@@ -3,11 +3,15 @@
 #include "nodes/file.hpp"
 #include "nodes/function_definition.hpp"
 #include "nodes/scope.hpp"
+#include "nodes/evaluatable.hpp"
 #include "rules.hpp"
 
 #include <deque>
 
 struct ScopeInfo {
+    ScopeInfo(TypeInfo type, size_t stackIndex, size_t arraySize) : m_type(type), m_stackIndex(stackIndex), m_arraySize(arraySize) {}
+    ScopeInfo(TypeInfo type, size_t stackIndex, int arraySize) : m_type(type), m_stackIndex(stackIndex), m_arraySize(arraySize) {}
+    ScopeInfo() {}
     TypeInfo m_type;
     size_t m_stackIndex;
     size_t m_arraySize;
@@ -31,6 +35,9 @@ public:
     std::shared_ptr<FunctionDefinitionNode> parseFunctionDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
     std::unique_ptr<ScopeNode> parseScope(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseInstruction(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<FunctionInstructionNode> parseVariableDeclaration(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parseExpression(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parseOperand(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
 
     bool expectTokenType(const Token& token, Token::Type type);
 };

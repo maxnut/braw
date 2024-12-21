@@ -8,7 +8,7 @@ namespace Message {
 
 namespace Error {
 
-void unknownType(std::string type) {
+inline void unknownType(std::string type) {
     spdlog::error("Unknown type {}", type);
 }
 

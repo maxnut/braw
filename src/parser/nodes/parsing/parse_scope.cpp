@@ -13,7 +13,7 @@ std::unique_ptr<ScopeNode> Parser::parseScope(std::shared_ptr<FileNode> file, To
         std::unique_ptr<FunctionInstructionNode> instruction = parseInstruction(file, cursor, ctx);
         if(!instruction)
             return nullptr;
-        scope->m_instructions.push_back(instruction);
+        scope->m_instructions.push_back(std::move(instruction));
     }
 
     ctx.m_scopeTables.pop_front();

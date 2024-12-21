@@ -5,8 +5,10 @@
 
 #include <vector>
 
+using TokenCursor = Cursor<std::vector<Token>::iterator, Token>;
+
 namespace Rules {
-    inline bool isValidTypeName(Cursor<std::vector<Token>::iterator, Token>& cursor) {
+    inline bool isValidTypeName(TokenCursor& cursor) {
         if(cursor.get().value().m_type != Token::IDENTIFIER && cursor.get().value().m_type != Token::KEYWORD)
             return false;
 
@@ -19,7 +21,7 @@ namespace Rules {
         return true;
     }
 
-    inline bool isFunctionDefinition(Cursor<std::vector<Token>::iterator, Token> cursor) {
+    inline bool isFunctionDefinition(TokenCursor cursor) {
         if(!isValidTypeName(cursor))
             return false;
 
@@ -29,6 +31,24 @@ namespace Rules {
         if(cursor.next().get().value().m_type != Token::LEFT_PAREN)
             return false;
 
+        return true;
+    }
+
+    inline bool isAssignment(TokenCursor cursor) {
+        while(cursor.hasNext() && cursor.get().value().m_type != Token::SEMICOLON) {
+            if(cursor.get().next().value().m_value == "=")
+                return true;
+        }
+        return false;
+    }
+
+    inline bool isVariableDeclaration(TokenCursor cursor) {
+        if(!isValidTypeName(cursor))
+            return false;
+
+        if(cursor.get().value().m_type != Token::IDENTIFIER)
+            return false;
+        
         return true;
     }
 }

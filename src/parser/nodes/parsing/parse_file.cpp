@@ -1,10 +1,9 @@
-#include "../../parser.hpp"
-#include "../../rules.hpp"
+#include "parser/parser.hpp"
 
-std::unique_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
-    std::unique_ptr<FileNode> file = std::make_unique<FileNode>();
+std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
+    std::shared_ptr<FileNode> file = std::make_shared<FileNode>();
 
-    Cursor<std::vector<Token>::iterator, Token> cursor(tokens.begin(), tokens.end());
+    TokenCursor cursor(tokens.begin(), tokens.end());
 
     while(cursor.hasNext()) {
         if(!expectTokenType(cursor.get().value(), Token::KEYWORD))

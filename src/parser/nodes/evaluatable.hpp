@@ -14,5 +14,5 @@ class EvaluatableNode : public FunctionInstructionNode {
 public:
     TypeInfo m_type;
     size_t m_size;
-    ValueType m_type;
+    ValueType m_memoryType;
 };

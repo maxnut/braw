@@ -13,10 +13,10 @@ struct TypeInfo {
     std::string m_name = "";
     size_t m_size = 0;
     std::unordered_map<std::string, MemberInfo> m_members;
-};
 
-bool operator==(const TypeInfo& t1, const TypeInfo& t2) {
-    return t1.m_name == t2.m_name &&
-    t1.m_size == t2.m_size &&
-    t1.m_members.size() == t2.m_members.size();
-}
+    bool operator==(const TypeInfo& t2) {
+        return m_name == t2.m_name &&
+        m_size == t2.m_size &&
+        m_members.size() == t2.m_members.size();
+    }
+};

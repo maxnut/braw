@@ -38,7 +38,7 @@ public:
                 }
 
                 for(int i = 0; i < func->m_parameters.size(); i++) {
-                    if(func->m_parameters[i] != function->m_parameters[i]) {
+                    if(static_cast<const TypeInfo&>(func->m_parameters[i]) != function->m_parameters[i]) {
                         found = false;
                         continue;
                     }

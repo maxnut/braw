@@ -2,6 +2,7 @@
 
 #include <iterator>
 #include <stdexcept>
+#include <stdint.h>
 
 template<typename Iterator, typename T>
 class Cursor {
@@ -12,18 +13,26 @@ public:
         return *m_value;
     }
 
+    T& peekNext(uint32_t amount = 1) {
+        return next(amount).get().prev(amount).value();
+    }
+
+    T& peekPrev(uint32_t amount = 1) {
+        return prev(amount).get().next(amount).value();
+    }
+
     Cursor& get() {
         m_value = &(*m_current);
         return *this;
     }
 
-    Cursor& next(int amount = 1) {
+    Cursor& next(uint32_t amount = 1) {
         if(std::next(m_current, amount) > m_end) throw std::out_of_range("Cursor out of range at end");
         m_current += amount;
         return *this;
     }
 
-    Cursor& prev(int amount = 1) {
+    Cursor& prev(uint32_t amount = 1) {
         if(std::prev(m_current, amount) < m_begin) throw std::out_of_range("Cursor out of range at begin");
         m_current -= amount;
         return *this;

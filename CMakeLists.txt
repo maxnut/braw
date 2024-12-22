@@ -12,6 +12,9 @@ add_executable(braw
 ${SOURCES}
 )
 
-target_include_directories(braw PRIVATE include)
+target_include_directories(braw PRIVATE
+src
+include
+)
 
 install(TARGETS braw)

@@ -2,6 +2,7 @@
 
 #include "memory.hpp"
 
+#include <stdint.h>
 #include <array>
 
 class Stack {

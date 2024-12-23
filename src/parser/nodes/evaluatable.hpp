@@ -5,14 +5,16 @@
 #include "function_instruction.hpp"
 
 enum ValueType {
+    DECLARATION,
     LVALUE,
     PRVALUE,
-    XVALUE
+    XVALUE,
+    COUNT
 };
 
 class EvaluatableNode : public FunctionInstructionNode {
 public:
     TypeInfo m_type;
-    size_t m_size;
-    ValueType m_memoryType;
+    size_t m_size = 0;
+    ValueType m_memoryType = COUNT;
 };

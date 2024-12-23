@@ -1,13 +1,12 @@
 #include "parser/parser.hpp"
 #include "../variable_declaration.hpp"
-#include "messages.hpp"
 
 std::unique_ptr<FunctionInstructionNode> Parser::parseVariableDeclaration(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
     bool assignment = Rules::isAssignment(cursor);
 
     std::optional<TypeInfo> type = file->getTypeInfo(cursor.get().value().m_value);
     if(!type) {
-        Message::Error::unknownType(cursor.value().m_value);
+        m_message.unknownType(cursor.value().m_value);
         return nullptr;
     }
 

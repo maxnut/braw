@@ -1,14 +1,15 @@
-#include "lexer/lexer.hpp"
+#include "parser/parser.hpp"
 
 #include <iostream>
 
 int main() {
-    std::optional<std::vector<Token>> tokens = Lexer(std::filesystem::path("main.braw")).tokenize();
+    Parser parser = Parser("main.braw");
+    std::shared_ptr<FileNode> file = parser.parse();
 
-    if(!tokens)
+    if(!file) {
+        std::cout << "Failed to parse file" << std::endl;
         return 1;
-
-    
+    }
 
     return 0;
 }

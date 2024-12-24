@@ -4,10 +4,18 @@
 #include "../token.hpp"
 
 #include <vector>
+#include <unordered_map>
 
 using TokenCursor = Cursor<std::vector<Token>::iterator, Token>;
 
 namespace Rules {
+    inline std::unordered_map<std::string, int> s_operatorPrecedence = {
+        {"+", 0},
+        {"-", 0},
+        {"*", 2},
+        {"/", 1},
+    };
+
     inline bool isValidTypeName(TokenCursor& cursor) {
         if(cursor.get().value().m_type != Token::IDENTIFIER && cursor.get().value().m_type != Token::KEYWORD)
             return false;
@@ -15,9 +23,10 @@ namespace Rules {
         while(cursor.hasNext()) {
             if(cursor.next().get().value().m_value == "*")
                 continue;
+
+            break;
         }
 
-        cursor.next();
         return true;
     }
 
@@ -49,6 +58,23 @@ namespace Rules {
         if(cursor.get().value().m_type != Token::IDENTIFIER)
             return false;
         
+        return true;
+    }
+
+    inline bool isFunctionCall(TokenCursor cursor) {
+        if(cursor.get().value().m_type != Token::IDENTIFIER)
+            return false;
+
+        if(cursor.next().get().value().m_type != Token::LEFT_PAREN)
+            return false;
+
+        return true;
+    }
+
+    inline bool isVariableAccess(TokenCursor cursor) {
+        if(cursor.get().value().m_type != Token::IDENTIFIER)
+            return false;
+
         return true;
     }
 }

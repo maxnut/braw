@@ -1,5 +1,6 @@
 #pragma once
 
+#include "messages.hpp"
 #include "nodes/file.hpp"
 #include "nodes/function_definition.hpp"
 #include "nodes/scope.hpp"
@@ -31,13 +32,24 @@ struct ParserFunctionContext {
 
 class Parser {
 public:
-    std::shared_ptr<FileNode> parseFile(std::vector<Token>& tokens);
+    Parser(const std::filesystem::path& path) : m_file(path) {}
+
+    std::shared_ptr<FileNode> parse();
     std::shared_ptr<FunctionDefinitionNode> parseFunctionDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
     std::unique_ptr<ScopeNode> parseScope(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseInstruction(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseVariableDeclaration(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parseExpression(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parseExpression(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, int minPrecedence = 0);
     std::unique_ptr<EvaluatableNode> parseOperand(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parsePrimary(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parseVariable(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
 
     bool expectTokenType(const Token& token, Token::Type type);
+
+private:
+    std::shared_ptr<FileNode> parseFile(std::vector<Token>& tokens);
+
+private:
+    std::filesystem::path m_file;
+    Message m_message;
 };

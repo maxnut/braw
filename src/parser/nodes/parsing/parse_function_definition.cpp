@@ -1,12 +1,11 @@
 #include "parser/parser.hpp"
-#include "messages.hpp"
 
 std::shared_ptr<FunctionDefinitionNode> Parser::parseFunctionDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor) {
     std::shared_ptr<FunctionDefinitionNode> node = std::make_shared<FunctionDefinitionNode>();
     
     std::optional<TypeInfo> returnType = file->getTypeInfo(cursor.get().value().m_value);
     if(!returnType) {
-        Message::Error::unknownType(cursor.value().m_value);
+        m_message.unknownType(cursor.value().m_value);
         return nullptr;
     }
 
@@ -22,7 +21,7 @@ std::shared_ptr<FunctionDefinitionNode> Parser::parseFunctionDefinition(std::sha
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_PAREN) {
         std::optional<TypeInfo> parameter = file->getTypeInfo(cursor.get().value().m_value);
         if(!returnType) {
-            Message::Error::unknownType(cursor.value().m_value);
+            m_message.unknownType(cursor.value().m_value);
             return nullptr;
         }
         if(!expectTokenType(cursor.next().get().value(), Token::IDENTIFIER))

@@ -7,6 +7,7 @@ public:
     template<typename T>
     void from(T from) {
         *(T*)m_data = from;
+        m_size = sizeof(T);
     }
 
     template<typename T>

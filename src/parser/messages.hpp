@@ -5,6 +5,8 @@
 
 #include <filesystem>
 
+class EvaluatableNode;
+
 class Message {
 public:
     Message() = default;
@@ -15,6 +17,7 @@ public:
     void expectedTokenType(const std::string& type, const std::string& expected);
     void unknownType(const std::string& type);
     void mismatchedTypes(const std::string& type1, const std::string& type2);
+    void unknownFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>> &parameters);
 
 private:
     std::filesystem::path m_file;

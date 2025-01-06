@@ -121,6 +121,9 @@ std::optional<std::vector<Token>> Lexer::tokenize() {
         lineNumber++;
     }
 
+    if(tokens.size() == 0)
+        return std::nullopt;
+
     return tokens;
 }
 

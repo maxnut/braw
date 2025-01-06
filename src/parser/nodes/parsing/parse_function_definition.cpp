@@ -10,7 +10,7 @@ std::shared_ptr<FunctionDefinitionNode> Parser::parseFunctionDefinition(std::sha
     }
 
     node->m_returnType = returnType.value();
-    std::string name = cursor.next().get().value().m_value;
+    node->m_name = cursor.next().get().value().m_value;
 
     if(!expectTokenType(cursor.next().get().next().value(), Token::LEFT_PAREN))
         return nullptr;
@@ -32,7 +32,7 @@ std::shared_ptr<FunctionDefinitionNode> Parser::parseFunctionDefinition(std::sha
         ctx.changeStackSize(parameter->m_size);
     }
 
-    if(!expectTokenType(cursor.next().get().value(), Token::RIGHT_PAREN))
+    if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return nullptr;
 
     ctx.m_scopeTables.push_front(scopeTable);

@@ -43,6 +43,8 @@ public:
     std::unique_ptr<EvaluatableNode> parseOperand(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<EvaluatableNode> parsePrimary(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<EvaluatableNode> parseVariable(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parseLiteral(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parseFunctionCall(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
 
     bool expectTokenType(const Token& token, Token::Type type);
 

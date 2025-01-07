@@ -11,4 +11,5 @@ public:
     TypeInfo m_returnType;
     std::vector<TypeInfo> m_parameters;
     std::unique_ptr<ScopeNode> m_scope;
+    std::string m_name;
 };

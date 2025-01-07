@@ -77,4 +77,28 @@ namespace Rules {
 
         return true;
     }
+
+    inline bool isString(TokenCursor cursor) {
+        if(cursor.get().value().m_type != Token::QUOTE)
+            return false;
+
+        if(cursor.next().get().value().m_type != Token::STRING)
+            return false;
+
+        if(cursor.next().get().value().m_type != Token::QUOTE)
+            return false;
+
+        return true;
+    }
+
+    inline bool isLiteral(TokenCursor cursor) {
+        if(cursor.get().value().m_type != Token::INTEGER && cursor.get().value().m_type != Token::FLOAT && cursor.get().value().m_type != Token::DOUBLE && !isString(cursor))
+            return false;
+
+        return true;
+    }
+
+    inline bool isPtr(const std::string& type) {
+        return type.find("*") != std::string::npos;
+    }
 }

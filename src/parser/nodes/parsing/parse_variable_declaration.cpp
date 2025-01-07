@@ -10,13 +10,15 @@ std::unique_ptr<FunctionInstructionNode> Parser::parseVariableDeclaration(std::s
         return nullptr;
     }
 
-    ctx.m_scopeTables.front()[cursor.next().get().value().m_value] = ScopeInfo(type.value(), ctx.m_currentStackSize, 0);
+    ctx.m_scopeTables.front()[cursor.next().get().next().value().m_value] = ScopeInfo(type.value(), ctx.m_currentStackSize, 0);
 
     std::unique_ptr<VariableDeclarationNode> variableDeclaration = std::make_unique<VariableDeclarationNode>();
     variableDeclaration->m_type = type.value();
 
-    if(assignment)
+    if(assignment) {
+        cursor.next();
         variableDeclaration->m_assignmentValue = parseExpression(file, cursor, ctx);
+    }
 
     return variableDeclaration;
 }

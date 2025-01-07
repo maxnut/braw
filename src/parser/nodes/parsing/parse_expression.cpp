@@ -8,7 +8,7 @@ std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNod
         return nullptr;
 
     while(cursor.hasNext()) {
-        if(cursor.get().value().m_type != Token::OPERATOR)
+        if(cursor.next().get().value().m_type != Token::OPERATOR)
             break;
 
         Token opToken = cursor.get().next().value();

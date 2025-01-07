@@ -12,7 +12,11 @@ std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
             return nullptr;
         
         if(Rules::isFunctionDefinition(cursor)) {
+            std::shared_ptr<FunctionDefinitionNode> node = parseFunctionDefinition(file, cursor);
+            if(!node)
+                return nullptr;
 
+            file->registerFunction(node, node->m_name);
         }
     }
 

@@ -18,6 +18,7 @@ public:
         KEYWORD,
         IDENTIFIER,
         SEMICOLON,
+        ASSIGNMENT,
         OPERATOR,
         COMMA,
         QUOTE,
@@ -43,6 +44,7 @@ public:
             case KEYWORD: return "KEYWORD";
             case IDENTIFIER: return "IDENTIFIER";
             case SEMICOLON: return "SEMICOLON";
+            case ASSIGNMENT: return "ASSIGNMENT";
             case OPERATOR: return "OPERATOR";
             case COMMA: return "COMMA";
             case QUOTE: return "QUOTE";

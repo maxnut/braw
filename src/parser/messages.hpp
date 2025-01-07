@@ -2,6 +2,7 @@
 
 #include "token.hpp"
 #include "cursor.hpp"
+#include "nodes/evaluatable.hpp"
 
 #include <filesystem>
 
@@ -15,9 +16,12 @@ public:
     std::string where();
     void unexpectedToken(const Token& token);
     void expectedTokenType(const std::string& type, const std::string& expected);
-    void unknownType(const std::string& type);
+    void expectedType(const std::string& type, const std::string& expected);
     void mismatchedTypes(const std::string& type1, const std::string& type2);
+    void unknownType(const std::string& type);
+    void unknownVariable(const std::string& type);
     void unknownFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>> &parameters);
+    void unexpectedValueCategories(ValueType type, std::vector<ValueType> expected);
 
 private:
     std::filesystem::path m_file;

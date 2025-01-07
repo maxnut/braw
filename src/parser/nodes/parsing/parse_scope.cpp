@@ -14,9 +14,6 @@ std::unique_ptr<ScopeNode> Parser::parseScope(std::shared_ptr<FileNode> file, To
         if(!instruction)
             return nullptr;
         scope->m_instructions.push_back(std::move(instruction));
-
-        if(!expectTokenType(cursor.get().next().value(), Token::SEMICOLON))
-            return nullptr;
     }
 
     ctx.m_scopeTables.pop_front();
@@ -24,6 +21,9 @@ std::unique_ptr<ScopeNode> Parser::parseScope(std::shared_ptr<FileNode> file, To
 
     if(!expectTokenType(cursor.get().value(), Token::RIGHT_BRACE))
         return nullptr;
+
+    if(cursor.hasNext())
+        cursor.next();
 
     return scope;
 }

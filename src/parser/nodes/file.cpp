@@ -2,7 +2,11 @@
 
 std::unordered_map<std::string, TypeInfo> FileNode::s_typeTable = {
     {"void", TypeInfo{"void", 0}},
-    {"int", TypeInfo{"int", 4}}
+    {"int", TypeInfo{"int", 4}},
+    {"float", TypeInfo{"float", 4}},
+    {"double", TypeInfo{"double", 8}},
+    {"bool", TypeInfo{"bool", 1}},
+    {"char", TypeInfo{"char", 1}}
 };
 
 

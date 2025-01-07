@@ -11,6 +11,7 @@ std::unique_ptr<FunctionInstructionNode> Parser::parseVariableDeclaration(std::s
     }
 
     ctx.m_scopeTables.front()[cursor.next().get().next().value().m_value] = ScopeInfo(type.value(), ctx.m_currentStackSize, 0);
+    ctx.changeStackSize(type->m_size);
 
     std::unique_ptr<VariableDeclarationNode> variableDeclaration = std::make_unique<VariableDeclarationNode>();
     variableDeclaration->m_type = type.value();

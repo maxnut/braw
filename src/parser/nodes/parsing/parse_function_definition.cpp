@@ -28,7 +28,7 @@ std::shared_ptr<FunctionDefinitionNode> Parser::parseFunctionDefinition(std::sha
             return nullptr;
         
         node->m_parameters.push_back(parameter.value());
-        scopeTable[cursor.value().m_value] = ScopeInfo(parameter.value(), ctx.m_currentStackSize, 0);
+        scopeTable[cursor.get().next().value().m_value] = ScopeInfo(parameter.value(), ctx.m_currentStackSize, 0);
         ctx.changeStackSize(parameter->m_size);
     }
 

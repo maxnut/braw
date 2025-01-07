@@ -13,6 +13,9 @@ struct ScopeInfo {
     ScopeInfo(TypeInfo type, size_t stackIndex, size_t arraySize) : m_type(type), m_stackIndex(stackIndex), m_arraySize(arraySize) {}
     ScopeInfo(TypeInfo type, size_t stackIndex, int arraySize) : m_type(type), m_stackIndex(stackIndex), m_arraySize(arraySize) {}
     ScopeInfo() {}
+
+    size_t getSize() const { return m_type.m_size * (m_arraySize == 0 ? 1 : m_arraySize); }
+
     TypeInfo m_type;
     size_t m_stackIndex;
     size_t m_arraySize;
@@ -45,8 +48,13 @@ public:
     std::unique_ptr<EvaluatableNode> parseVariable(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<EvaluatableNode> parseLiteral(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<EvaluatableNode> parseFunctionCall(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<EvaluatableNode> parseVariableAccess(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<FunctionInstructionNode> parseAssignment(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<FunctionInstructionNode> parseReturn(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<FunctionInstructionNode> parseIf(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
 
     bool expectTokenType(const Token& token, Token::Type type);
+    bool expectTokenValue(const Token& token, const std::string& value);
 
 private:
     std::shared_ptr<FileNode> parseFile(std::vector<Token>& tokens);

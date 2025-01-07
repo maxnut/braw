@@ -74,7 +74,7 @@ public:
                 return false;
 
             for(int i = 0; i < func->m_parameters.size(); i++) {
-                if(!(Rules::isPtr(func->m_parameters[i].m_name) && Rules::isPtr(parameters[i]->m_type.m_name)) && func->m_parameters[i] != parameters[i]->m_type)
+                if(!(Rules::isPtr(func->m_parameters[i].m_name) && Rules::isPtr(parameters[i]->m_type.m_name)) && static_cast<const TypeInfo&>(func->m_parameters[i]) != parameters[i]->m_type)
                     return false;
             }
             

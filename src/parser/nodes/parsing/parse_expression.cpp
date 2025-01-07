@@ -8,14 +8,16 @@ std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNod
         return nullptr;
 
     while(cursor.hasNext()) {
-        if(cursor.next().get().value().m_type != Token::OPERATOR)
+        if(cursor.get().value().m_type != Token::OPERATOR)
             break;
 
         Token opToken = cursor.get().next().value();
         int precedence = Rules::s_operatorPrecedence[opToken.m_value];
 
-        if(precedence < minPrecedence)
+        if(precedence < minPrecedence) {
+            cursor.prev();
             break;
+        }
 
         std::unique_ptr<EvaluatableNode> right = parseExpression(file, cursor, ctx, precedence + 1);
         if(!right)
@@ -35,8 +37,8 @@ std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNod
 
         op->m_left = std::move(left);
         op->m_right = std::move(right);
-        op->m_type = left->m_type;
-        op->m_size = left->m_size;
+        op->m_type = op->m_left->m_type;
+        op->m_size = op->m_left->m_size;
         op->m_memoryType = PRVALUE;
 
         left = std::move(op);

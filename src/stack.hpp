@@ -11,6 +11,19 @@ public:
         m_head = m_memory.data();
     }
 
+    Stack(const Stack& other) {
+        m_memory = other.m_memory;
+        m_head = m_memory.data() + ((uintptr_t)other.m_head - (uintptr_t)other.m_memory.data());
+    }
+
+    Stack& operator=(const Stack& other) {
+        if (this != &other) {
+            m_memory = other.m_memory;
+            m_head = m_memory.data() + ((uintptr_t)other.m_head - (uintptr_t)other.m_memory.data());
+        }
+        return *this;
+    }
+
     Memory push(size_t size) {
         // if(size == 0)
         //     spdlog::warn("push(0)");
@@ -48,6 +61,6 @@ public:
     }
 
 private:
-    std::array<uint8_t, 5242> m_memory;
+    std::array<uint8_t, 512> m_memory;
     void* m_head;
 };

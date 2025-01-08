@@ -1,14 +1,8 @@
 #pragma once
 
-#include "../../stack.hpp"
-
-struct FunctionContext {
-    Memory m_returnValue;
-    size_t m_functionPtr = 0;
-    bool m_return = false;
-};
+#include "interpreter/interpreter.hpp"
 
 class FunctionInstructionNode {
 public:
-    ~FunctionInstructionNode() {}
+    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) = 0;
 };

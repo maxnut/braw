@@ -21,6 +21,7 @@ public:
     void unknownType(const std::string& type);
     void unknownVariable(const std::string& type);
     void unknownFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>> &parameters);
+    void unknownOperator(const std::string& op, const std::string& type);
     void unexpectedValueCategories(ValueType type, std::vector<ValueType> expected);
 
 private:

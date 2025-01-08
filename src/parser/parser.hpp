@@ -56,6 +56,9 @@ public:
     bool expectTokenType(const Token& token, Token::Type type);
     bool expectTokenValue(const Token& token, const std::string& value);
 
+    TypeInfo makePointer(const TypeInfo& base);
+    std::string getRawType(const std::string& type);
+
 private:
     std::shared_ptr<FileNode> parseFile(std::vector<Token>& tokens);
 

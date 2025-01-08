@@ -24,6 +24,9 @@ static std::string valueTypeString(ValueType type) {
 
 class EvaluatableNode : public FunctionInstructionNode {
 public:
+    virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) = 0;
+
+public:
     TypeInfo m_type;
     size_t m_size = 0;
     ValueType m_memoryType = COUNT;

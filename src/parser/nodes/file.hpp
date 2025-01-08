@@ -68,7 +68,7 @@ public:
         return true;
     }
 
-    std::shared_ptr<FunctionDefinitionNode> getFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>>& parameters) {
+    std::shared_ptr<FunctionDefinitionNode> getFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>>& parameters, bool* outNative = nullptr) {
         auto check = [&](std::shared_ptr<FunctionDefinitionNode> func) -> bool {
             if(func->m_parameters.size() != parameters.size())
                 return false;
@@ -83,8 +83,10 @@ public:
 
         if(s_functionTable.contains(name)) {
             for(std::shared_ptr<FunctionDefinitionNode> func : s_functionTable[name]) {
-                if(check(func))
+                if(check(func)) {
+                    if(outNative) *outNative = true;
                     return func;
+                }
             }
         }
         

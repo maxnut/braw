@@ -134,8 +134,10 @@ Token Lexer::parseNumber(Cursor<std::string::iterator, char>& cursor, int lineNu
         n += cursor.get().next().value();
 
     if(n.find('.') != std::string::npos) {
-        if(cursor.get().value() == 'f' || cursor.get().value() == 'F')
+        if(cursor.get().value() == 'f' || cursor.get().value() == 'F') {
+            cursor.next();
             return Token(Token::FLOAT, n, lineNumber, index);
+        }
 
         return Token(Token::DOUBLE, n, lineNumber, index);
     }

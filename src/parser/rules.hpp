@@ -23,7 +23,7 @@ namespace Rules {
     inline std::unordered_map<std::string, int> s_operatorPrecedence = {
         {"+", 0},
         {"-", 0},
-        {"*", 2},
+        {"*", 1},
         {"/", 1},
     };
 

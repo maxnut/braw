@@ -6,13 +6,13 @@
 #include <memory>
 #include <vector>
 
-class FunctionCallNode : public EvaluatableNode {
+class NativeFunctionCallNode : public EvaluatableNode {
 public:
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        return interpreter.visitFunctionCall(this, stack, functionContext);
+        return interpreter.visitNativeFunctionCall(this, stack, functionContext);
     }
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        interpreter.visitFunctionCall(this, stack, functionContext);
+        interpreter.visitNativeFunctionCall(this, stack, functionContext);
     }
 
 public:

@@ -10,6 +10,12 @@ std::unique_ptr<EvaluatableNode> Parser::parsePrimary(std::shared_ptr<FileNode> 
         result = parseVariableAccess(file, cursor, ctx);
     else if(Rules::isLiteral(cursor))
         result = parseLiteral(file, cursor, ctx);
+    else if(beg.m_type == Token::LEFT_PAREN) {
+        cursor.next();
+        result = parseExpression(file, cursor, ctx);
+        if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
+            return nullptr;
+    }
     
     if(!result)
         m_message.unexpectedToken(beg);

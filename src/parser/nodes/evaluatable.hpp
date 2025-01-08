@@ -12,6 +12,16 @@ enum ValueType {
     COUNT
 };
 
+static std::string valueTypeString(ValueType type) {
+    switch(type) {
+        case DECLARATION: return "DECLARATION";
+        case LVALUE: return "LVALUE";
+        case PRVALUE: return "PRVALUE";
+        case XVALUE: return "XVALUE";
+        default: case COUNT: return "COUNT";
+    }
+}
+
 class EvaluatableNode : public FunctionInstructionNode {
 public:
     TypeInfo m_type;

@@ -17,6 +17,13 @@ bool Parser::expectTokenType(const Token& token, Token::Type type) {
     return token.m_type == type;
 }
 
+bool Parser::expectTokenValue(const Token& token, const std::string& value) {
+    if(token.m_value != value)
+        m_message.unexpectedToken(token);
+
+    return token.m_value == value;
+}
+
 std::optional<ScopeInfo> ParserFunctionContext::get(const std::string& name) const {
     for(auto it = m_scopeTables.rbegin(); it != m_scopeTables.rend(); it++) {
         auto it2 = it->find(name);

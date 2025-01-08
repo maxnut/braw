@@ -23,6 +23,10 @@ void Message::mismatchedTypes(const std::string& type1, const std::string& type2
     spdlog::error("{} Mismatched types {} and {}", where(), type1, type2);
 }
 
+void Message::expectedType(const std::string& type, const std::string& expected) {
+    spdlog::error("{} Expected type {}, got {}", where(), expected, type);
+}
+
 void Message::unknownFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>> &parameters) {
     std::string funcString = name + "(";
     for(int i = 0; i < parameters.size(); i++) {
@@ -33,4 +37,19 @@ void Message::unknownFunction(const std::string& name, const std::vector<std::un
     funcString += ")";
 
     spdlog::error("{} Unknown function {}", where(), funcString);
+}
+
+void Message::unknownVariable(const std::string& type) {
+    spdlog::error("{} Unknown variable {}", where(), type);
+}
+
+void Message::unexpectedValueCategories(ValueType type, std::vector<ValueType> expected) {
+    std::string expectedValues = "";
+    for(int i = 0; i < expected.size(); i++) {
+        expectedValues += valueTypeString(expected[i]);
+        if(i < expected.size() - 1)
+            expectedValues += ", ";
+    }
+
+    spdlog::error("{} Expected value of type {}, got {}", where(), expectedValues, valueTypeString(type));
 }

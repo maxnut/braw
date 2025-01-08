@@ -25,5 +25,7 @@ std::unique_ptr<EvaluatableNode> Parser::parseLiteral(std::shared_ptr<FileNode> 
     literal->m_size = literal->m_type.m_size;
     literal->m_memoryType = ValueType::PRVALUE;
 
+    cursor.next();
+
     return literal;
 }

@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <iostream>
+#include <cstring>
 
 namespace NativeFunctions {
 
@@ -69,8 +70,7 @@ inline void memory_set(Stack& stack, Memory* returnValue, const std::vector<Type
     void* ptr = ptrM.get<void*>();
     int value = valueM.get<int>();
     int size = sizeM.get<int>();
-
-    memset(ptr, value, size);
+    std::memset(ptr, value, size);
 }
 
 }

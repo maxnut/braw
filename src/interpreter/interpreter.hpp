@@ -21,6 +21,7 @@ class ReturnNode;
 class VariableAccessNode;
 class VariableDeclarationNode;
 class AddressNode;
+class DereferenceNode;
 
 class Interpreter {
 public:
@@ -38,6 +39,7 @@ public:
     Memory visitLiteral(LiteralNode* instruction, Stack& stack, FunctionContext& context);
     Memory visitVariableAccess(VariableAccessNode* instruction, Stack& stack, FunctionContext& context);
     Memory visitAddress(AddressNode* instruction, Stack& stack, FunctionContext& context);
+    Memory visitDereference(DereferenceNode* instruction, Stack& stack, FunctionContext& context);
 
 public:
     std::unordered_map<uint64_t, std::unique_ptr<Stack>> m_stacks;

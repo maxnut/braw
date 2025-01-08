@@ -97,6 +97,13 @@ namespace Rules {
         return true;
     }
 
+    inline bool isStructDefinition(TokenCursor cursor) {
+        if(cursor.get().value().m_value != "struct" || cursor.next().get().value().m_type != Token::IDENTIFIER)
+            return false;
+
+        return true;
+    }
+
     inline bool isString(TokenCursor cursor) {
         if(cursor.get().value().m_type != Token::QUOTE)
             return false;

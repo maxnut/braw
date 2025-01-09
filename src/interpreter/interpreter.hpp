@@ -15,6 +15,7 @@ class FunctionCallNode;
 class BinaryOperatorNode;
 class NativeFunctionCallNode;
 class IfNode;
+class WhileNode;
 class LiteralNode;
 class NativeFunctionNode;
 class ReturnNode;
@@ -33,6 +34,7 @@ public:
 
     void visitAssignment(AssignmentNode* instruction, Stack& stack, FunctionContext& context);
     void visitIf(IfNode* instruction, Stack& stack, FunctionContext& context);
+    void visitWhile(WhileNode* instruction, Stack& stack, FunctionContext& context);
     void visitReturn(ReturnNode* instruction, Stack& stack, FunctionContext& context);
     void visitVariableDeclaration(VariableDeclarationNode* instruction, Stack& stack, FunctionContext& context);
     Memory visitBinaryOperator(BinaryOperatorNode* instruction, Stack& stack, FunctionContext& context);

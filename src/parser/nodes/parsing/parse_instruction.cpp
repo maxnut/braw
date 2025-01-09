@@ -13,6 +13,8 @@ std::unique_ptr<FunctionInstructionNode> Parser::parseInstruction(std::shared_pt
         instruction = parseReturn(file, cursor, ctx);
     else if(Rules::isIf(cursor))
         instruction = parseIf(file, cursor, ctx);
+    else if(Rules::isWhile(cursor))
+        instruction = parseWhile(file, cursor, ctx);
     else
         instruction = parseExpression(file, cursor, ctx);
 
@@ -23,6 +25,7 @@ std::unique_ptr<FunctionInstructionNode> Parser::parseInstruction(std::shared_pt
 
             break;
         }
+        case Rules::InstructionType::WHILE:
         case Rules::InstructionType::IF:
             break;
     }

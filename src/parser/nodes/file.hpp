@@ -33,6 +33,14 @@ public:
         return std::nullopt;
     }
 
+    bool registerType(const TypeInfo& info) {
+        if(s_typeTable.contains(info.m_name) || m_typeTable.contains(info.m_name))
+            return false;
+
+        m_typeTable[info.m_name] = info;
+        return true;
+    }
+
     bool registerFunction(std::shared_ptr<FunctionDefinitionNode> function, const std::string& name) {
         auto check = [&](const std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionDefinitionNode>>>& table) -> bool {
             bool found = true;

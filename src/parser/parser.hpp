@@ -53,11 +53,13 @@ public:
     std::unique_ptr<FunctionInstructionNode> parseReturn(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseIf(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
 
+    std::optional<TypeInfo> parseStructDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
+
     bool expectTokenType(const Token& token, Token::Type type);
     bool expectTokenValue(const Token& token, const std::string& value);
 
     TypeInfo makePointer(const TypeInfo& base);
-    std::string getRawType(const std::string& type);
+    std::optional<TypeInfo> getRawType(const TypeInfo& pointer, std::shared_ptr<FileNode> file);
 
 private:
     std::shared_ptr<FileNode> parseFile(std::vector<Token>& tokens);

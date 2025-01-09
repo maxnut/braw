@@ -16,8 +16,24 @@ std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
             if(!node)
                 return nullptr;
 
-            file->registerFunction(node, node->m_name);
+            if(!file->registerFunction(node, node->m_name))
+                return nullptr;
+            
+            continue;
         }
+        else if(Rules::isStructDefinition(cursor)) {
+            std::optional<TypeInfo> type = parseStructDefinition(file, cursor);
+            if(!type)
+                return nullptr;
+
+            if(!file->registerType(type.value()))
+                return nullptr;
+            
+            continue;
+        }
+
+        m_message.unexpectedToken(cursor.get().value());
+        return nullptr;
     }
 
     return file;

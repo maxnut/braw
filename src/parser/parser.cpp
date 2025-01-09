@@ -54,8 +54,13 @@ TypeInfo Parser::makePointer(const TypeInfo& base) {
     return TypeInfo{base.m_name + "*", 8};
 }
 
-std::string Parser::getRawType(const std::string& type) {
-    if(type.find("*") != std::string::npos)
-        return type.substr(0, type.size() - 1);
-    return type;
+std::optional<TypeInfo> Parser::getRawType(const TypeInfo& pointer, std::shared_ptr<FileNode> file) {
+    std::string raw = pointer.m_name;
+    if(raw.find("*") != std::string::npos)
+        raw = raw.substr(0, raw.size() - 1);
+
+    if(Rules::isPtr(raw))
+        return TypeInfo{raw, 8};
+
+    return file->getTypeInfo(raw);
 }

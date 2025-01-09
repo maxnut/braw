@@ -1,6 +1,5 @@
 #include "parser/parser.hpp"
-#include "../addition.hpp"
-#include "../multiplication.hpp"
+#include "../binary_operator.hpp"
 
 std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, int minPrecedence) {
     std::unique_ptr<EvaluatableNode> left = parseOperand(file, cursor, ctx);
@@ -23,18 +22,18 @@ std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNod
         if(!right)
             return nullptr;
 
-        if(static_cast<const TypeInfo&>(left->m_type) != right->m_type) {
+        if(left->m_type != right->m_type) {
             m_message.mismatchedTypes(left->m_type.m_name, right->m_type.m_name);
             return nullptr;
         }
 
-        std::unique_ptr<BinaryOperatorNode> op = nullptr;
+        if(!left->m_type.m_operators.contains(opToken.m_value)) {
+            m_message.unknownOperator(opToken.m_value, left->m_type.m_name);
+            return nullptr;
+        }
 
-        if(opToken.m_value == "+")
-            op = std::make_unique<AdditionNode>();
-        else if(opToken.m_value == "*")
-            op = std::make_unique<MultiplicationNode>();
-
+        std::unique_ptr<BinaryOperatorNode> op = std::make_unique<BinaryOperatorNode>();
+        op->m_function = left->m_type.m_operators.at(opToken.m_value);
         op->m_left = std::move(left);
         op->m_right = std::move(right);
         op->m_type = op->m_left->m_type;

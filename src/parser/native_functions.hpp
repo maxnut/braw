@@ -18,6 +18,11 @@ inline void print(Stack& stack, Memory* returnValue, const std::vector<TypeInfo>
 
         std::cout << a << "\n";
     }
+    else if(param.m_name == "float") {
+        float a = message.get<float>();
+
+        std::cout << a << "\n";
+    }
     else if(param.m_name == "bool") {
         bool a = message.get<bool>();
 

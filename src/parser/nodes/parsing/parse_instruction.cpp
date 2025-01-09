@@ -17,15 +17,13 @@ std::unique_ptr<FunctionInstructionNode> Parser::parseInstruction(std::shared_pt
         instruction = parseExpression(file, cursor, ctx);
 
     switch(instructionType) {
-        case Rules::InstructionType::VARIABLE_DECLARATION:
-        case Rules::InstructionType::ASSIGNMENT:
-        case Rules::InstructionType::RETURN: {
+        default: {
             if(!expectTokenType(cursor.get().next().value(), Token::SEMICOLON))
                 return nullptr;
 
             break;
         }
-        default:
+        case Rules::InstructionType::IF:
             break;
     }
     

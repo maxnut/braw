@@ -1,4 +1,5 @@
 #include "parser/parser.hpp"
+#include "interpreter/interpreter.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -11,9 +12,20 @@ int main() {
     std::shared_ptr<FileNode> file = parser.parse();
 
     if(!file) {
-        std::cout << "Failed to parse file" << std::endl;
+        spdlog::error("Failed to parse file");
         return 1;
     }
+
+    auto main = file->getFunction("main", {});
+    if(!main) {
+        spdlog::error("Failed to find main function");
+        return 1;
+    }
+
+    size_t stackId = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    Interpreter interpreter;
+    interpreter.m_stacks[stackId] = std::make_unique<Stack>();
+    interpreter.invokeFunction(main.get(), *interpreter.m_stacks[stackId], nullptr, 0);
 
     return 0;
 }

@@ -49,3 +49,13 @@ void ParserFunctionContext::setStackSize(size_t amt) {
     if(m_currentStackSize > m_maxStackSize)
         m_maxStackSize = m_currentStackSize;
 }
+
+TypeInfo Parser::makePointer(const TypeInfo& base) {
+    return TypeInfo{base.m_name + "*", 8};
+}
+
+std::string Parser::getRawType(const std::string& type) {
+    if(type.find("*") != std::string::npos)
+        return type.substr(0, type.size() - 1);
+    return type;
+}

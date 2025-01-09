@@ -4,48 +4,120 @@ std::unordered_map<std::string, TypeInfo> FileNode::s_typeTable = {
     {"void", TypeInfo{"void", 0}},
 
     {"int", TypeInfo{"int", 4, {
-        {"+", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        {"+", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<int>() + rhs.get<int>());
-        }},
-        {"-", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "int"}
+        },
+        {"-", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<int>() - rhs.get<int>());
-        }},
-        {"*", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "int"}
+        },
+        {"*", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<int>() * rhs.get<int>());
-        }},
-        {"/", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "int"}
+        },
+        {"/", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<int>() / rhs.get<int>());
-        }}
+        }, "int"}
+        },
+        {"==", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<int>() == rhs.get<int>());
+        }, "bool"}
+        },
+        {">", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<int>() > rhs.get<int>());
+        }, "bool"}
+        },
+        {">=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<int>() >= rhs.get<int>());
+        }, "bool"}
+        },
+        {"<", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<int>() < rhs.get<int>());
+        }, "bool"}
+        },
+        {"<=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<int>() <= rhs.get<int>());
+        }, "bool"}
+        }
     }}},
 
     {"float", TypeInfo{"float", 4, {
-        {"+", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        {"+", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<float>() + rhs.get<float>());
-        }},
-        {"-", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "float"}
+        },
+        {"-", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<float>() - rhs.get<float>());
-        }},
-        {"*", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "float"}
+        },
+        {"*", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<float>() * rhs.get<float>());
-        }},
-        {"/", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "float"}
+        },
+        {"/", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<float>() / rhs.get<float>());
-        }}
+        }, "float"}
+        },
+        {"==", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<float>() == rhs.get<float>());
+        }, "bool"}
+        },
+        {">", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<float>() > rhs.get<float>());
+        }, "bool"}
+        },
+        {">=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<float>() >= rhs.get<float>());
+        }, "bool"}
+        },
+        {"<", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<float>() < rhs.get<float>());
+        }, "bool"}
+        },
+        {"<=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<float>() <= rhs.get<float>());
+        }, "bool"}
+        }
     }}},
 
     {"double", TypeInfo{"double", 8, {
-        {"+", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        {"+", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<double>() + rhs.get<double>());
-        }},
-        {"-", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "double"}
+        },
+        {"-", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<double>() - rhs.get<double>());
-        }},
-        {"*", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "double"}
+        },
+        {"*", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<double>() * rhs.get<double>());
-        }},
-        {"/", [](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+        }, "double"}
+        },
+        {"/", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
             dst.from(lhs.get<double>() / rhs.get<double>());
-        }}
+        }, "double"}
+        },
+        {"==", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<double>() == rhs.get<double>());
+        }, "bool"}
+        },
+        {">", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<double>() > rhs.get<double>());
+        }, "bool"}
+        },
+        {">=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<double>() >= rhs.get<double>());
+        }, "bool"}
+        },
+        {"<", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<double>() < rhs.get<double>());
+        }, "bool"}
+        },
+        {"<=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+            dst.from(lhs.get<double>() <= rhs.get<double>());
+        }, "bool"}
+        }
     }}},
 
     {"bool", TypeInfo{"bool", 1}},

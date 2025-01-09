@@ -12,10 +12,15 @@ struct MemberInfo {
     size_t m_arraySize = 0;
 };
 
+struct OperatorInfo {
+    std::function<void(Memory&, Memory&, Memory&)> m_function;
+    std::string m_returnType;
+};
+
 struct TypeInfo {
     std::string m_name = "";
     size_t m_size = 0;
-    std::unordered_map<std::string, std::function<void(Memory&, Memory&, Memory&)>> m_operators;
+    std::unordered_map<std::string, OperatorInfo> m_operators;
     std::unordered_map<std::string, MemberInfo> m_members;
 
     friend bool operator==(const TypeInfo&, const TypeInfo&);

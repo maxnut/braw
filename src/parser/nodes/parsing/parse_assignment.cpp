@@ -20,5 +20,10 @@ std::unique_ptr<FunctionInstructionNode> Parser::parseAssignment(std::shared_ptr
     if(!assignment->m_value)
         return nullptr;
 
+    if(assignment->m_variable->m_type != assignment->m_value->m_type) {
+        m_message.mismatchedTypes(assignment->m_variable->m_type.m_name, assignment->m_value->m_type.m_name);
+        return nullptr;
+    }
+
     return assignment;
 }

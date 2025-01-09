@@ -38,6 +38,11 @@ public:
         return *this;
     }
 
+    void tryNext() {
+        if(hasNext())
+            next();
+    }
+
     bool hasNext() {
         return m_current != m_end;
     }

@@ -104,6 +104,20 @@ namespace Rules {
         return true;
     }
 
+    inline bool isBind(TokenCursor cursor) {
+        if(cursor.get().value().m_value != "bind")
+            return false;
+
+        return true;
+    }
+
+    inline bool isImport(TokenCursor cursor) {
+        if(cursor.get().value().m_value != "import")
+            return false;
+
+        return true;
+    }
+
     inline bool isString(TokenCursor cursor) {
         if(cursor.get().value().m_type != Token::QUOTE)
             return false;

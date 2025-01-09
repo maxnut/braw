@@ -2,6 +2,7 @@
 
 #include "../stack.hpp"
 #include "nodes/function_definition.hpp"
+#include "utils.hpp"
 
 #include <vector>
 #include <iostream>
@@ -20,6 +21,11 @@ inline void print(Stack& stack, Memory* returnValue, const std::vector<TypeInfo>
     }
     else if(param.m_name == "float") {
         float a = message.get<float>();
+
+        std::cout << a << "\n";
+    }
+    else if(param.m_name == "double") {
+        double a = message.get<double>();
 
         std::cout << a << "\n";
     }

@@ -47,6 +47,10 @@ void Message::unknownOperator(const std::string& op, const std::string& type) {
     spdlog::error("{} Unknown operator {} {} {}", where(), type, op, type);
 }
 
+void Message::unknownMember(const std::string& member, const std::string& type) {
+    spdlog::error("{} Unknown member {} in type {}", where(), member, type);
+}
+
 void Message::unexpectedValueCategories(ValueType type, std::vector<ValueType> expected) {
     std::string expectedValues = "";
     for(int i = 0; i < expected.size(); i++) {

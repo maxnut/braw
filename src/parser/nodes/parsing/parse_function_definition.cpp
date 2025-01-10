@@ -16,16 +16,23 @@ std::optional<FunctionSignature> Parser::parseFunctionSignature(std::shared_ptr<
         return std::nullopt;
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_PAREN) {
-        std::optional<TypeInfo> parameter = file->getTypeInfo(cursor.get().value().m_value);
-        if(!returnType) {
+        std::optional<TypeInfo> typeOpt = file->getTypeInfo(cursor.get().value().m_value);
+        if(!typeOpt) {
             m_message.unknownType(cursor.value().m_value);
             return std::nullopt;
         }
-        if(!expectTokenType(cursor.next().get().value(), Token::IDENTIFIER))
-            return std::nullopt;
+
+        TypeInfo type = typeOpt.value();
+
+        while(cursor.hasNext() && cursor.peekNext().m_value == "*") {
+            type = makePointer(type);
+            cursor.next();
+        }
+
+        cursor.next();
         
         sig.m_parameterNames.push_back(cursor.value().m_value);
-        sig.m_parameters.push_back(parameter.value());
+        sig.m_parameters.push_back(type);
 
         if(cursor.next().get().value().m_type == Token::COMMA)
             cursor.next();

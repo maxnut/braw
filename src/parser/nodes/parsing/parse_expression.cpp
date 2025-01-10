@@ -33,10 +33,10 @@ std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNod
         }
 
         std::unique_ptr<BinaryOperatorNode> op = std::make_unique<BinaryOperatorNode>();
-        op->m_function = left->m_type.m_operators.at(opToken.m_value);
+        op->m_function = left->m_type.m_operators.at(opToken.m_value).m_function;
+        op->m_type = file->getTypeInfo(left->m_type.m_operators.at(opToken.m_value).m_returnType).value();
         op->m_left = std::move(left);
         op->m_right = std::move(right);
-        op->m_type = op->m_left->m_type;
         op->m_size = op->m_left->m_size;
         op->m_memoryType = PRVALUE;
 

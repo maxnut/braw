@@ -34,19 +34,30 @@ std::unique_ptr<EvaluatableNode> Parser::parseOperand(std::shared_ptr<FileNode> 
             m_message.mismatchedTypes("pointer", ret->m_type.m_name);
             return nullptr;
         }
-
-        dereference->m_base = std::move(ret);
-        dereference->m_memoryType = ValueType::LVALUE;
-        auto rawOpt = getRawType(dereference->m_base->m_type, file);
-
+        auto rawOpt = getRawType(ret->m_type, file);
         if(!rawOpt) {
             m_message.unknownType(dereference->m_base->m_type.m_name);
             return nullptr;
         }
-        
+
+        dereference->m_base = std::move(ret);
+        dereference->m_memoryType = ValueType::LVALUE;
         dereference->m_type = rawOpt.value();
         dereference->m_size = dereference->m_type.m_size;
         ret = std::move(dereference);
+    }
+
+    while(cursor.hasNext()) {
+        if(cursor.get().value().m_value == ".") {
+            ret = parseDot(file, cursor, ctx, std::move(ret));
+            continue;
+        }
+        else if(cursor.get().value().m_value == "->") {
+            ret = parseArrow(file, cursor, ctx, std::move(ret));
+            continue;
+        }
+
+        break;
     }
 
     return ret;

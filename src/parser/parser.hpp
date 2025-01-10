@@ -55,6 +55,7 @@ public:
     std::unique_ptr<FunctionInstructionNode> parseAssignment(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseReturn(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseIf(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    std::unique_ptr<FunctionInstructionNode> parseWhile(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
 
     std::optional<FunctionSignature> parseFunctionSignature(std::shared_ptr<FileNode> file, TokenCursor& cursor);
     std::optional<TypeInfo> parseStructDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);

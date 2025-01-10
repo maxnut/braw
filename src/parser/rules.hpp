@@ -14,6 +14,7 @@ namespace Rules {
         ASSIGNMENT,
         RETURN,
         IF,
+        WHILE,
         VARIABLE_DECLARATION,
         FUNCTION_CALL,
         VARIABLE_ACCESS,
@@ -68,6 +69,10 @@ namespace Rules {
 
     inline bool isIf(TokenCursor cursor) {
         return cursor.get().value().m_type == Token::KEYWORD && cursor.get().value().m_value == "if";
+    }
+
+    inline bool isWhile(TokenCursor cursor) {
+        return cursor.get().value().m_type == Token::KEYWORD && cursor.get().value().m_value == "while";
     }
 
     inline bool isVariableDeclaration(TokenCursor cursor) {
@@ -153,6 +158,8 @@ namespace Rules {
             return InstructionType::RETURN;
         else if(isIf(cursor))
             return InstructionType::IF;
+        else if(isWhile(cursor))
+            return InstructionType::WHILE;
         else if(isVariableDeclaration(cursor))
             return InstructionType::VARIABLE_DECLARATION;
         else if(isFunctionCall(cursor))

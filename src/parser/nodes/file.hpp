@@ -46,13 +46,13 @@ public:
             bool found = true;
 
             for(auto func : m_functionTable[name]) {
-                if(func->m_parameters.size() != function->m_parameters.size()) {
+                if(func->m_signature.m_parameters.size() != function->m_signature.m_parameters.size()) {
                     found = false;
                     continue;
                 }
 
-                for(int i = 0; i < func->m_parameters.size(); i++) {
-                    if(static_cast<const TypeInfo&>(func->m_parameters[i]) != function->m_parameters[i]) {
+                for(int i = 0; i < func->m_signature.m_parameters.size(); i++) {
+                    if(func->m_signature.m_parameters[i] != function->m_signature.m_parameters[i]) {
                         found = false;
                         continue;
                     }
@@ -76,13 +76,13 @@ public:
         return true;
     }
 
-    std::shared_ptr<FunctionDefinitionNode> getFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>>& parameters, bool* outNative = nullptr) {
+    std::shared_ptr<FunctionDefinitionNode> getFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>>& parameters) {
         auto check = [&](std::shared_ptr<FunctionDefinitionNode> func) -> bool {
-            if(func->m_parameters.size() != parameters.size())
+            if(func->m_signature.m_parameters.size() != parameters.size())
                 return false;
 
-            for(int i = 0; i < func->m_parameters.size(); i++) {
-                if(!(Rules::isPtr(func->m_parameters[i].m_name) && Rules::isPtr(parameters[i]->m_type.m_name)) && static_cast<const TypeInfo&>(func->m_parameters[i]) != parameters[i]->m_type)
+            for(int i = 0; i < func->m_signature.m_parameters.size(); i++) {
+                if(!(Rules::isPtr(func->m_signature.m_parameters[i].m_name) && Rules::isPtr(parameters[i]->m_type.m_name)) && func->m_signature.m_parameters[i] != parameters[i]->m_type)
                     return false;
             }
             
@@ -91,10 +91,8 @@ public:
 
         if(s_functionTable.contains(name)) {
             for(std::shared_ptr<FunctionDefinitionNode> func : s_functionTable[name]) {
-                if(check(func)) {
-                    if(outNative) *outNative = true;
+                if(check(func))
                     return func;
-                }
             }
         }
         

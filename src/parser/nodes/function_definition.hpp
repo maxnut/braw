@@ -6,10 +6,17 @@
 #include <vector>
 #include <memory>
 
-class FunctionDefinitionNode {
-public:
+struct FunctionSignature {
     TypeInfo m_returnType;
     std::vector<TypeInfo> m_parameters;
-    std::unique_ptr<ScopeNode> m_scope;
+    std::vector<std::string> m_parameterNames;
     std::string m_name;
+};
+
+class FunctionDefinitionNode {
+public:
+    virtual bool isNative() {return false;}
+public:
+    FunctionSignature m_signature;
+    std::unique_ptr<ScopeNode> m_scope;
 };

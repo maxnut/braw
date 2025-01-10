@@ -23,6 +23,8 @@ public:
     void unknownFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>> &parameters);
     void unknownOperator(const std::string& op, const std::string& type);
     void unexpectedValueCategories(ValueType type, std::vector<ValueType> expected);
+    void bindFail(const std::string& name);
+    void bindFunctionFail(const std::string& name, const std::string& function);
 
 private:
     std::filesystem::path m_file;

@@ -1,5 +1,6 @@
 #include "parser/parser.hpp"
 #include "interpreter/interpreter.hpp"
+#include "parser/binder/binder.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -26,6 +27,8 @@ int main() {
     Interpreter interpreter;
     interpreter.m_stacks[stackId] = std::make_unique<Stack>();
     interpreter.invokeFunction(main.get(), *interpreter.m_stacks[stackId], nullptr, 0);
+
+    Binder::closeHandles();
 
     return 0;
 }

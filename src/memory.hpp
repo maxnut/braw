@@ -16,6 +16,6 @@ public:
     }
 
 public:
-    void* m_data;
-    size_t m_size;
+    void* m_data = nullptr;
+    size_t m_size = 0;
 };

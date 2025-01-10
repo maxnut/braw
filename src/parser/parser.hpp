@@ -3,6 +3,7 @@
 #include "messages.hpp"
 #include "nodes/file.hpp"
 #include "nodes/function_definition.hpp"
+#include "nodes/native_function.hpp"
 #include "nodes/scope.hpp"
 #include "nodes/evaluatable.hpp"
 #include "rules.hpp"
@@ -53,7 +54,10 @@ public:
     std::unique_ptr<FunctionInstructionNode> parseReturn(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseIf(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
 
+    std::optional<FunctionSignature> parseFunctionSignature(std::shared_ptr<FileNode> file, TokenCursor& cursor);
     std::optional<TypeInfo> parseStructDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
+
+    std::vector<std::shared_ptr<NativeFunctionNode>> parseBind(std::shared_ptr<FileNode> file, TokenCursor& cursor);
 
     bool expectTokenType(const Token& token, Token::Type type);
     bool expectTokenValue(const Token& token, const std::string& value);

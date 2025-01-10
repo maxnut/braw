@@ -8,15 +8,12 @@ std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
     m_message = Message(m_file, &cursor);
 
     while(cursor.hasNext()) {
-        if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
-            return nullptr;
-        
         if(Rules::isFunctionDefinition(cursor)) {
             std::shared_ptr<FunctionDefinitionNode> node = parseFunctionDefinition(file, cursor);
             if(!node)
                 return nullptr;
 
-            if(!file->registerFunction(node, node->m_name))
+            if(!file->registerFunction(node, node->m_signature.m_name))
                 return nullptr;
             
             continue;
@@ -29,6 +26,40 @@ std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
             if(!file->registerType(type.value()))
                 return nullptr;
             
+            continue;
+        }
+        else if(Rules::isBind(cursor)) {
+            auto funcs = parseBind(file, cursor);
+
+            for(auto func : funcs) {
+                if(!func) {
+                    return nullptr;
+                }
+
+                if(!file->registerFunction(func, func->m_signature.m_name))
+                    return nullptr;
+            }
+
+            continue;
+        }
+        else if(Rules::isImport(cursor)) {
+            if(!expectTokenType(cursor.next().get().value(), Token::QUOTE) || !expectTokenType(cursor.next().get().value(), Token::STRING))
+                return nullptr;
+
+            std::string path = cursor.get().value().m_value;
+
+            if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
+                return nullptr;
+
+            Parser parser = Parser(path);
+            std::shared_ptr<FileNode> newFile = parser.parse();
+
+            if(!newFile)
+                return nullptr;
+
+            file->m_imports.push_back(newFile);
+
+            cursor.tryNext();
             continue;
         }
 

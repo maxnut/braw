@@ -19,7 +19,9 @@ Memory Interpreter::visitNativeFunctionCall(NativeFunctionCallNode* instruction,
     }
 
     auto func = (NativeFunctionNode*)instruction->m_function.get();
-    invokeNativeFunction(func, stack, nullptr, funcPtr);
+    invokeNativeFunction(func, stack, &ret, funcPtr);
+
+    double test2 = ret.get<double>();
     
     stack.setHead(head);
     return ret;

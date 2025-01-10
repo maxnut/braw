@@ -16,30 +16,32 @@ std::unique_ptr<EvaluatableNode> Parser::parseFunctionCall(std::shared_ptr<FileN
     while(cursor.hasNext()) {
         parameters.push_back(parseExpression(file, cursor, ctx));
 
+        if(!parameters.back())
+            return nullptr;
+
         if(cursor.get().value().m_type == Token::RIGHT_PAREN)
             break;
 
-        if(!expectTokenType(cursor.get().value(), Token::COMMA))
+        if(!expectTokenType(cursor.get().next().value(), Token::COMMA))
             return nullptr;
     }
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return nullptr;
 
-    bool native = false;
-    auto func = file->getFunction(name, parameters, &native);
+    auto func = file->getFunction(name, parameters);
     if(!func) {
         m_message.unknownFunction(name, parameters);
         return nullptr;
     }
 
-    if(native) {
+    if(func->isNative()) {
         std::unique_ptr<NativeFunctionCallNode> functionCall = std::make_unique<NativeFunctionCallNode>();
         functionCall->m_function = func;
         functionCall->m_parameters = std::move(parameters);
         functionCall->m_memoryType = ValueType::PRVALUE;
-        functionCall->m_size = functionCall->m_function->m_returnType.m_size;
-        functionCall->m_type = functionCall->m_function->m_returnType;
+        functionCall->m_size = functionCall->m_function->m_signature.m_returnType.m_size;
+        functionCall->m_type = functionCall->m_function->m_signature.m_returnType;
         return functionCall;
     }
 
@@ -47,7 +49,7 @@ std::unique_ptr<EvaluatableNode> Parser::parseFunctionCall(std::shared_ptr<FileN
     functionCall->m_function = func;
     functionCall->m_parameters = std::move(parameters);
     functionCall->m_memoryType = ValueType::PRVALUE;
-    functionCall->m_size = functionCall->m_function->m_returnType.m_size;
-    functionCall->m_type = functionCall->m_function->m_returnType;
+    functionCall->m_size = functionCall->m_function->m_signature.m_returnType.m_size;
+    functionCall->m_type = functionCall->m_function->m_signature.m_returnType;
     return functionCall;
 }

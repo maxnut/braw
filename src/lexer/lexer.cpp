@@ -9,6 +9,8 @@
 static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"int", Token::KEYWORD},
     {"char", Token::KEYWORD},
+    {"double", Token::KEYWORD},
+    {"float", Token::KEYWORD},
     {"void", Token::KEYWORD},
     {"false", Token::KEYWORD},
     {"true", Token::KEYWORD},
@@ -22,6 +24,7 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"continue", Token::KEYWORD},
     {"struct", Token::KEYWORD},
     {"import", Token::KEYWORD},
+    {"bind", Token::KEYWORD},
     {";", Token::SEMICOLON},
     {"(", Token::LEFT_PAREN},
     {")", Token::RIGHT_PAREN},

@@ -57,3 +57,11 @@ void Message::unexpectedValueCategories(ValueType type, std::vector<ValueType> e
 
     spdlog::error("{} Expected value of type {}, got {}", where(), expectedValues, valueTypeString(type));
 }
+
+void Message::bindFail(const std::string& name) {
+    spdlog::error("{} Failed to bind {}", where(), name);
+}
+
+void Message::bindFunctionFail(const std::string& name, const std::string& function) {
+    spdlog::error("{} Failed to bind function {} to {}", where(), function, name);
+}

@@ -3,13 +3,22 @@
 std::optional<FunctionSignature> Parser::parseFunctionSignature(std::shared_ptr<FileNode> file, TokenCursor& cursor) {
     FunctionSignature sig;
     
-    std::optional<TypeInfo> returnType = file->getTypeInfo(cursor.get().value().m_value);
-    if(!returnType) {
+    std::optional<TypeInfo> returnTypeOpt = file->getTypeInfo(cursor.get().value().m_value);
+    if(!returnTypeOpt) {
         m_message.unknownType(cursor.value().m_value);
         return std::nullopt;
     }
 
-    sig.m_returnType = returnType.value();
+    TypeInfo returnType = returnTypeOpt.value();
+
+    while(cursor.hasNext() && cursor.peekNext().m_value == "*") {
+        returnType = makePointer(returnType);
+        cursor.next();
+    }
+
+    cursor.next();
+
+    sig.m_returnType = returnType;
     sig.m_name = cursor.next().get().value().m_value;
 
     if(!expectTokenType(cursor.next().get().next().value(), Token::LEFT_PAREN))

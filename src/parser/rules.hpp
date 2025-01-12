@@ -149,6 +149,13 @@ namespace Rules {
         return type.find("*") != std::string::npos;
     }
 
+    inline bool canDirectCast(const TypeInfo& a, const TypeInfo& b) {
+        if(Rules::isPtr(a.m_name) && Rules::isPtr(b.m_name))
+            return true;
+
+        return false;
+    }
+
     inline InstructionType getInstructionType(TokenCursor cursor) {
         if(isFunctionDefinition(cursor))
             return InstructionType::FUNCTION_DEFINITION;

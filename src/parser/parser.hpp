@@ -52,6 +52,7 @@ public:
     std::unique_ptr<EvaluatableNode> parseVariableAccess(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<EvaluatableNode> parseDot(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, std::unique_ptr<EvaluatableNode> left);
     std::unique_ptr<EvaluatableNode> parseArrow(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, std::unique_ptr<EvaluatableNode> left);
+    std::unique_ptr<EvaluatableNode> parseCast(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseAssignment(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseReturn(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseIf(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
@@ -67,6 +68,7 @@ public:
 
     TypeInfo makePointer(const TypeInfo& base);
     std::optional<TypeInfo> getRawType(const TypeInfo& pointer, std::shared_ptr<FileNode> file);
+    uint32_t getPointerDepth(const TypeInfo& pointer);
 
 private:
     std::shared_ptr<FileNode> parseFile(std::vector<Token>& tokens);

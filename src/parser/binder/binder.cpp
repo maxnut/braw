@@ -1,16 +1,23 @@
 #include "binder.hpp"
 
-#include <filesystem>
-#include <dlfcn.h>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
+#include <filesystem>
 
-using NativeFunctionPtr = void(*)(Stack&, Memory*, const std::vector<TypeInfo>&);
+using NativeFunctionPtr = void(__cdecl *)(Stack&, Memory*, const std::vector<TypeInfo>&);
+
+#if not defined(_WIN32) || not defined(_WIN64)
+#include <dlfcn.h>
 
 std::unordered_map<std::filesystem::path, void*> s_handles;
 
 std::function<void(Stack&, Memory*, const std::vector<TypeInfo>&)> Binder::getFunction(const std::string& lib, const std::string& name) {
     std::filesystem::path libPath = std::filesystem::current_path() / ("lib" + lib + ".so");
+
+    if(!std::filesystem::exists(libPath)) {
+        spdlog::error("Cannot find library {}", libPath.string());
+        return nullptr;
+    }
 
     void* handle = nullptr;
 
@@ -40,3 +47,43 @@ void Binder::closeHandles() {
     for(auto& handle : s_handles)
         dlclose(handle.second);
 }
+#else
+#include <windows.h>
+
+std::unordered_map<std::filesystem::path, HMODULE> s_handles;
+
+std::function<void(Stack&, Memory*, const std::vector<TypeInfo>&)> Binder::getFunction(const std::string& lib, const std::string& name) {
+    std::filesystem::path libPath = std::filesystem::current_path() / (lib + ".dll");
+
+    if(!std::filesystem::exists(libPath)) {
+        spdlog::error("Cannot find library {}", libPath.string());
+        return nullptr;
+    }
+
+    HMODULE handle = nullptr;
+
+    if(s_handles.contains(libPath))
+        handle = s_handles[libPath];
+    else
+        handle = LoadLibrary(libPath.string().c_str());
+
+    if(!handle)
+        return nullptr;
+
+    NativeFunctionPtr funcPtr = 
+        (NativeFunctionPtr)GetProcAddress(handle, name.c_str());
+    
+    if (!funcPtr) {
+        spdlog::error("Error code {}", GetLastError());
+        FreeLibrary(handle);
+        return nullptr;
+    }
+
+    return funcPtr;
+}
+
+void Binder::closeHandles() {
+    for(auto& handle : s_handles)
+        FreeLibrary(handle.second);
+}
+#endif

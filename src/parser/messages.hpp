@@ -23,6 +23,7 @@ public:
     void unknownFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>> &parameters);
     void unknownOperator(const std::string& op, const std::string& type);
     void unknownMember(const std::string& member, const std::string& type);
+    void invalidCast(const std::string& from, const std::string& to);
     void unexpectedValueCategories(ValueType type, std::vector<ValueType> expected);
     void bindFail(const std::string& name);
     void bindFunctionFail(const std::string& name, const std::string& function);

@@ -4,20 +4,14 @@
 std::unique_ptr<FunctionInstructionNode> Parser::parseVariableDeclaration(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
     bool assignment = Rules::isAssignment(cursor);
 
-    std::optional<TypeInfo> typeOpt = file->getTypeInfo(cursor.get().value().m_value);
+    std::optional<TypeInfo> typeOpt = parseTypename(file, cursor);
     if(!typeOpt) {
         m_message.unknownType(cursor.value().m_value);
         return nullptr;
     }
-
     TypeInfo type = typeOpt.value();
 
-    while(cursor.hasNext() && cursor.peekNext().m_value == "*") {
-        type = makePointer(type);
-        cursor.next();
-    }
-
-    ctx.m_scopeTables.front()[cursor.next().get().next().value().m_value] = ScopeInfo(type, ctx.m_currentStackSize, 0);
+    ctx.m_scopeTables.front()[cursor.get().next().value().m_value] = ScopeInfo(type, ctx.m_currentStackSize, 0);
     ctx.changeStackSize(type.m_size);
 
     std::unique_ptr<VariableDeclarationNode> variableDeclaration = std::make_unique<VariableDeclarationNode>();

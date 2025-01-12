@@ -149,6 +149,13 @@ namespace Rules {
         return type.find("*") != std::string::npos;
     }
 
+    inline bool isCast(TokenCursor cursor) {
+        if(cursor.get().next().value().m_type != Token::LEFT_PAREN || !isValidTypeName(cursor) || cursor.get().value().m_type != Token::RIGHT_PAREN)
+            return false;
+
+        return true;
+    }
+
     inline bool canDirectCast(const TypeInfo& a, const TypeInfo& b) {
         if(Rules::isPtr(a.m_name) && Rules::isPtr(b.m_name))
             return true;

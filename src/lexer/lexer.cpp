@@ -93,6 +93,11 @@ std::optional<std::vector<Token>> Lexer::tokenize() {
                 continue;
             }
 
+            if((cursor.get().value() == '-' && std::isdigit(cursor.peekNext())) || std::isdigit(cursor.get().value())) {
+                tokens.push_back(parseNumber(cursor, lineNumber));
+                continue;
+            }
+
             if (Token val = tryParseSingleToken(cursor, lineNumber); val.m_type != Token::COUNT) {
                 Token check = tokens.size() > 0 ? tokens.back() : Token();
 
@@ -104,11 +109,6 @@ std::optional<std::vector<Token>> Lexer::tokenize() {
 
                 tokens.push_back(parseString(cursor, lineNumber));
 
-                continue;
-            }
-
-            if(std::isdigit(cursor.get().value())) {
-                tokens.push_back(parseNumber(cursor, lineNumber));
                 continue;
             }
 
@@ -133,6 +133,10 @@ std::optional<std::vector<Token>> Lexer::tokenize() {
 Token Lexer::parseNumber(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
     std::string n = "";
     size_t index = cursor.getIndex() + 1;
+
+    if(cursor.get().value() == '-')
+        n += cursor.get().next().value();
+
     while(cursor.hasNext() && std::isdigit(cursor.get().value()) || cursor.get().value() == '.')
         n += cursor.get().next().value();
 

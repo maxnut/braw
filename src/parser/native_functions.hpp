@@ -10,77 +10,31 @@
 
 namespace NativeFunctions {
 
+template <typename T>
 inline void print(Stack& stack, Memory* returnValue, const std::vector<TypeInfo>& parameters) {
-    TypeInfo param = parameters[0];
-    Memory message{stack.ptrHead(param.m_size), param.m_size};
-
-    if(param.m_name == "int") {
-        int a = message.get<int>();
-
-        std::cout << a << "\n";
-    }
-    else if(param.m_name == "float") {
-        float a = message.get<float>();
-
-        std::cout << a << "\n";
-    }
-    else if(param.m_name == "double") {
-        double a = message.get<double>();
-
-        std::cout << a << "\n";
-    }
-    else if(param.m_name == "bool") {
-        bool a = message.get<bool>();
-
-        std::cout << (a ? "true" : "false") << "\n";
-    }
-    else if(param.m_name == "char") {
-        char a = message.get<char>();
-
-        std::cout << a << "\n";
-    }
-    else if(param.m_name == "char*") {
-        char* a = message.get<char*>();
-
-        std::cout << a << "\n";
-    }
+    T val = Utils::fromStack<T, sizeof(T)>(stack);
+    std::cout << val << "\n";
 }
 
 inline void scan(Stack& stack, Memory* returnValue, const std::vector<TypeInfo>& parameters) {
-    TypeInfo size = parameters[0];
-    TypeInfo ptr = parameters[1];
-
-    Memory sizeM{stack.ptrHead(ptr.m_size + size.m_size), size.m_size};
-    Memory ptrM{stack.ptrHead(ptr.m_size), ptr.m_size};
-
-    int a = sizeM.get<int>();
-    char* b = ptrM.get<char*>();
+    int a = Utils::fromStack<int, sizeof(int)>(stack);
+    char* b = Utils::fromStack<char*, sizeof(int) + sizeof(char*)>(stack);
 
     std::cin.getline(b, a);
 }
 
 inline void memory_allocate(Stack& stack, Memory* returnValue, const std::vector<TypeInfo>& parameters) {
-    TypeInfo param = parameters[0];
-    Memory message{stack.ptrHead(param.m_size), param.m_size};
-    Memory ret = stack.push(8);
-    ret.from(malloc(message.get<int>()));
-    *returnValue = ret;
+    returnValue->from(malloc(Utils::fromStack<int, sizeof(int)>(stack)));
 }
 
 inline void memory_free(Stack& stack, Memory* returnValue, const std::vector<TypeInfo>& parameters) {
-    TypeInfo param = parameters[0];
-    Memory message{stack.ptrHead(param.m_size), param.m_size};
-    free(message.get<void*>());
+    free(Utils::fromStack<void*, sizeof(void*)>(stack));
 }
 
 inline void memory_set(Stack& stack, Memory* returnValue, const std::vector<TypeInfo>& parameters) {
-    Memory ptrM{stack.ptrHead(16), 8};
-    Memory valueM{stack.ptrHead(8), 4};
-    Memory sizeM{stack.ptrHead(4), 4};
-
-    void* ptr = ptrM.get<void*>();
-    int value = valueM.get<int>();
-    int size = sizeM.get<int>();
+    void* ptr = Utils::fromStack<void*, sizeof(void*) + sizeof(int) * 2>(stack);
+    int value = Utils::fromStack<int, sizeof(int) * 2>(stack);
+    int size = Utils::fromStack<int, sizeof(int)>(stack);
     std::memset(ptr, value, size);
 }
 

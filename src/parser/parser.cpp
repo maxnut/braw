@@ -64,3 +64,14 @@ std::optional<TypeInfo> Parser::getRawType(const TypeInfo& pointer, std::shared_
 
     return file->getTypeInfo(raw);
 }
+
+uint32_t Parser::getPointerDepth(const TypeInfo& pointer) {
+    uint32_t depth = 0;
+    std::string name = pointer.m_name;
+    while(pointer.m_name.find("*") != std::string::npos) {
+        depth++;
+        name = name.substr(0, name.size() - 1);
+    }
+
+    return depth;
+}

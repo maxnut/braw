@@ -6,6 +6,8 @@
 
 class LiteralNode : public EvaluatableNode {
 public:
+    ~LiteralNode() override { free(m_value.m_data); }
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitLiteral(this, stack, functionContext);
     }

@@ -51,6 +51,9 @@ std::shared_ptr<FunctionDefinitionNode> Parser::parseFunctionDefinition(std::sha
     node->m_signature = signatureOpt.value();
 
     ParserFunctionContext ctx;
+    ctx.m_hasReturnType = node->m_signature.m_returnType.m_size != 0;
+    ctx.changeStackSize(node->m_signature.m_returnType.m_size);
+
     std::unordered_map<std::string, ScopeInfo> scopeTable = std::unordered_map<std::string, ScopeInfo>();
 
     for(int i = 0; i < node->m_signature.m_parameterNames.size(); i++) {

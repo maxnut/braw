@@ -13,7 +13,7 @@ std::unique_ptr<EvaluatableNode> Parser::parseFunctionCall(std::shared_ptr<FileN
 
     std::vector<std::unique_ptr<EvaluatableNode>> parameters;
 
-    while(cursor.hasNext()) {
+    while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_PAREN) {
         parameters.push_back(parseExpression(file, cursor, ctx));
 
         if(!parameters.back())

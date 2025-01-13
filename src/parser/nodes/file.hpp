@@ -12,6 +12,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <filesystem>
 
 class FileNode {
 public:
@@ -123,4 +124,5 @@ public:
 public:
     static std::unordered_map<std::string, TypeInfo> s_typeTable;
     static std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionDefinitionNode>>> s_functionTable;
+    static std::unordered_map<std::filesystem::path, std::shared_ptr<FileNode>> s_fileCache;
 };

@@ -34,6 +34,11 @@ std::unique_ptr<EvaluatableNode> Parser::parseLiteral(std::shared_ptr<FileNode> 
             literal->m_value.m_data = malloc(sizeof(bool));
             literal->m_value.from(false);
         }
+        else if(tkn.m_value == "nullptr") {
+            literal->m_type = makePointer(file->getTypeInfo("void").value());
+            literal->m_value.m_data = malloc(sizeof(void*));
+            literal->m_value.from(nullptr);
+        }
         else
             return nullptr;
     }

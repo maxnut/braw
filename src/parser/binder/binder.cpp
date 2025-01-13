@@ -26,8 +26,11 @@ std::function<void(Stack&, Memory*)> Binder::getFunction(const std::string& lib,
     else
         handle = dlopen(libPath.string().c_str(), RTLD_LAZY);
 
-    if(!handle)
+    if(!handle) {
+        const char* error = dlerror();
+        spdlog::error("{}", error);
         return nullptr;
+    }
 
     dlerror();
 

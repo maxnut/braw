@@ -8,13 +8,13 @@
 class CastNode : public EvaluatableNode {
 public:
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        // return interpreter.visitDereference(this, stack, functionContext);
+        return interpreter.visitCast(this, stack, functionContext);
     }
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        // interpreter.visitDereference(this, stack, functionContext);
+        interpreter.visitCast(this, stack, functionContext);
     }
 
 public:
     std::unique_ptr<EvaluatableNode> m_base;
-    std::function<Memory(Memory&)> m_function;
+    std::function<Memory(Memory&, Stack&)> m_function;
 };

@@ -18,6 +18,14 @@ std::vector<std::shared_ptr<NativeFunctionNode>> Parser::parseBind(std::shared_p
     std::vector<std::shared_ptr<NativeFunctionNode>> funcs;
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_BRACE) {
+        if(!expectTokenType(cursor.get().next().value(), Token::QUOTE) || !expectTokenType(cursor.get().value(), Token::STRING))
+            return {nullptr};
+
+        std::string symbol = cursor.get().next().value().m_value;
+        
+        if(!expectTokenType(cursor.get().next().value(), Token::QUOTE))
+            return {nullptr};
+
         auto signatureOpt = parseFunctionSignature(file, cursor);
         if(!signatureOpt) {
             m_message.bindFail(library);
@@ -29,10 +37,10 @@ std::vector<std::shared_ptr<NativeFunctionNode>> Parser::parseBind(std::shared_p
 
         std::shared_ptr<NativeFunctionNode> f = std::make_shared<NativeFunctionNode>();
         f->m_signature = signatureOpt.value();
-        f->m_function = Binder::getFunction(library, f->m_signature.m_name);
+        f->m_function = Binder::getFunction(library, symbol);
 
         if(!f->m_function) {
-            m_message.bindFunctionFail(library, f->m_signature.m_name);
+            m_message.bindFunctionFail(library, symbol);
             return {nullptr};
         }
 

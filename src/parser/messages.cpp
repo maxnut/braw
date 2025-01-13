@@ -51,6 +51,10 @@ void Message::unknownMember(const std::string& member, const std::string& type) 
     spdlog::error("{} Unknown member {} in type {}", where(), member, type);
 }
 
+void Message::invalidCast(const std::string& from, const std::string& to) {
+    spdlog::error("{} Invalid cast from {} to {}", where(), from, to);
+}
+
 void Message::unexpectedValueCategories(ValueType type, std::vector<ValueType> expected) {
     std::string expectedValues = "";
     for(int i = 0; i < expected.size(); i++) {

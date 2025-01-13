@@ -1,6 +1,7 @@
 #pragma once
 
 #include "memory.hpp"
+#include "stack.hpp"
 
 #include <string>
 #include <unordered_map>

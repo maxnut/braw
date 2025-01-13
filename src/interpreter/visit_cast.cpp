@@ -5,5 +5,5 @@ Memory Interpreter::visitCast(CastNode* instruction, Stack& stack, FunctionConte
     void* head = stack.head();
     Memory m = instruction->m_base->evaluate(*this, stack, context);
     stack.setHead(head);
-    return instruction->m_function(m);
+    return instruction->m_function(m, stack);
 }

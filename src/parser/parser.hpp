@@ -60,6 +60,7 @@ public:
 
     std::optional<FunctionSignature> parseFunctionSignature(std::shared_ptr<FileNode> file, TokenCursor& cursor);
     std::optional<TypeInfo> parseStructDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
+    std::optional<TypeInfo> parseTypename(std::shared_ptr<FileNode> file, TokenCursor& cursor);
 
     std::vector<std::shared_ptr<NativeFunctionNode>> parseBind(std::shared_ptr<FileNode> file, TokenCursor& cursor);
 

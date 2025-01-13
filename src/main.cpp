@@ -8,6 +8,7 @@
 
 int main() {
     spdlog::set_pattern("[%^%l%$] %v");
+    spdlog::set_level(spdlog::level::debug);
     
     Parser parser = Parser("main.braw");
     std::shared_ptr<FileNode> file = parser.parse();

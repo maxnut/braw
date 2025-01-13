@@ -75,3 +75,20 @@ uint32_t Parser::getPointerDepth(const TypeInfo& pointer) {
 
     return depth;
 }
+
+std::optional<TypeInfo> Parser::parseTypename(std::shared_ptr<FileNode> file, TokenCursor& cursor) {
+    std::optional<TypeInfo> typeOpt = file->getTypeInfo(cursor.get().value().m_value);
+    if(!typeOpt)
+        return std::nullopt;
+
+    TypeInfo type = typeOpt.value();
+
+    while(cursor.hasNext() && cursor.peekNext().m_value == "*") {
+        type = makePointer(type);
+        cursor.next();
+    }
+
+    cursor.next();
+
+    return type;
+}

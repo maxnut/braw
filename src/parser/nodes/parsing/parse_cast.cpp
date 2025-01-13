@@ -5,25 +5,17 @@ std::unique_ptr<EvaluatableNode> Parser::parseCast(std::shared_ptr<FileNode> fil
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
         return nullptr;
 
-    std::optional<TypeInfo> typeOpt = file->getTypeInfo(cursor.get().value().m_value);
+    std::optional<TypeInfo> typeOpt = parseTypename(file, cursor);
     if(!typeOpt) {
         m_message.unknownType(cursor.value().m_value);
         return nullptr;
     }
-
     TypeInfo type = typeOpt.value();
-
-    while(cursor.hasNext() && cursor.peekNext().m_value == "*") {
-        type = makePointer(type);
-        cursor.next();
-    }
-
-    cursor.next();
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return nullptr;
 
-    std::unique_ptr<EvaluatableNode> base = parseExpression(file, cursor, ctx, 0);
+    std::unique_ptr<EvaluatableNode> base = parseOperand(file, cursor, ctx);
     if(!base)
         return nullptr;
 
@@ -32,10 +24,15 @@ std::unique_ptr<EvaluatableNode> Parser::parseCast(std::shared_ptr<FileNode> fil
         return base;
     }
 
+    if(!base->m_type.m_casts.contains(type.m_name)) {
+        m_message.invalidCast(base->m_type.m_name, type.m_name);
+        return nullptr;
+    }
+
     std::unique_ptr<CastNode> castNode = std::make_unique<CastNode>();
     castNode->m_type = type;
+    castNode->m_function = base->m_type.m_casts[type.m_name].m_function;
     castNode->m_base = std::move(base);
-    //get cast func from map
 
     return castNode;
 }

@@ -2,7 +2,6 @@
 
 #include <spdlog/spdlog.h>
 #include <unordered_map>
-#include <filesystem>
 
 using NativeFunctionPtr = void(__cdecl *)(Stack&, Memory*);
 
@@ -11,11 +10,18 @@ using NativeFunctionPtr = void(__cdecl *)(Stack&, Memory*);
 
 std::unordered_map<std::filesystem::path, void*> s_handles;
 
-std::function<void(Stack&, Memory*)> Binder::getFunction(const std::string& lib, const std::string& name) {
-    std::filesystem::path libPath = std::filesystem::current_path() / ("lib" + lib + ".so");
+std::function<void(Stack&, Memory*)> Binder::getFunction(const std::vector<std::filesystem::path>& libDirectories, const std::string& lib, const std::string& name) {
+    std::filesystem::path libPath;
+
+    for(auto& dir : libDirectories) {
+        libPath = dir / ("lib" + lib + ".so");
+
+        if(std::filesystem::exists(libPath))
+            break;
+    }
 
     if(!std::filesystem::exists(libPath)) {
-        spdlog::error("Cannot find library {}", libPath.string());
+        spdlog::error("Cannot find library {}", lib);
         return nullptr;
     }
 
@@ -55,11 +61,18 @@ void Binder::closeHandles() {
 
 std::unordered_map<std::filesystem::path, HMODULE> s_handles;
 
-std::function<void(Stack&, Memory*)> Binder::getFunction(const std::string& lib, const std::string& name) {
-    std::filesystem::path libPath = std::filesystem::current_path() / (lib + ".dll");
+std::function<void(Stack&, Memory*)> Binder::getFunction(const std::vector<std::filesystem::path>& libDirectories, const std::string& lib, const std::string& name) {
+    std::filesystem::path libPath;
+
+    for(auto& dir : libDirectories) {
+        libPath = dir / (lib + ".dll");
+
+        if(std::filesystem::exists(libPath))
+            break;
+    }
 
     if(!std::filesystem::exists(libPath)) {
-        spdlog::error("Cannot find library {}", libPath.string());
+        spdlog::error("Cannot find library {}", lib);
         return nullptr;
     }
 

@@ -37,7 +37,7 @@ std::vector<std::shared_ptr<NativeFunctionNode>> Parser::parseBind(std::shared_p
 
         std::shared_ptr<NativeFunctionNode> f = std::make_shared<NativeFunctionNode>();
         f->m_signature = signatureOpt.value();
-        f->m_function = Binder::getFunction(library, symbol);
+        f->m_function = Binder::getFunction({m_file.root_directory()}, library, symbol);
 
         if(!f->m_function) {
             m_message.bindFunctionFail(library, symbol);

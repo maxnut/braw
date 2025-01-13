@@ -12,7 +12,9 @@ public:
         return interpreter.visitFunctionCall(this, stack, functionContext);
     }
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
+        void* head = stack.head();
         interpreter.visitFunctionCall(this, stack, functionContext);
+        stack.setHead(head);
     }
 
 public:

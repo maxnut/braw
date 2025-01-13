@@ -20,6 +20,6 @@ void Interpreter::invokeFunction(FunctionDefinitionNode* function, Stack& stack,
 
 void Interpreter::invokeNativeFunction(NativeFunctionNode* function, Stack& stack, Memory* returnValue, size_t functionPtr) {
     void* head = stack.head();
-    function->m_function(stack, returnValue, function->m_signature.m_parameters);
+    function->m_function(stack, returnValue);
     stack.setHead(head);
 }

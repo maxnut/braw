@@ -8,7 +8,7 @@
 
 namespace Binder {
 
-std::function<void(Stack&, Memory*, const std::vector<TypeInfo>&)> getFunction(const std::string& lib, const std::string& name);
+std::function<void(Stack&, Memory*)> getFunction(const std::string& lib, const std::string& name);
 void closeHandles();
 
 }

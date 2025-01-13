@@ -24,10 +24,12 @@ std::optional<FunctionSignature> Parser::parseFunctionSignature(std::shared_ptr<
         }
         TypeInfo type = typeOpt.value();
         
-        sig.m_parameterNames.push_back(cursor.value().m_value);
+        if(cursor.get().value().m_type == Token::IDENTIFIER)
+            sig.m_parameterNames.push_back(cursor.get().next().value().m_value);
+
         sig.m_parameters.push_back(type);
 
-        if(cursor.next().get().value().m_type == Token::COMMA)
+        if(cursor.get().value().m_type == Token::COMMA)
             cursor.next();
         else if(cursor.value().m_type != Token::RIGHT_PAREN) {
             m_message.unexpectedToken(cursor.value());

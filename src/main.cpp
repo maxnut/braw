@@ -4,18 +4,11 @@
 #include "parser/binder/binder.hpp"
 
 #include <spdlog/spdlog.h>
+#include <args/args.hxx>
 
 #include <iostream>
 
 int main(int argc, char** argv) {
-    spdlog::set_pattern("[%^%l%$] %v");
-    spdlog::set_level(spdlog::level::debug);
-
-    if(argc < 2) {
-        spdlog::error("No file specified");
-        return 1;
-    }
-
     std::filesystem::path filepath(argv[1]);
     auto tokens = Lexer::tokenize(filepath);
     if(!tokens) {

@@ -46,18 +46,23 @@ std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
             if(!expectTokenType(cursor.next().get().value(), Token::QUOTE) || !expectTokenType(cursor.next().get().value(), Token::STRING))
                 return nullptr;
 
-            std::string path = cursor.get().value().m_value;
+            std::filesystem::path path = cursor.get().value().m_value;
 
             if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
                 return nullptr;
 
-            Parser parser = Parser(path);
-            std::shared_ptr<FileNode> newFile = parser.parse();
+            if(FileNode::s_fileCache.contains(path)) {
+                file->m_imports.push_back(FileNode::s_fileCache.at(path));
+            }
+            else {
+                Parser parser = Parser(path);
+                std::shared_ptr<FileNode> newFile = parser.parse();
 
-            if(!newFile)
-                return nullptr;
+                if(!newFile)
+                    return nullptr;
 
-            file->m_imports.push_back(newFile);
+                file->m_imports.push_back(newFile);
+            }
 
             cursor.tryNext();
             continue;

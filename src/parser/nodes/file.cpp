@@ -7,6 +7,8 @@
         return ret; \
     }}} \
 
+std::unordered_map<std::filesystem::path, std::shared_ptr<FileNode>> FileNode::s_fileCache;
+
 std::unordered_map<std::string, TypeInfo> FileNode::s_typeTable = {
     {"void", TypeInfo{"void", 0}},
 

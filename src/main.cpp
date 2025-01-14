@@ -1,4 +1,5 @@
 #include "parser/parser.hpp"
+#include "lexer/lexer.hpp"
 #include "interpreter/interpreter.hpp"
 #include "parser/binder/binder.hpp"
 
@@ -6,12 +7,24 @@
 
 #include <iostream>
 
-int main() {
+int main(int argc, char** argv) {
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);
+
+    if(argc < 2) {
+        spdlog::error("No file specified");
+        return 1;
+    }
+
+    std::filesystem::path filepath(argv[1]);
+    auto tokens = Lexer::tokenize(filepath);
+    if(!tokens) {
+        spdlog::error("Failed to tokenize file");
+        return 1;
+    }
     
-    Parser parser = Parser("main.braw");
-    std::shared_ptr<FileNode> file = parser.parse();
+    Parser p{};
+    std::shared_ptr<FileNode> file = p.parseFile(filepath, tokens.value());
 
     if(!file) {
         spdlog::error("Failed to parse file");

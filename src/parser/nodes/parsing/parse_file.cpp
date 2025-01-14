@@ -1,6 +1,8 @@
 #include "parser/parser.hpp"
+#include "lexer/lexer.hpp"
 
-std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
+std::shared_ptr<FileNode> Parser::parseFile(std::filesystem::path filepath, std::vector<Token>& tokens) {
+    m_file = filepath;
     std::shared_ptr<FileNode> file = std::make_shared<FileNode>();
 
     TokenCursor cursor(tokens.begin(), tokens.end() - 1);
@@ -46,7 +48,7 @@ std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
             if(!expectTokenType(cursor.next().get().value(), Token::QUOTE) || !expectTokenType(cursor.next().get().value(), Token::STRING))
                 return nullptr;
 
-            std::filesystem::path path = cursor.get().value().m_value;
+            std::filesystem::path path = m_file.root_directory() / cursor.get().value().m_value;
 
             if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
                 return nullptr;
@@ -55,8 +57,11 @@ std::shared_ptr<FileNode> Parser::parseFile(std::vector<Token>& tokens) {
                 file->m_imports.push_back(FileNode::s_fileCache.at(path));
             }
             else {
-                Parser parser = Parser(path);
-                std::shared_ptr<FileNode> newFile = parser.parse();
+                auto newTokens = Lexer::tokenize(path);
+                if(!newTokens)
+                    return nullptr;
+
+                std::shared_ptr<FileNode> newFile = Parser().parseFile(path, newTokens.value());
 
                 if(!newFile)
                     return nullptr;

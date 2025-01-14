@@ -37,9 +37,9 @@ struct ParserFunctionContext {
 
 class Parser {
 public:
-    Parser(const std::filesystem::path& path) : m_file(path) {}
+    std::shared_ptr<FileNode> parseFile(std::filesystem::path file, std::vector<Token>& tokens);
 
-    std::shared_ptr<FileNode> parse();
+private:
     std::shared_ptr<FunctionDefinitionNode> parseFunctionDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
     std::unique_ptr<ScopeNode> parseScope(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
     std::unique_ptr<FunctionInstructionNode> parseInstruction(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
@@ -71,9 +71,6 @@ public:
     TypeInfo makePointer(const TypeInfo& base);
     std::optional<TypeInfo> getRawType(const TypeInfo& pointer, std::shared_ptr<FileNode> file);
     uint32_t getPointerDepth(const TypeInfo& pointer);
-
-private:
-    std::shared_ptr<FileNode> parseFile(std::vector<Token>& tokens);
 
 private:
     std::filesystem::path m_file;

@@ -62,18 +62,85 @@ static std::unordered_map<char, char> s_escapeMap = {
     {'t', '\t'},
 };
 
-Lexer::Lexer(std::filesystem::path path) {
-    m_path = path;
+Token parseNumber(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
+    std::string n = "";
+    size_t index = cursor.getIndex() + 1;
+
+    if(cursor.get().value() == '-')
+        n += cursor.get().next().value();
+
+    while(cursor.hasNext() && std::isdigit(cursor.get().value()) || cursor.get().value() == '.')
+        n += cursor.get().next().value();
+
+    if(n.find('.') != std::string::npos) {
+        if(cursor.get().value() == 'f' || cursor.get().value() == 'F') {
+            cursor.next();
+            return Token(Token::FLOAT, n, lineNumber, index);
+        }
+
+        return Token(Token::DOUBLE, n, lineNumber, index);
+    }
+
+    return Token(Token::INTEGER, n, lineNumber, index);
 }
 
-std::optional<std::vector<Token>> Lexer::tokenize() {
-    if(m_path.extension() != ".braw") {
-        spdlog::error("guy {}", m_path.extension().string());
+Token parseAlphanumeric(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
+    std::string n = "";
+    size_t index = cursor.getIndex() + 1;
+    while(cursor.hasNext() && (std::isalnum(cursor.get().value()) || cursor.get().value() == '_'))
+        n += cursor.get().next().value();
+    return Token(Token::IDENTIFIER, n, lineNumber, index);
+}
+
+Token parseString(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
+    std::string ret = "";
+    size_t index = cursor.getIndex() + 1;
+    while(cursor.hasNext() && cursor.get().value() != '"') {
+
+        if (cursor.get().value() == '\\') {
+            char nextChar = cursor.next().get().prev().value();
+            auto it = s_escapeMap.find(nextChar);
+            if (it != s_escapeMap.end()) {
+                ret += it->second;
+                cursor.next(2);
+                continue;
+            }
+        }
+
+        ret += cursor.get().next().value();
+    }
+    return Token(Token::STRING, ret, lineNumber, index);
+}
+
+
+Token tryParseSingleToken(Cursor<std::string::iterator, char> cursor, int lineNumber) {
+    Token token(Token::COUNT, lineNumber, cursor.getIndex() + 1);
+    std::string val = "";
+
+    while(cursor.hasNext() && !std::isspace(cursor.get().value())) {
+        val += cursor.get().next().value();
+
+        if(s_tokenTypes.contains(val)) {
+            token.m_type = s_tokenTypes.at(val);
+            token.m_value = val;
+            continue;
+        }
+    }
+
+    if(token.m_type == Token::COUNT)
+        return {};
+    
+    return token;
+}
+
+std::optional<std::vector<Token>> Lexer::tokenize(std::filesystem::path path) {
+    if(path.extension() != ".braw") {
+        spdlog::error("guy {}", path.extension().string());
         return std::nullopt;
     }
     std::vector<Token> tokens;
 
-    std::ifstream file(m_path);
+    std::ifstream file(path);
     std::string line;
     int lineNumber = 1;
 
@@ -129,75 +196,4 @@ std::optional<std::vector<Token>> Lexer::tokenize() {
         return std::nullopt;
 
     return tokens;
-}
-
-Token Lexer::parseNumber(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
-    std::string n = "";
-    size_t index = cursor.getIndex() + 1;
-
-    if(cursor.get().value() == '-')
-        n += cursor.get().next().value();
-
-    while(cursor.hasNext() && std::isdigit(cursor.get().value()) || cursor.get().value() == '.')
-        n += cursor.get().next().value();
-
-    if(n.find('.') != std::string::npos) {
-        if(cursor.get().value() == 'f' || cursor.get().value() == 'F') {
-            cursor.next();
-            return Token(Token::FLOAT, n, lineNumber, index);
-        }
-
-        return Token(Token::DOUBLE, n, lineNumber, index);
-    }
-
-    return Token(Token::INTEGER, n, lineNumber, index);
-}
-
-Token Lexer::parseAlphanumeric(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
-    std::string n = "";
-    size_t index = cursor.getIndex() + 1;
-    while(cursor.hasNext() && (std::isalnum(cursor.get().value()) || cursor.get().value() == '_'))
-        n += cursor.get().next().value();
-    return Token(Token::IDENTIFIER, n, lineNumber, index);
-}
-
-Token Lexer::parseString(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
-    std::string ret = "";
-    size_t index = cursor.getIndex() + 1;
-    while(cursor.hasNext() && cursor.get().value() != '"') {
-
-        if (cursor.get().value() == '\\') {
-            char nextChar = cursor.next().get().prev().value();
-            auto it = s_escapeMap.find(nextChar);
-            if (it != s_escapeMap.end()) {
-                ret += it->second;
-                cursor.next(2);
-                continue;
-            }
-        }
-
-        ret += cursor.get().next().value();
-    }
-    return Token(Token::STRING, ret, lineNumber, index);
-}
-
-
-Token Lexer::tryParseSingleToken(Cursor<std::string::iterator, char> cursor, int lineNumber) {
-    Token token(Token::COUNT, lineNumber, cursor.getIndex() + 1);
-    std::string val = "";
-
-    while(cursor.hasNext() && !std::isspace(cursor.get().value())) {
-        val += cursor.get().next().value();
-
-        if(s_tokenTypes.contains(val)) {
-            token.m_type = s_tokenTypes.at(val);
-            token.m_value = val;
-            continue;
-        }
-    }
-
-    if(token.m_type == Token::COUNT)
-        return {};
-    
-    return token;
 }

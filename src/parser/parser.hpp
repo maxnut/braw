@@ -26,6 +26,7 @@ struct ParserFunctionContext {
     std::deque<std::unordered_map<std::string, ScopeInfo>> m_scopeTables;
     size_t m_currentStackSize = 0;
     size_t m_maxStackSize = 0;
+    bool m_hasReturnType = false;
 
     std::optional<ScopeInfo> get(const std::string& name) const;
     bool isDefined(const std::string& name) const;

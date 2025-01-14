@@ -8,7 +8,6 @@ void Interpreter::invokeFunction(FunctionDefinitionNode* function, Stack& stack,
     FunctionContext context{};
 
     context.m_returnValue = stack.push(function->m_signature.m_returnType.m_size);
-
     context.m_functionPtr = functionPtr;
 
     executeScope(function->m_scope.get(), stack, context);

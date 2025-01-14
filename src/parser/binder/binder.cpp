@@ -4,14 +4,14 @@
 #include <unordered_map>
 #include <filesystem>
 
-using NativeFunctionPtr = void(__cdecl *)(Stack&, Memory*, const std::vector<TypeInfo>&);
+using NativeFunctionPtr = void(__cdecl *)(Stack&, Memory*);
 
 #if not defined(_WIN32) || not defined(_WIN64)
 #include <dlfcn.h>
 
 std::unordered_map<std::filesystem::path, void*> s_handles;
 
-std::function<void(Stack&, Memory*, const std::vector<TypeInfo>&)> Binder::getFunction(const std::string& lib, const std::string& name) {
+std::function<void(Stack&, Memory*)> Binder::getFunction(const std::string& lib, const std::string& name) {
     std::filesystem::path libPath = std::filesystem::current_path() / ("lib" + lib + ".so");
 
     if(!std::filesystem::exists(libPath)) {
@@ -52,7 +52,7 @@ void Binder::closeHandles() {
 
 std::unordered_map<std::filesystem::path, HMODULE> s_handles;
 
-std::function<void(Stack&, Memory*, const std::vector<TypeInfo>&)> Binder::getFunction(const std::string& lib, const std::string& name) {
+std::function<void(Stack&, Memory*)> Binder::getFunction(const std::string& lib, const std::string& name) {
     std::filesystem::path libPath = std::filesystem::current_path() / (lib + ".dll");
 
     if(!std::filesystem::exists(libPath)) {

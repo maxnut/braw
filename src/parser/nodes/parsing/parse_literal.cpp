@@ -1,6 +1,8 @@
 #include "parser/parser.hpp"
 #include "../literal.hpp"
 
+#include <cstring>
+
 std::unique_ptr<EvaluatableNode> Parser::parseLiteral(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
     std::unique_ptr<LiteralNode> literal = std::make_unique<LiteralNode>();
 
@@ -33,6 +35,19 @@ std::unique_ptr<EvaluatableNode> Parser::parseLiteral(std::shared_ptr<FileNode> 
             literal->m_value.from(false);
         }
         else
+            return nullptr;
+    }
+    else if(tkn.m_type == Token::QUOTE) {
+        std::string str = cursor.next().get().value().m_value;
+        char* ptr = (char*)malloc(str.size() + 1);
+        std::memcpy(ptr, str.data(), str.size() + 1);
+        LiteralNode::s_strings.push_back(std::shared_ptr<char>(ptr));
+
+        literal->m_type = makePointer(file->getTypeInfo("char").value());
+        literal->m_value.m_data = malloc(sizeof(char*));
+        literal->m_value.from(ptr);
+
+        if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
             return nullptr;
     }
     else

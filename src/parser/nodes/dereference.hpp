@@ -10,7 +10,9 @@ public:
         return interpreter.visitDereference(this, stack, functionContext);
     }
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
+        void* head = stack.head();
         interpreter.visitDereference(this, stack, functionContext);
+        stack.setHead(head);
     }
 
 public:

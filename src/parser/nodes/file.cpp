@@ -27,6 +27,9 @@ std::unordered_map<std::string, TypeInfo> FileNode::s_typeTable = {
             {"==", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
                 dst.from(lhs.get<int>() == rhs.get<int>());
             }, "bool"}},
+            {"!=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                dst.from(lhs.get<int>() != rhs.get<int>());
+            }, "bool"}},
             {">", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
                 dst.from(lhs.get<int>() > rhs.get<int>());
             }, "bool"}},
@@ -67,6 +70,9 @@ std::unordered_map<std::string, TypeInfo> FileNode::s_typeTable = {
             }, "float"}},
             {"==", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
                 dst.from(lhs.get<float>() == rhs.get<float>());
+            }, "bool"}},
+            {"!=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                dst.from(lhs.get<float>() != rhs.get<float>());
             }, "bool"}},
             {">", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
                 dst.from(lhs.get<float>() > rhs.get<float>());
@@ -109,6 +115,9 @@ std::unordered_map<std::string, TypeInfo> FileNode::s_typeTable = {
             {"==", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
                 dst.from(lhs.get<double>() == rhs.get<double>());
             }, "bool"}},
+            {"!=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                dst.from(lhs.get<double>() != rhs.get<double>());
+            }, "bool"}},
             {">", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
                 dst.from(lhs.get<double>() > rhs.get<double>());
             }, "bool"}},
@@ -146,6 +155,7 @@ std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionDefinitionNo
             std::shared_ptr<FunctionDefinitionNode>(new NativeFunctionNode("print", {TypeInfo{"int", 4}}, TypeInfo{"void", 0}, &NativeFunctions::print<int>)),
             std::shared_ptr<FunctionDefinitionNode>(new NativeFunctionNode("print", {TypeInfo{"float", 4}}, TypeInfo{"void", 0}, &NativeFunctions::print<float>)),
             std::shared_ptr<FunctionDefinitionNode>(new NativeFunctionNode("print", {TypeInfo{"bool", 1}}, TypeInfo{"void", 0}, &NativeFunctions::print<bool>)),
+            std::shared_ptr<FunctionDefinitionNode>(new NativeFunctionNode("print", {TypeInfo{"char*", 8}}, TypeInfo{"void", 0}, &NativeFunctions::print<char*>)),
             std::shared_ptr<FunctionDefinitionNode>(new NativeFunctionNode("print", {TypeInfo{"double", 8}}, TypeInfo{"void", 0}, &NativeFunctions::print<double>))
         }
     },

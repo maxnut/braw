@@ -18,7 +18,6 @@ struct BinaryOperatorNode;
 struct StructNode;
 struct FunctionCallNode;
 struct BindNode;
-struct CastNode;
 struct IfNode;
 struct WhileNode;
 struct LiteralNode;
@@ -37,36 +36,39 @@ using Result = std::expected<T, ParseError>;
 
 class Parser {
 public:
-    Result<std::unique_ptr<AST::FileNode>> parse(std::vector<Token> tokens);
+    static Result<std::shared_ptr<AST::FileNode>> parse(std::vector<Token> tokens);
 
-public:
-    Result<std::unique_ptr<AST::FileNode>> parseFile(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::Node>> parseInstruction(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::VariableDeclarationNode>> parseVariableDeclaration(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::Node>> parseExpression(TokenCursor& cursor, int minPrecedence = 0);
-    Result<std::unique_ptr<AST::Node>> parseOperand(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::Node>> parsePrimary(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::LiteralNode>> parseLiteral(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::FunctionCallNode>> parseFunctionCall(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::VariableAccessNode>> parseVariableAccess(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::UnaryOperatorNode>> parseDot(TokenCursor& cursor, std::unique_ptr<AST::Node> left);
-    Result<std::unique_ptr<AST::UnaryOperatorNode>> parseArrow(TokenCursor& cursor, std::unique_ptr<AST::Node> left);
-    Result<std::unique_ptr<AST::CastNode>> parseCast(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::BinaryOperatorNode>> parseAssignment(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::ReturnNode>> parseReturn(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::IfNode>> parseIf(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::BindNode>> parseBind(TokenCursor& cursor);
-    Result<std::unique_ptr<AST::ImportNode>> parseImport(TokenCursor& cursor);
-    Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor);
-    Result<Identifier> parseTypename(TokenCursor& cursor);
+private:
+    static Result<std::shared_ptr<AST::FileNode>> parseFile(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::Node>> parseInstruction(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::Node>> parseVariableDeclaration(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::Node>> parseExpression(TokenCursor& cursor, int minPrecedence = 0);
+    static Result<std::shared_ptr<AST::Node>> parseOperand(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::Node>> parsePrimary(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::LiteralNode>> parseLiteral(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::FunctionCallNode>> parseFunctionCall(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::VariableAccessNode>> parseVariableAccess(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::UnaryOperatorNode>> parseDotArrow(TokenCursor& cursor, std::shared_ptr<AST::Node> left);
+    static Result<std::shared_ptr<AST::UnaryOperatorNode>> parseCast(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::BinaryOperatorNode>> parseAssignment(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::ReturnNode>> parseReturn(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::IfNode>> parseIf(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::BindNode>> parseBind(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::ImportNode>> parseImport(TokenCursor& cursor);
+    static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor);
+    static Result<Identifier> parseTypename(TokenCursor& cursor);
 
-    std::unexpected<ParseError> unexpectedToken(Token& token);
-    std::unexpected<ParseError> unexpectedTokenExpectedType(Token& token, Token::Type expectedType);
+    static std::unexpected<ParseError> unexpectedToken(Token& token);
+    static std::unexpected<ParseError> unexpectedTokenExpectedType(Token& token, Token::Type expectedType);
+    static std::unexpected<ParseError> unexpectedTokenExpectedTypes(Token& token, std::vector<Token::Type> expectedTypes);
+    static std::unexpected<ParseError> unexpectedTokenExpectedValue(Token& token, const std::string& expectedValue);
 
-    bool expectTokenType(const Token& token, Token::Type type) { return token.m_type == type; }
+    static bool expectTokenType(const Token& token, Token::Type type) { return token.m_type == type; }
+    static bool expectTokenTypes(const Token& token, std::vector<Token::Type> types) { return std::find(types.begin(), types.end(), token.m_type) != types.end(); }
+    static bool expectTokenValue(const Token& token, const std::string& value) { return token.m_value == value; }
     
 };

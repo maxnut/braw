@@ -18,7 +18,7 @@ struct FunctionDefinitionNode : Node {
     FunctionDefinitionNode() : Node(Type::FunctionDefinition) {}
 
     FunctionSignature m_signature;
-    std::unique_ptr<ScopeNode> m_scope;
+    std::shared_ptr<ScopeNode> m_scope;
 };
 
 }

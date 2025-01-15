@@ -1,8 +1,8 @@
 #include "parsernew/parser.hpp"
 
 Result<Identifier> Parser::parseTypename(TokenCursor& cursor) {
-    if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
-        return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
+    if(!expectTokenTypes(cursor.get().value(), {Token::IDENTIFIER, Token::KEYWORD}))
+        return unexpectedTokenExpectedTypes(cursor.value(), {Token::IDENTIFIER, Token::KEYWORD});
 
     Identifier id{cursor.get().value().m_value};
 

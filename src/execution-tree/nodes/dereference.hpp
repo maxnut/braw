@@ -6,6 +6,8 @@
 
 class DereferenceNode : public EvaluatableNode {
 public:
+    DereferenceNode() : EvaluatableNode(Type::Dereference) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitDereference(this, stack, functionContext);
     }

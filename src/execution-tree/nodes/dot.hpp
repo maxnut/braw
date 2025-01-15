@@ -6,6 +6,8 @@
 
 class DotNode : public EvaluatableNode {
 public:
+    DotNode() : EvaluatableNode(Type::Dot) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitDot(this, stack, functionContext);
     }

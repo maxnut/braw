@@ -6,6 +6,8 @@
 
 class VariableAccessNode : public EvaluatableNode {
 public:
+    VariableAccessNode() : EvaluatableNode(Type::VariableAccess) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitVariableAccess(this, stack, functionContext);
     }

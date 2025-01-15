@@ -7,6 +7,8 @@
 
 class IfNode : public FunctionInstructionNode {
 public:
+    IfNode() : FunctionInstructionNode(Type::If) {}
+
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         interpreter.visitIf(this, stack, functionContext);
     }

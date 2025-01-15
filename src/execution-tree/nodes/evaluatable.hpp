@@ -24,6 +24,8 @@ static std::string valueTypeString(ValueType type) {
 
 class EvaluatableNode : public FunctionInstructionNode {
 public:
+    EvaluatableNode(Node::Type type) : FunctionInstructionNode(type) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) = 0;
 
 public:

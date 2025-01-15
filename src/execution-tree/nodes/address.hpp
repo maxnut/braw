@@ -6,6 +6,8 @@
 
 class AddressNode : public EvaluatableNode {
 public:
+    AddressNode() : EvaluatableNode(Type::Address) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitAddress(this, stack, functionContext);
     }

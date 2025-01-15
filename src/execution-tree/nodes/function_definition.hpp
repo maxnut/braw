@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../type_info.hpp"
+#include "type_info.hpp"
 #include "scope.hpp"
 
 #include <vector>
@@ -13,8 +13,11 @@ struct FunctionSignature {
     std::string m_name;
 };
 
-class FunctionDefinitionNode {
+class FunctionDefinitionNode : public Node {
 public:
+    FunctionDefinitionNode() : Node(Type::FunctionDefinition) {}
+    FunctionDefinitionNode(Type type) : Node(type) {}
+
     virtual bool isNative() {return false;}
 public:
     FunctionSignature m_signature;

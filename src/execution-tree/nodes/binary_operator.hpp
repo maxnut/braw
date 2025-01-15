@@ -7,6 +7,8 @@
 
 class BinaryOperatorNode : public EvaluatableNode {
 public:
+    BinaryOperatorNode() : EvaluatableNode(Type::BinaryOperator) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitBinaryOperator(this, stack, functionContext);
     }

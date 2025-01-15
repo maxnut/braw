@@ -1,17 +1,15 @@
 #pragma once
 
-#include "evaluatable.hpp"
 #include "scope.hpp"
 
-#include <memory>
+namespace AST {
 
-class IfNode : public FunctionInstructionNode {
-public:
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        interpreter.visitIf(this, stack, functionContext);
-    }
+struct IfNode : Node {
+    IfNode() : Node(Type::If) {}
 
-public:
-    std::unique_ptr<EvaluatableNode> m_condition;
-    std::unique_ptr<ScopeNode> m_scope;
+    std::unique_ptr<Node> m_condition;
+    std::unique_ptr<ScopeNode> m_then;
+    std::unique_ptr<Node> m_else;
 };
+
+}

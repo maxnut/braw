@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/cast.hpp"
+#include "execution-tree/nodes/cast.hpp"
 
 Memory Interpreter::visitCast(CastNode* instruction, Stack& stack, FunctionContext& context) {
     void* head = stack.head();

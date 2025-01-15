@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/dereference.hpp"
+#include "execution-tree/nodes/dereference.hpp"
 
 Memory Interpreter::visitDereference(DereferenceNode* instruction, Stack& stack, FunctionContext& context) {
     void* head = stack.head();

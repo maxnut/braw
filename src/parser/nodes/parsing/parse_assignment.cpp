@@ -1,29 +1,22 @@
 #include "parser/parser.hpp"
-#include "../assignment.hpp"
+#include "../binary_operator.hpp"
 
-std::unique_ptr<FunctionInstructionNode> Parser::parseAssignment(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
-    std::unique_ptr<AssignmentNode> assignment = std::make_unique<AssignmentNode>();
+Result<std::unique_ptr<AST::BinaryOperatorNode>> Parser::parseAssignment(TokenCursor& cursor) {
+    std::unique_ptr<AST::BinaryOperatorNode> assignment = std::make_unique<AST::BinaryOperatorNode>();
+    assignment->m_operator = "=";
 
-    assignment->m_variable = parseExpression(file, cursor, ctx);
-    if(!assignment->m_variable)
-        return nullptr;
-
-    if(assignment->m_variable->m_memoryType == ValueType::PRVALUE || assignment->m_variable->m_memoryType == ValueType::XVALUE) {
-        m_message.unexpectedValueCategories(assignment->m_variable->m_memoryType, {ValueType::LVALUE, ValueType::XVALUE});
-        return nullptr;
-    }
+    auto leftOpt = parseExpression(cursor);
+    if(!leftOpt)
+        return std::unexpected{leftOpt.error()};
+    assignment->m_left = std::move(leftOpt.value());
 
     if(!expectTokenType(cursor.get().next().value(), Token::ASSIGNMENT))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::ASSIGNMENT);
 
-    assignment->m_value = parseExpression(file, cursor, ctx);
-    if(!assignment->m_value)
-        return nullptr;
-
-    if(assignment->m_variable->m_type != assignment->m_value->m_type) {
-        m_message.mismatchedTypes(assignment->m_variable->m_type.m_name, assignment->m_value->m_type.m_name);
-        return nullptr;
-    }
+    auto rightOpt = parseExpression(cursor);
+    if(!rightOpt)
+        return std::unexpected{rightOpt.error()};
+    assignment->m_right = std::move(rightOpt.value());
 
     return assignment;
 }

@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/address.hpp"
+#include "execution-tree/nodes/address.hpp"
 
 Memory Interpreter::visitAddress(AddressNode* instruction, Stack& stack, FunctionContext& context) {
     void* head = stack.head();

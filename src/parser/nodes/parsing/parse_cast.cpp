@@ -1,38 +1,25 @@
 #include "parser/parser.hpp"
-#include "../cast.hpp"
+#include "../unary_operator.hpp"
 
-std::unique_ptr<EvaluatableNode> Parser::parseCast(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
+Result<std::unique_ptr<AST::UnaryOperatorNode>> Parser::parseCast(TokenCursor& cursor) {
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN);
 
-    std::optional<TypeInfo> typeOpt = parseTypename(file, cursor);
-    if(!typeOpt) {
-        m_message.unknownType(cursor.value().m_value);
-        return nullptr;
-    }
-    TypeInfo type = typeOpt.value();
+    std::unique_ptr<AST::UnaryOperatorNode> cast = std::make_unique<AST::UnaryOperatorNode>();
+    cast->m_operator = "cast";
+
+    auto typeOpt = parseTypename(cursor);
+    if(!typeOpt)
+        return std::unexpected{typeOpt.error()};
+    cast->m_data = typeOpt.value();
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN);
 
-    std::unique_ptr<EvaluatableNode> base = parseOperand(file, cursor, ctx);
-    if(!base)
-        return nullptr;
+    auto baseOpt = parseOperand(cursor);
+    if(!baseOpt)
+        return std::unexpected{baseOpt.error()};
+    cast->m_operand = std::move(baseOpt.value());
 
-    if(Rules::canDirectCast(base->m_type, type)) {
-        base->m_type = type;
-        return base;
-    }
-
-    if(!base->m_type.m_casts.contains(type.m_name)) {
-        m_message.invalidCast(base->m_type.m_name, type.m_name);
-        return nullptr;
-    }
-
-    std::unique_ptr<CastNode> castNode = std::make_unique<CastNode>();
-    castNode->m_type = type;
-    castNode->m_function = base->m_type.m_casts[type.m_name].m_function;
-    castNode->m_base = std::move(base);
-
-    return castNode;
+    return cast;
 }

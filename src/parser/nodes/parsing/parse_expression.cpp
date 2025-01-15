@@ -1,10 +1,12 @@
 #include "parser/parser.hpp"
 #include "../binary_operator.hpp"
 
-std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, int minPrecedence) {
-    std::unique_ptr<EvaluatableNode> left = parseOperand(file, cursor, ctx);
-    if(!left)
-        return nullptr;
+Result<std::unique_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, int minPrecedence) {
+    auto leftOpt = parseOperand(cursor);
+    if(!leftOpt)
+        return std::unexpected{leftOpt.error()};
+
+    std::unique_ptr<AST::Node> left = std::move(leftOpt.value());
 
     while(cursor.hasNext()) {
         if(cursor.get().value().m_type != Token::OPERATOR)
@@ -18,27 +20,14 @@ std::unique_ptr<EvaluatableNode> Parser::parseExpression(std::shared_ptr<FileNod
             break;
         }
 
-        std::unique_ptr<EvaluatableNode> right = parseExpression(file, cursor, ctx, precedence + 1);
-        if(!right)
-            return nullptr;
+        auto rightOpt = parseExpression(cursor, precedence + 1);
+        if(!rightOpt)
+            return std::unexpected{rightOpt.error()};
 
-        if(left->m_type != right->m_type) {
-            m_message.mismatchedTypes(left->m_type.m_name, right->m_type.m_name);
-            return nullptr;
-        }
-
-        if(!left->m_type.m_operators.contains(opToken.m_value)) {
-            m_message.unknownOperator(opToken.m_value, left->m_type.m_name);
-            return nullptr;
-        }
-
-        std::unique_ptr<BinaryOperatorNode> op = std::make_unique<BinaryOperatorNode>();
-        op->m_function = left->m_type.m_operators.at(opToken.m_value).m_function;
-        op->m_type = file->getTypeInfo(left->m_type.m_operators.at(opToken.m_value).m_returnType).value();
+        std::unique_ptr<AST::BinaryOperatorNode> op = std::make_unique<AST::BinaryOperatorNode>();
+        op->m_operator = opToken.m_value;
         op->m_left = std::move(left);
-        op->m_right = std::move(right);
-        op->m_size = op->m_left->m_size;
-        op->m_memoryType = PRVALUE;
+        op->m_right = std::move(rightOpt.value());
 
         left = std::move(op);
     }

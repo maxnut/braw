@@ -1,55 +1,31 @@
 #include "parser/parser.hpp"
 #include "../function_call.hpp"
-#include "../native_function_call.hpp"
 
-std::unique_ptr<EvaluatableNode> Parser::parseFunctionCall(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
+Result<std::unique_ptr<AST::FunctionCallNode>> Parser::parseFunctionCall(TokenCursor& cursor) {
     if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
 
-    std::string name = cursor.value().m_value;
+    std::unique_ptr<AST::FunctionCallNode> functionCall = std::make_unique<AST::FunctionCallNode>();
+    functionCall->m_name = cursor.value().m_value;
 
     if(!expectTokenType(cursor.next().get().next().value(), Token::LEFT_PAREN))
-        return nullptr;
-
-    std::vector<std::unique_ptr<EvaluatableNode>> parameters;
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN);
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_PAREN) {
-        parameters.push_back(parseExpression(file, cursor, ctx));
-
-        if(!parameters.back())
-            return nullptr;
+        auto paramOpt = parseExpression(cursor);
+        if(!paramOpt)
+            return std::unexpected{paramOpt.error()};
+        functionCall->m_parameters.push_back(std::move(paramOpt.value()));
 
         if(cursor.get().value().m_type == Token::RIGHT_PAREN)
             break;
 
         if(!expectTokenType(cursor.get().next().value(), Token::COMMA))
-            return nullptr;
+            return unexpectedTokenExpectedType(cursor.value(), Token::COMMA);
     }
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
-        return nullptr;
-
-    auto func = file->getFunction(name, parameters);
-    if(!func) {
-        m_message.unknownFunction(name, parameters);
-        return nullptr;
-    }
-
-    if(func->isNative()) {
-        std::unique_ptr<NativeFunctionCallNode> functionCall = std::make_unique<NativeFunctionCallNode>();
-        functionCall->m_function = func;
-        functionCall->m_parameters = std::move(parameters);
-        functionCall->m_memoryType = ValueType::PRVALUE;
-        functionCall->m_size = functionCall->m_function->m_signature.m_returnType.m_size;
-        functionCall->m_type = functionCall->m_function->m_signature.m_returnType;
-        return functionCall;
-    }
-
-    std::unique_ptr<FunctionCallNode> functionCall = std::make_unique<FunctionCallNode>();
-    functionCall->m_function = func;
-    functionCall->m_parameters = std::move(parameters);
-    functionCall->m_memoryType = ValueType::PRVALUE;
-    functionCall->m_size = functionCall->m_function->m_signature.m_returnType.m_size;
-    functionCall->m_type = functionCall->m_function->m_signature.m_returnType;
+        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN);
+    
     return functionCall;
 }

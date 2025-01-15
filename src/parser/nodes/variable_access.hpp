@@ -1,20 +1,14 @@
 #pragma once
 
-#include "evaluatable.hpp"
+#include "node.hpp"
+#include "../identifier.hpp"
 
-#include <memory>
+namespace AST {
 
-class VariableAccessNode : public EvaluatableNode {
-public:
-    virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        return interpreter.visitVariableAccess(this, stack, functionContext);
-    }
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        void* head = stack.head();
-        interpreter.visitVariableAccess(this, stack, functionContext);
-        stack.setHead(head);
-    }
+struct VariableAccessNode : Node {
+    VariableAccessNode() : Node(Type::VariableAccess) {}
 
-public:
-    size_t m_stackIndex = 0;
+    Identifier m_name;
 };
+
+}

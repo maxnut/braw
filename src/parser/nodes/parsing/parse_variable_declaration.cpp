@@ -1,35 +1,36 @@
 #include "parser/parser.hpp"
 #include "../variable_declaration.hpp"
+#include "../binary_operator.hpp"
 
-std::unique_ptr<FunctionInstructionNode> Parser::parseVariableDeclaration(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
+Result<std::unique_ptr<AST::Node>> Parser::parseVariableDeclaration(TokenCursor& cursor) {
+    std::unique_ptr<AST::Node> ret = nullptr;
+
     bool assignment = Rules::isAssignment(cursor);
 
-    std::optional<TypeInfo> typeOpt = parseTypename(file, cursor);
-    if(!typeOpt) {
-        m_message.unknownType(cursor.value().m_value);
-        return nullptr;
-    }
-    TypeInfo type = typeOpt.value();
+    auto typeOpt = parseTypename(cursor);
+    if(!typeOpt)
+        return std::unexpected{typeOpt.error()};
 
-    ctx.m_scopeTables.front()[cursor.get().next().value().m_value] = ScopeInfo(type, ctx.m_currentStackSize, 0);
-    ctx.changeStackSize(type.m_size);
+    std::unique_ptr<AST::VariableDeclarationNode> variableDeclaration = std::make_unique<AST::VariableDeclarationNode>();
+    variableDeclaration->m_type = typeOpt.value();
+    variableDeclaration->m_name = cursor.get().next().value().m_value;
 
-    std::unique_ptr<VariableDeclarationNode> variableDeclaration = std::make_unique<VariableDeclarationNode>();
-    variableDeclaration->m_type = type;
-    variableDeclaration->size = type.m_size; //TODO array size
+    ret = std::move(variableDeclaration);
 
     if(assignment) {
+        std::unique_ptr<AST::BinaryOperatorNode> equals = std::make_unique<AST::BinaryOperatorNode>();
+        equals->m_operator = "=";
+        equals->m_left = std::move(ret);
+
         cursor.next();
-        variableDeclaration->m_assignmentValue = parseExpression(file, cursor, ctx);
+        auto exprOpt = parseExpression(cursor);
+        if(!exprOpt)
+            return std::unexpected{exprOpt.error()};
 
-        if(!variableDeclaration->m_assignmentValue)
-            return nullptr;
+        equals->m_right = std::move(exprOpt.value());
 
-        if(variableDeclaration->m_type != variableDeclaration->m_assignmentValue->m_type) {
-            m_message.mismatchedTypes(variableDeclaration->m_type.m_name, variableDeclaration->m_assignmentValue->m_type.m_name);
-            return nullptr;
-        }
+        ret = std::move(equals);
     }
 
-    return variableDeclaration;
+    return ret;
 }

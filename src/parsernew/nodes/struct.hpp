@@ -11,7 +11,7 @@ struct StructNode : Node {
     StructNode() : Node(Type::Struct) {}
 
     Identifier m_name;
-    std::vector<std::unique_ptr<VariableDeclarationNode>> m_members;
+    std::vector<std::shared_ptr<VariableDeclarationNode>> m_members;
 };
 
 }

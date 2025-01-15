@@ -1,8 +1,8 @@
 #include "parsernew/parser.hpp"
 #include "../file.hpp"
 
-Result<std::unique_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor) {
-    std::unique_ptr<AST::FileNode> file = std::make_unique<AST::FileNode>();
+Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor) {
+    std::shared_ptr<AST::FileNode> file = std::make_shared<AST::FileNode>();
     
     while(cursor.hasNext()) {
         if(Rules::isFunctionDefinition(cursor)) {

@@ -22,7 +22,9 @@ struct Node {
         Struct,
         Bind,
         Return,
-        Import
+        Import,
+        Dot,
+        Arrow
     };
 
     Node(Type t) : m_type(t) {} 

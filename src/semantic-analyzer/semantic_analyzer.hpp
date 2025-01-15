@@ -27,7 +27,7 @@ struct ReturnNode;
 }
 
 struct SemanticError {
-    std::string m_error;
+    std::string m_message;
     std::pair<uint32_t, uint32_t> m_rangeBegin;
     std::pair<uint32_t, uint32_t> m_rangeEnd;
 };
@@ -57,8 +57,9 @@ private:
 
     static SemanticError unknownType(const AST::Node* causer, const std::string& type);
     static SemanticError mismatchedTypes(const AST::Node* causer, const std::string& type1, const std::string& type2);
-    static SemanticError duplicateFunction(const AST::FunctionDefinitionNode* causer);
+    static SemanticError duplicateFunction(const AST::Node* causer, const AST::FunctionSignature& signature);
     static SemanticError unknownVariable(const AST::VariableAccessNode* causer);
     static SemanticError unknownOperator(const AST::UnaryOperatorNode* causer);
     static SemanticError unknownOperator(const AST::BinaryOperatorNode* causer);
+    static SemanticError unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& types);
 };

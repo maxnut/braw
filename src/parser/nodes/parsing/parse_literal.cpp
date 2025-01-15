@@ -5,16 +5,14 @@ Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
     std::unique_ptr<AST::LiteralNode> literal = std::make_unique<AST::LiteralNode>();
     Token tkn = cursor.get().value();
 
-    if(tkn.m_type == Token::INTEGER) {
-        long v = std::stol(cursor.value().m_value);
-        literal->m_value = v > INT_MAX ? v : (int)v;
-    }
-    else if(tkn.m_type == Token::FLOAT) {
+    if(tkn.m_type == Token::INTEGER)
+        literal->m_value = std::stoi(cursor.value().m_value);
+    else if(tkn.m_type == Token::LONG)
+        literal->m_value = std::stol(cursor.value().m_value);
+    else if(tkn.m_type == Token::FLOAT)
         literal->m_value = std::stof(cursor.value().m_value);
-    }
-    else if(tkn.m_type == Token::DOUBLE) {
+    else if(tkn.m_type == Token::DOUBLE)
         literal->m_value = std::stod(cursor.value().m_value);
-    }
     else if(tkn.m_type == Token::KEYWORD) {
         if(tkn.m_value == "true") {
             literal->m_value = true;

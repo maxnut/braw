@@ -2,15 +2,15 @@
 #include "parser/nodes/variable_declaration.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableDeclarationNode* node, BrawContext& ctx) {
-    if(!ctx.m_typeTable.contains(node->m_type))
+    if(!ctx.getTypeInfo(node->m_type))
         return unknownType(node, node->m_type);
 
-    ctx.m_scopes.front()[node->m_type] = ScopeInfo{
-        ctx.m_typeTable[node->m_type],
+    ctx.m_scopes.front()[node->m_name] = ScopeInfo{
+        ctx.getTypeInfo(node->m_type).value(),
         ctx.m_stackSize,
         0
     };
-    ctx.m_stackSize += ctx.m_typeTable[node->m_type].m_size;
+    ctx.m_stackSize += ctx.getTypeInfo(node->m_type)->m_size;
     
     return std::nullopt;
 }

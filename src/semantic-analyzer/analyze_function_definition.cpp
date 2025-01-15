@@ -2,33 +2,35 @@
 #include "parser/nodes/function_definition.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefinitionNode* node, BrawContext& ctx) {
-    if(!ctx.m_typeTable.contains(node->m_signature.m_returnType))
+    if(!ctx.getTypeInfo(node->m_signature.m_returnType))
         return unknownType(node, node->m_signature.m_returnType);
 
     std::shared_ptr<FunctionDefinitionNode> func = std::make_shared<FunctionDefinitionNode>();
     func->m_signature.m_name = node->m_signature.m_name;
-    func->m_signature.m_returnType = ctx.m_typeTable[node->m_signature.m_returnType];
+    func->m_signature.m_returnType = ctx.getTypeInfo(node->m_signature.m_returnType).value();
 
     size_t initialStackSize = ctx.m_stackSize;
 
     std::unordered_map<std::string, ScopeInfo> scopeTable = std::unordered_map<std::string, ScopeInfo>();
 
     for(auto& param : node->m_signature.m_parameters) {
-        if(!ctx.m_typeTable.contains(param.m_type.m_name))
+        if(!ctx.getTypeInfo(param.m_type.m_name))
             return unknownType(node, param.m_type.m_name);
-        func->m_signature.m_parameters.push_back(ctx.m_typeTable[param.m_type]);
+        func->m_signature.m_parameters.push_back(ctx.getTypeInfo(param.m_type).value());
         func->m_signature.m_parameterNames.push_back(param.m_name);
 
         scopeTable[param.m_name] = ScopeInfo{
-            ctx.m_typeTable[param.m_type],
+            ctx.getTypeInfo(param.m_type).value(),
             ctx.m_stackSize,
             0
         };
-        ctx.m_stackSize += ctx.m_typeTable[param.m_type].m_size;
+        ctx.m_stackSize += ctx.getTypeInfo(param.m_type)->m_size;
     }
 
     if(ctx.functionExists(func))
-        return duplicateFunction(node);
+        return duplicateFunction(node, node->m_signature);
+
+    ctx.m_functionTable[func->m_signature.m_name].push_back(func);
 
     ctx.m_scopes.push_front(scopeTable);
     std::optional<SemanticError> errOpt = analyze(node->m_scope.get(), ctx);

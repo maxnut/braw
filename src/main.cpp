@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
         spdlog::error("Failed to tokenize file");
         return 1;
     }
-    
+
     Parser p{};
     std::shared_ptr<FileNode> file = p.parseFile(filepath, tokens.value());
 

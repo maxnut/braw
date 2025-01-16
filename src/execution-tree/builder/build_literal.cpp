@@ -3,10 +3,7 @@
 #include "execution-tree/nodes/literal.hpp"
 #include "utils.hpp"
 
-#include <cstdlib>
-#include <cstring>
 #include <memory>
-#include <unordered_map>
 #include <variant>
 
 std::unique_ptr<EvaluatableNode> ETBuilder::buildLiteral(const AST::LiteralNode* node, BrawContext& context) {

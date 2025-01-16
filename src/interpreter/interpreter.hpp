@@ -3,10 +3,6 @@
 #include "stack.hpp"
 #include "function_context.hpp"
 
-#include <memory>
-#include <unordered_map>
-#include <thread>
-
 class FunctionDefinitionNode;
 class ScopeNode;
 class FunctionInstructionNode;

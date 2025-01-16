@@ -13,6 +13,7 @@ public:
         LEFT_BRACKET,
         RIGHT_BRACKET,
         INTEGER,
+        LONG,
         FLOAT,
         DOUBLE,
         KEYWORD,
@@ -39,6 +40,7 @@ public:
             case LEFT_BRACKET: return "LEFT_BRACKET";
             case RIGHT_BRACKET: return "RIGHT_BRACKET";
             case INTEGER: return "INTEGER";
+            case LONG: return "LONG";
             case FLOAT: return "FLOAT";
             case DOUBLE: return "DOUBLE";
             case KEYWORD: return "KEYWORD";

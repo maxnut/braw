@@ -78,6 +78,11 @@ Token parseNumber(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
             return Token(Token::FLOAT, n, lineNumber, index);
         }
 
+        if(cursor.get().value() == 'l' || cursor.get().value() == 'L') {
+            cursor.next();
+            return Token(Token::LONG, n, lineNumber, index);
+        }
+
         return Token(Token::DOUBLE, n, lineNumber, index);
     }
 

@@ -1,6 +1,7 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "ast-printer/ast_printer.hpp"
+#include "semantic-analyzer/semantic_analyzer.hpp"
 
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
@@ -29,7 +30,11 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    ASTPrinter::print(ast.value().get());
+    auto ctx = SemanticAnalyzer::analyze(ast.value().get());
+    if(!ctx) {
+        spdlog::error("{}:{} {}", ctx.error().m_rangeBegin.first, ctx.error().m_rangeBegin.second, ctx.error().m_message);
+        return 1;
+    }
 
     return 0;
 }

@@ -1,9 +1,12 @@
 #pragma once
 
 #include "stack.hpp"
+#include "type_info.hpp"
+#include "braw_context.hpp"
 #include "parser/nodes/function_definition.hpp"
 
 #include <string>
+#include <optional>
 
 namespace Utils {
     template <typename T, size_t offset>
@@ -24,5 +27,21 @@ namespace Utils {
         }
         funcString += ")";
         return funcString;
+    }
+
+    inline TypeInfo makePointer(const TypeInfo& base) {
+        return TypeInfo{base.m_name + "*", 8};
+    }
+
+    inline std::optional<TypeInfo> getRawType(const TypeInfo& pointer, const BrawContext& ctx) {
+        std::string raw = pointer.m_name;
+        if(raw.find("*") != std::string::npos)
+            raw = raw.substr(0, raw.size() - 1);
+
+        if(raw.find("*") != std::string::npos)
+            return TypeInfo{raw, 8};
+
+
+        return ctx.getTypeInfo(raw);
     }
 }

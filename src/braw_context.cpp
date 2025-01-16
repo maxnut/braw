@@ -1,6 +1,7 @@
 #include "braw_context.hpp"
 #include "execution-tree/nodes/native_function.hpp"
 #include "native_functions.hpp"
+#include "rules.hpp"
 
 #define DIRECT_CAST(_from, _to) \
     {#_to, {[](Memory& from, Stack& stack) -> Memory { \
@@ -189,6 +190,9 @@ BrawContext::BrawContext() {
 }
 
 bool BrawContext::functionExists(std::shared_ptr<FunctionDefinitionNode> function) const {
+    if(!m_functionTable.contains(function->m_signature.m_name))
+        return false;
+
     bool found = true;
 
     for(auto func : m_functionTable.at(function->m_signature.m_name)) {
@@ -219,6 +223,39 @@ std::optional<ScopeInfo> BrawContext::getScopeInfo(const std::string& name) cons
     return std::nullopt;
 }
 
-bool BrawContext::isDefined(const std::string& name) const {
+bool BrawContext::isDefinedInScope(const std::string& name) const {
     return getScopeInfo(name).has_value();
+}
+
+std::shared_ptr<FunctionDefinitionNode> BrawContext::getFunction(const std::string& name, const std::vector<TypeInfo>& parameters) const {
+    auto check = [&](std::shared_ptr<FunctionDefinitionNode> func) -> bool {
+        if(func->m_signature.m_parameters.size() != parameters.size())
+            return false;
+
+        for(int i = 0; i < func->m_signature.m_parameters.size(); i++) {
+            if(!(Rules::isPtr(func->m_signature.m_parameters[i].m_name) && Rules::isPtr(parameters[i].m_name)) && func->m_signature.m_parameters[i] != parameters[i])
+                return false;
+        }
+        
+        return true;
+    };
+
+    if(m_functionTable.contains(name)) {
+        for(std::shared_ptr<FunctionDefinitionNode> func : m_functionTable.at(name)) {
+            if(check(func))
+                return func;
+        }
+    }
+
+    return nullptr;
+}
+
+std::optional<TypeInfo> BrawContext::getTypeInfo(const std::string& name) const {
+    if(Rules::isPtr(name))
+        return TypeInfo(name, 8);
+
+    if(m_typeTable.contains(name))
+        return m_typeTable.at(name);
+
+    return std::nullopt;
 }

@@ -19,9 +19,11 @@ struct ScopeInfo {
 struct BrawContext {
     BrawContext();
 
-    bool functionExists(std::shared_ptr<FunctionDefinitionNode> func) const;
     std::optional<ScopeInfo> getScopeInfo(const std::string& name) const;
-    bool isDefined(const std::string& name) const;
+    std::optional<TypeInfo> getTypeInfo(const std::string& name) const;
+    std::shared_ptr<FunctionDefinitionNode> getFunction(const std::string& name, const std::vector<TypeInfo>& parameters) const;
+    bool isDefinedInScope(const std::string& name) const;
+    bool functionExists(std::shared_ptr<FunctionDefinitionNode> func) const;
 
     std::deque<std::unordered_map<std::string, ScopeInfo>> m_scopes;
     std::unordered_map<std::string, TypeInfo> m_typeTable;

@@ -6,6 +6,8 @@
 
 class ArrowNode : public EvaluatableNode {
 public:
+    ArrowNode() : EvaluatableNode(Type::Arrow) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitArrow(this, stack, functionContext);
     }

@@ -6,6 +6,8 @@
 
 class AssignmentNode : public FunctionInstructionNode {
 public:
+    AssignmentNode() : FunctionInstructionNode(Type::Assignment) {}
+
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         interpreter.visitAssignment(this, stack, functionContext);
     }

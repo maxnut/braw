@@ -6,6 +6,8 @@
 
 class VariableDeclarationNode : public FunctionInstructionNode {
 public:
+    VariableDeclarationNode() : FunctionInstructionNode(Type::VariableDeclaration) {}
+
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         interpreter.visitVariableDeclaration(this, stack, functionContext);
     }

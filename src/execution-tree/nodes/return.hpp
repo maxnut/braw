@@ -6,6 +6,8 @@
 
 class ReturnNode : public FunctionInstructionNode {
 public:
+    ReturnNode() : FunctionInstructionNode(Type::Return) {}
+
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         interpreter.visitReturn(this, stack, functionContext);
     }

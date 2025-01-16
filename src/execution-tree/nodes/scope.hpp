@@ -7,6 +7,8 @@
 
 class ScopeNode : public FunctionInstructionNode {
 public:
+    ScopeNode() : FunctionInstructionNode(Type::Scope) {}
+
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         interpreter.executeScope(this, stack, functionContext);
     }

@@ -8,6 +8,8 @@
 
 class FunctionCallNode : public EvaluatableNode {
 public:
+    FunctionCallNode() : EvaluatableNode(Type::FunctionCall) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitFunctionCall(this, stack, functionContext);
     }

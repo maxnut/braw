@@ -7,6 +7,8 @@
 
 class CastNode : public EvaluatableNode {
 public:
+    CastNode() : EvaluatableNode(Type::Cast) {}
+
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitCast(this, stack, functionContext);
     }

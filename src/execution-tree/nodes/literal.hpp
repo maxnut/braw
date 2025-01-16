@@ -7,6 +7,7 @@
 
 class LiteralNode : public EvaluatableNode {
 public:
+    LiteralNode() : EvaluatableNode(Type::Literal) {}
     ~LiteralNode() override { free(m_value.m_data); }
 
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {

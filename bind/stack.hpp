@@ -61,6 +61,6 @@ public:
     }
 
 private:
-    std::array<uint8_t, 512> m_memory;
+    std::array<uint8_t, 262144> m_memory;
     void* m_head;
 };

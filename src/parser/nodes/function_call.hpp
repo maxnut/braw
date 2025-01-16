@@ -1,23 +1,18 @@
 #pragma once
 
-#include "function_definition.hpp"
-#include "evaluatable.hpp"
+#include "node.hpp"
+#include "../identifier.hpp"
 
-#include <memory>
 #include <vector>
+#include <memory>
 
-class FunctionCallNode : public EvaluatableNode {
-public:
-    virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        return interpreter.visitFunctionCall(this, stack, functionContext);
-    }
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        void* head = stack.head();
-        interpreter.visitFunctionCall(this, stack, functionContext);
-        stack.setHead(head);
-    }
+namespace AST {
 
-public:
-    std::shared_ptr<FunctionDefinitionNode> m_function;
-    std::vector<std::unique_ptr<EvaluatableNode>> m_parameters;
+struct FunctionCallNode : Node {
+    FunctionCallNode() : Node(Type::FunctionCall) {}
+
+    Identifier m_name;
+    std::vector<std::unique_ptr<Node>> m_parameters;
 };
+
+}

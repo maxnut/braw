@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/if.hpp"
+#include "execution-tree/nodes/if.hpp"
 
 void Interpreter::visitIf(IfNode* instruction, Stack& stack, FunctionContext& context) {
     void* head = stack.head();

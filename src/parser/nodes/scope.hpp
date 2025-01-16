@@ -1,16 +1,16 @@
 #pragma once
 
-#include "function_instruction.hpp"
+#include "node.hpp"
 
-#include <memory>
 #include <vector>
+#include <memory>
 
-class ScopeNode : public FunctionInstructionNode {
-public:
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        interpreter.executeScope(this, stack, functionContext);
-    }
+namespace AST {
 
-public:
-    std::vector<std::unique_ptr<FunctionInstructionNode>> m_instructions;
+struct ScopeNode : Node {
+    ScopeNode() : Node(Type::Scope) {}
+
+    std::vector<std::unique_ptr<Node>> m_instructions;
 };
+
+}

@@ -1,15 +1,15 @@
 #pragma once
 
-#include "evaluatable.hpp"
+#include "node.hpp"
 
 #include <memory>
 
-class ReturnNode : public FunctionInstructionNode {
-public:
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        interpreter.visitReturn(this, stack, functionContext);
-    }
+namespace AST {
 
-public:
-    std::unique_ptr<EvaluatableNode> m_value = nullptr;
+struct ReturnNode : Node {
+    ReturnNode() : Node(Type::Return) {}
+
+    std::unique_ptr<Node> m_value = nullptr;
 };
+
+}

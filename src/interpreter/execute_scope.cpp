@@ -1,5 +1,5 @@
 #include "interpreter/interpreter.hpp"
-#include "parser/nodes/scope.hpp"
+#include "execution-tree/nodes/scope.hpp"
 
 void Interpreter::executeScope(ScopeNode* scope, Stack& stack, FunctionContext& functionContext) {
     void* head = stack.head();

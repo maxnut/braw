@@ -1,26 +1,16 @@
 #pragma once
 
-#include "evaluatable.hpp"
+#include "node.hpp"
 
-#include <memory>
-#include <vector>
+#include <variant>
+#include <string>
 
-class LiteralNode : public EvaluatableNode {
-public:
-    ~LiteralNode() override { free(m_value.m_data); }
+namespace AST {
 
-    virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        return interpreter.visitLiteral(this, stack, functionContext);
-    }
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        void* head = stack.head();
-        interpreter.visitLiteral(this, stack, functionContext);
-        stack.setHead(head);
-    }
+struct LiteralNode : Node {
+    LiteralNode() : Node(Type::Literal) {}
 
-public:
-    Memory m_value;
-
-public:
-    static std::vector<std::shared_ptr<char>> s_strings;
+    std::variant<int, long, float, double, bool, std::string, std::nullptr_t> m_value;
 };
+
+}

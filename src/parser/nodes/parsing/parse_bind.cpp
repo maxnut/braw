@@ -1,56 +1,55 @@
 #include "parser/parser.hpp"
-#include "parser/binder/binder.hpp"
+#include "../bind.hpp"
 
-std::vector<std::shared_ptr<NativeFunctionNode>> Parser::parseBind(std::shared_ptr<FileNode> file, TokenCursor& cursor) {
-    if(!expectTokenType(cursor.get().next().value(), Token::KEYWORD)
-        || !expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN)
-        || !expectTokenType(cursor.get().next().value(), Token::QUOTE)
-        || !expectTokenType(cursor.get().value(), Token::STRING))
-        return {nullptr};
+Result<std::unique_ptr<AST::BindNode>> Parser::parseBind(TokenCursor& cursor) {
+    if(!expectTokenType(cursor.get().next().value(), Token::KEYWORD))
+        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
+    if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN);
+    if(!expectTokenType(cursor.get().next().value(), Token::QUOTE))
+        return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE);
+    if(!expectTokenType(cursor.get().value(), Token::STRING))
+        return unexpectedTokenExpectedType(cursor.value(), Token::STRING);
 
-    std::string library = cursor.value().m_value;
+    std::unique_ptr<AST::BindNode> bind = std::make_unique<AST::BindNode>();
 
-    if(!expectTokenType(cursor.next().get().value(), Token::QUOTE)
-        || !expectTokenType(cursor.next().get().value(), Token::RIGHT_PAREN)
-        || !expectTokenType(cursor.next().get().next().value(), Token::LEFT_BRACE))
-        return {nullptr};
+    bind->m_library = cursor.value().m_value;
 
-    std::vector<std::shared_ptr<NativeFunctionNode>> funcs;
+    if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
+        return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE);
+    if(!expectTokenType(cursor.next().get().value(), Token::RIGHT_PAREN))
+        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN);
+    if(!expectTokenType(cursor.next().get().next().value(), Token::LEFT_BRACE))
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_BRACE);
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_BRACE) {
-        if(!expectTokenType(cursor.get().next().value(), Token::QUOTE) || !expectTokenType(cursor.get().value(), Token::STRING))
-            return {nullptr};
+        if(!expectTokenType(cursor.get().next().value(), Token::QUOTE))
+            return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE);
+        if(!expectTokenType(cursor.get().value(), Token::STRING))
+            return unexpectedTokenExpectedType(cursor.value(), Token::STRING);
 
-        std::string symbol = cursor.get().next().value().m_value;
+        std::pair<Identifier, AST::FunctionSignature> binding;
+        binding.first = cursor.get().next().value().m_value;
         
         if(!expectTokenType(cursor.get().next().value(), Token::QUOTE))
-            return {nullptr};
+            return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE);
 
-        auto signatureOpt = parseFunctionSignature(file, cursor);
-        if(!signatureOpt) {
-            m_message.bindFail(library);
-            return {nullptr};
-        }
+        auto signatureOpt = parseFunctionSignature(cursor);
+        if(!signatureOpt)
+            return std::unexpected{signatureOpt.error()};
+
+        binding.second = signatureOpt.value();
 
         if(!expectTokenType(cursor.get().next().value(), Token::SEMICOLON))
-            return {nullptr};
+            return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
 
-        std::shared_ptr<NativeFunctionNode> f = std::make_shared<NativeFunctionNode>();
-        f->m_signature = signatureOpt.value();
-        f->m_function = Binder::getFunction({m_file.root_directory()}, library, symbol);
-
-        if(!f->m_function) {
-            m_message.bindFunctionFail(library, symbol);
-            return {nullptr};
-        }
-
-        funcs.push_back(f);
+        bind->m_functions.push_back(binding);
     }
 
     if(!expectTokenType(cursor.get().value(), Token::RIGHT_BRACE))
-        return {nullptr};
+        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_BRACE);
 
     cursor.tryNext();
 
-    return funcs;
+    return bind;
 }

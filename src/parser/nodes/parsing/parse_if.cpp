@@ -1,31 +1,32 @@
 #include "parser/parser.hpp"
 #include "../if.hpp"
 
-std::unique_ptr<FunctionInstructionNode> Parser::parseIf(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
-    if(!expectTokenType(cursor.get().value(), Token::KEYWORD) || !expectTokenValue(cursor.get().value(), "if"))
-        return nullptr;
+Result<std::unique_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor) {
+    if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
+        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
+
+    if(!!expectTokenValue(cursor.get().value(), "if"))
+        return unexpectedTokenExpectedValue(cursor.value(), "if");
+    
     cursor.next();
 
-    std::unique_ptr<IfNode> ifNode = std::make_unique<IfNode>();
+    std::unique_ptr<AST::IfNode> ifNode = std::make_unique<AST::IfNode>();
 
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN);
 
-    ifNode->m_condition = parseExpression(file, cursor, ctx, 0);
-    if(!ifNode->m_condition)
-        return nullptr;
-
-    if(ifNode->m_condition->m_type.m_name != "bool") {
-        m_message.expectedType(ifNode->m_condition->m_type.m_name, "bool");
-        return nullptr;
-    }
+    auto conditionOpt = parseExpression(cursor);
+    if(!conditionOpt)
+        return std::unexpected{conditionOpt.error()};
+    ifNode->m_condition = std::move(conditionOpt.value());
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN);
 
-    ifNode->m_scope = parseScope(file, cursor, ctx);
-    if(!ifNode->m_scope)
-        return nullptr;
+    auto scopeOpt = parseScope(cursor);
+    if(!scopeOpt)
+        return std::unexpected{scopeOpt.error()};
+    ifNode->m_then = std::move(scopeOpt.value());
 
     return ifNode;
 }

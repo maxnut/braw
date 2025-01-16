@@ -1,78 +1,73 @@
 #pragma once
 
-#include "messages.hpp"
 #include "nodes/file.hpp"
-#include "nodes/function_definition.hpp"
-#include "nodes/native_function.hpp"
-#include "nodes/scope.hpp"
-#include "nodes/evaluatable.hpp"
+#include "identifier.hpp"
 #include "rules.hpp"
 
-#include <deque>
+#include <expected>
+#include <memory>
 
-struct ScopeInfo {
-    ScopeInfo(TypeInfo type, size_t stackIndex, size_t arraySize) : m_type(type), m_stackIndex(stackIndex), m_arraySize(arraySize) {}
-    ScopeInfo(TypeInfo type, size_t stackIndex, int arraySize) : m_type(type), m_stackIndex(stackIndex), m_arraySize(arraySize) {}
-    ScopeInfo() {}
+namespace AST {
+struct FileNode;
+struct FunctionDefinitionNode;
+struct ScopeNode;
+struct VariableDeclarationNode;
+struct VariableAccessNode;
+struct UnaryOperatorNode;
+struct BinaryOperatorNode;
+struct StructNode;
+struct FunctionCallNode;
+struct BindNode;
+struct IfNode;
+struct WhileNode;
+struct LiteralNode;
+struct ReturnNode;
+}
 
-    size_t getSize() const { return m_type.m_size * (m_arraySize == 0 ? 1 : m_arraySize); }
-
-    TypeInfo m_type;
-    size_t m_stackIndex;
-    size_t m_arraySize;
+struct ParseError {
+    std::string m_message;
+    int m_line;
+    int m_column;
 };
 
-struct ParserFunctionContext {
-    std::deque<std::unordered_map<std::string, ScopeInfo>> m_scopeTables;
-    size_t m_currentStackSize = 0;
-    size_t m_maxStackSize = 0;
-    bool m_hasReturnType = false;
-
-    std::optional<ScopeInfo> get(const std::string& name) const;
-    bool isDefined(const std::string& name) const;
-
-    void changeStackSize(int amt);
-    void setStackSize(size_t amt);
-};
+template <typename T>
+using Result = std::expected<T, ParseError>;
 
 class Parser {
 public:
-    std::shared_ptr<FileNode> parseFile(std::filesystem::path file, std::vector<Token>& tokens);
+    static Result<std::unique_ptr<AST::FileNode>> parse(std::vector<Token> tokens);
 
 private:
-    std::shared_ptr<FunctionDefinitionNode> parseFunctionDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
-    std::unique_ptr<ScopeNode> parseScope(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<FunctionInstructionNode> parseInstruction(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<FunctionInstructionNode> parseVariableDeclaration(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parseExpression(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, int minPrecedence = 0);
-    std::unique_ptr<EvaluatableNode> parseOperand(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parsePrimary(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parseVariable(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parseLiteral(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parseFunctionCall(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parseVariableAccess(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<EvaluatableNode> parseDot(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, std::unique_ptr<EvaluatableNode> left);
-    std::unique_ptr<EvaluatableNode> parseArrow(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx, std::unique_ptr<EvaluatableNode> left);
-    std::unique_ptr<EvaluatableNode> parseCast(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<FunctionInstructionNode> parseAssignment(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<FunctionInstructionNode> parseReturn(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<FunctionInstructionNode> parseIf(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
-    std::unique_ptr<FunctionInstructionNode> parseWhile(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx);
+    static Result<std::unique_ptr<AST::FileNode>> parseFile(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::Node>> parseInstruction(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::Node>> parseVariableDeclaration(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::Node>> parseExpression(TokenCursor& cursor, int minPrecedence = 0);
+    static Result<std::unique_ptr<AST::Node>> parseOperand(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::Node>> parsePrimary(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::LiteralNode>> parseLiteral(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::FunctionCallNode>> parseFunctionCall(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::VariableAccessNode>> parseVariableAccess(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::UnaryOperatorNode>> parseDotArrow(TokenCursor& cursor, std::unique_ptr<AST::Node> left);
+    static Result<std::unique_ptr<AST::UnaryOperatorNode>> parseCast(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::BinaryOperatorNode>> parseAssignment(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::ReturnNode>> parseReturn(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::IfNode>> parseIf(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::BindNode>> parseBind(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::FileNode>> parseImport(TokenCursor& cursor);
+    static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor);
+    static Result<Identifier> parseTypename(TokenCursor& cursor);
 
-    std::optional<FunctionSignature> parseFunctionSignature(std::shared_ptr<FileNode> file, TokenCursor& cursor);
-    std::optional<TypeInfo> parseStructDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor);
-    std::optional<TypeInfo> parseTypename(std::shared_ptr<FileNode> file, TokenCursor& cursor);
+    static std::unexpected<ParseError> unexpectedToken(Token& token);
+    static std::unexpected<ParseError> unexpectedTokenExpectedType(Token& token, Token::Type expectedType);
+    static std::unexpected<ParseError> unexpectedTokenExpectedTypes(Token& token, std::vector<Token::Type> expectedTypes);
+    static std::unexpected<ParseError> unexpectedTokenExpectedValue(Token& token, const std::string& expectedValue);
 
-    std::vector<std::shared_ptr<NativeFunctionNode>> parseBind(std::shared_ptr<FileNode> file, TokenCursor& cursor);
-
-    bool expectTokenType(const Token& token, Token::Type type);
-    bool expectTokenValue(const Token& token, const std::string& value);
-
-    TypeInfo makePointer(const TypeInfo& base);
-    std::optional<TypeInfo> getRawType(const TypeInfo& pointer, std::shared_ptr<FileNode> file);
-    uint32_t getPointerDepth(const TypeInfo& pointer);
-
-private:
-    std::filesystem::path m_file;
-    Message m_message;
+    static bool expectTokenType(const Token& token, Token::Type type) { return token.m_type == type; }
+    static bool expectTokenTypes(const Token& token, std::vector<Token::Type> types) { return std::find(types.begin(), types.end(), token.m_type) != types.end(); }
+    static bool expectTokenValue(const Token& token, const std::string& value) { return token.m_value == value; }
+    
 };

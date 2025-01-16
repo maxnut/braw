@@ -1,22 +1,24 @@
 #pragma once
 
-#include "../../type_info.hpp"
+#include "variable_declaration.hpp"
 #include "scope.hpp"
 
 #include <vector>
 #include <memory>
 
+namespace AST {
+
 struct FunctionSignature {
-    TypeInfo m_returnType;
-    std::vector<TypeInfo> m_parameters;
-    std::vector<std::string> m_parameterNames;
-    std::string m_name;
+    Identifier m_returnType;
+    Identifier m_name;
+    std::vector<VariableDeclarationNode> m_parameters; 
 };
 
-class FunctionDefinitionNode {
-public:
-    virtual bool isNative() {return false;}
-public:
+struct FunctionDefinitionNode : Node {
+    FunctionDefinitionNode() : Node(Type::FunctionDefinition) {}
+
     FunctionSignature m_signature;
     std::unique_ptr<ScopeNode> m_scope;
 };
+
+}

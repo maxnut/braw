@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/binary_operator.hpp"
+#include "execution-tree/nodes/binary_operator.hpp"
 
 Memory Interpreter::visitBinaryOperator(BinaryOperatorNode* instruction, Stack& stack, FunctionContext& context) {
     Memory eval = stack.push(instruction->m_left->m_size);

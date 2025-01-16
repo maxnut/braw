@@ -1,28 +1,32 @@
 #include "parser/parser.hpp"
+#include "../variable_declaration.hpp"
+#include "../binary_operator.hpp"
+#include "../return.hpp"
+#include "../if.hpp"
+#include "../while.hpp"
 
-std::unique_ptr<FunctionInstructionNode> Parser::parseInstruction(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
-    std::unique_ptr<FunctionInstructionNode> instruction = nullptr;
+Result<std::unique_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor) {
+    Result<std::unique_ptr<AST::Node>> instruction;
 
     Rules::InstructionType instructionType = Rules::getInstructionType(cursor);
     
     if(Rules::isVariableDeclaration(cursor))
-        instruction = parseVariableDeclaration(file, cursor, ctx);
+        instruction = parseVariableDeclaration(cursor);
     else if(Rules::isAssignment(cursor))
-        instruction = parseAssignment(file, cursor, ctx);
+        instruction = parseAssignment(cursor);
     else if(Rules::isReturn(cursor))
-        instruction = parseReturn(file, cursor, ctx);
+        instruction = parseReturn(cursor);
     else if(Rules::isIf(cursor))
-        instruction = parseIf(file, cursor, ctx);
+        instruction = parseIf(cursor);
     else if(Rules::isWhile(cursor))
-        instruction = parseWhile(file, cursor, ctx);
+        instruction = parseWhile(cursor);
     else
-        instruction = parseExpression(file, cursor, ctx);
+        instruction = parseExpression(cursor);
 
     switch(instructionType) {
         default: {
             if(!expectTokenType(cursor.get().next().value(), Token::SEMICOLON))
-                return nullptr;
-
+                return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
             break;
         }
         case Rules::InstructionType::WHILE:

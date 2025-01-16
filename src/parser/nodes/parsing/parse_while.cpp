@@ -1,31 +1,31 @@
 #include "parser/parser.hpp"
 #include "../while.hpp"
 
-std::unique_ptr<FunctionInstructionNode> Parser::parseWhile(std::shared_ptr<FileNode> file, TokenCursor& cursor, ParserFunctionContext& ctx) {
-    if(!expectTokenType(cursor.get().value(), Token::KEYWORD) || !expectTokenValue(cursor.get().value(), "while"))
-        return nullptr;
+Result<std::unique_ptr<AST::WhileNode>> Parser::parseWhile(TokenCursor& cursor) {
+    if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
+        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
+
+    if(!expectTokenValue(cursor.get().value(), "while"))
+        return unexpectedTokenExpectedValue(cursor.value(), "while");
     cursor.next();
 
-    std::unique_ptr<WhileNode> whileNode = std::make_unique<WhileNode>();
+    std::unique_ptr<AST::WhileNode> whileNode = std::make_unique<AST::WhileNode>();
 
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN);
 
-    whileNode->m_condition = parseExpression(file, cursor, ctx, 0);
-    if(!whileNode->m_condition)
-        return nullptr;
-
-    if(whileNode->m_condition->m_type.m_name != "bool") {
-        m_message.expectedType(whileNode->m_condition->m_type.m_name, "bool");
-        return nullptr;
-    }
+    auto conditionOpt = parseExpression(cursor);
+    if(!conditionOpt)
+        return std::unexpected{conditionOpt.error()};
+    whileNode->m_condition = std::move(conditionOpt.value());
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
-        return nullptr;
+        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN);
 
-    whileNode->m_scope = parseScope(file, cursor, ctx);
-    if(!whileNode->m_scope)
-        return nullptr;
+    auto scopeOpt = parseScope(cursor);
+    if(!scopeOpt)
+        return std::unexpected{scopeOpt.error()};
+    whileNode->m_then = std::move(scopeOpt.value());
 
     return whileNode;
 }

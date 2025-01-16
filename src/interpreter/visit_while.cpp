@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/while.hpp"
+#include "execution-tree/nodes/while.hpp"
 
 void Interpreter::visitWhile(WhileNode* instruction, Stack& stack, FunctionContext& context) {
     void* head = stack.head();

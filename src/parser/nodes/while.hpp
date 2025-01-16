@@ -1,17 +1,14 @@
 #pragma once
 
-#include "evaluatable.hpp"
 #include "scope.hpp"
 
-#include <memory>
+namespace AST {
 
-class WhileNode : public FunctionInstructionNode {
-public:
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        interpreter.visitWhile(this, stack, functionContext);
-    }
+struct WhileNode : Node {
+    WhileNode() : Node(Type::While) {}
 
-public:
-    std::unique_ptr<EvaluatableNode> m_condition;
-    std::unique_ptr<ScopeNode> m_scope;
+    std::unique_ptr<Node> m_condition;
+    std::unique_ptr<ScopeNode> m_then;
 };
+
+}

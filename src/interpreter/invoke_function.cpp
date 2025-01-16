@@ -1,6 +1,6 @@
 #include "interpreter/interpreter.hpp"
-#include "parser/nodes/function_definition.hpp"
-#include "parser/nodes/native_function.hpp"
+#include "execution-tree/nodes/function_definition.hpp"
+#include "execution-tree/nodes/native_function.hpp"
 
 #include <cstring>
 

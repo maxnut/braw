@@ -1,17 +1,15 @@
 #pragma once
 
-#include "evaluatable.hpp"
+#include "node.hpp"
+#include "../identifier.hpp"
 
-#include <memory>
+namespace AST {
 
-class VariableDeclarationNode : public FunctionInstructionNode {
-public:
-    virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
-        interpreter.visitVariableDeclaration(this, stack, functionContext);
-    }
+struct VariableDeclarationNode : Node {
+    VariableDeclarationNode() : Node(Type::VariableDeclaration) {}
 
-public:
-    TypeInfo m_type;
-    size_t size;
-    std::unique_ptr<EvaluatableNode> m_assignmentValue = nullptr;
+    Identifier m_type;
+    Identifier m_name;
 };
+
+}

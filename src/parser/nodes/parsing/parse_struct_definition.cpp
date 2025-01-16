@@ -1,57 +1,42 @@
 #include "parser/parser.hpp"
+#include "../struct.hpp"
 
-std::optional<TypeInfo> Parser::parseStructDefinition(std::shared_ptr<FileNode> file, TokenCursor& cursor) {
-    if(!expectTokenType(cursor.get().value(), Token::KEYWORD) || !expectTokenValue(cursor.get().value(), "struct"))
-        return std::nullopt;
+Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCursor& cursor) {
+    if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
+        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
+
+    if(!expectTokenValue(cursor.get().value(), "struct"))
+        return unexpectedTokenExpectedValue(cursor.value(), "struct");
 
     if(!expectTokenType(cursor.next().get().value(), Token::IDENTIFIER))
-        return std::nullopt;
-
-    std::string structName = cursor.get().next().value().m_value;
+        return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
+        
+    std::unique_ptr<AST::StructNode> structNode = std::make_unique<AST::StructNode>();
+    structNode->m_name = cursor.get().next().value().m_value;
 
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_BRACE))
-        return std::nullopt;
-
-    TypeInfo info;
-    info.m_name = structName;
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_BRACE);
 
     while(cursor.get().value().m_type != Token::RIGHT_BRACE) {
-        std::string type = cursor.get().next().value().m_value;
-        auto typeInfo = file->getTypeInfo(type);
-
-        if(!typeInfo)
-            return std::nullopt;
+        std::unique_ptr<AST::VariableDeclarationNode> varDecl = std::make_unique<AST::VariableDeclarationNode>();
+        varDecl->m_type = cursor.get().next().value().m_value;
 
         if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
-            return std::nullopt;
+            return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
 
-        std::string name = cursor.get().next().value().m_value;
-        size_t arraySize = 0;
-
-        if(cursor.get().value().m_type == Token::LEFT_BRACKET) {
-            if(!expectTokenType(cursor.next().get().value(), Token::INTEGER))
-                return std::nullopt;
-
-            arraySize = std::stoul(cursor.get().value().m_value);
-
-            if(!expectTokenType(cursor.next().get().value(), Token::RIGHT_BRACKET))
-                return std::nullopt;
-
-            cursor.next();
-        }
+        varDecl->m_name = cursor.get().next().value().m_value;
 
         if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
-            return std::nullopt;
-
-        info.m_members[name] = {type, info.m_size, arraySize};
-        info.m_size += typeInfo->m_size;
+            return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
+        
+        structNode->m_members.push_back(std::move(varDecl));
         cursor.next();
     }
 
     if(!expectTokenType(cursor.next().get().value(), Token::SEMICOLON))
-        return std::nullopt;
+        return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
 
-    cursor.next();
+    cursor.tryNext();
 
-    return info;
+    return structNode;
 }

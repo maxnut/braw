@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/arrow.hpp"
+#include "execution-tree/nodes/arrow.hpp"
 
 Memory Interpreter::visitArrow(ArrowNode* instruction, Stack& stack, FunctionContext& context) {
     void* head = stack.head();

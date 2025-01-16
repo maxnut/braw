@@ -1,5 +1,5 @@
 #include "interpreter.hpp"
-#include "parser/nodes/dot.hpp"
+#include "execution-tree/nodes/dot.hpp"
 
 Memory Interpreter::visitDot(DotNode* instruction, Stack& stack, FunctionContext& context) {
     Memory m = instruction->m_base->evaluate(*this, stack, context);

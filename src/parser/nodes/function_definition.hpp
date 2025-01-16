@@ -1,17 +1,21 @@
 #pragma once
 
-#include "variable_declaration.hpp"
 #include "scope.hpp"
-
-#include <vector>
-#include <memory>
+#include "variable_declaration.hpp"
 
 namespace AST {
 
 struct FunctionSignature {
+    FunctionSignature() = default;
+    FunctionSignature(const FunctionSignature&) = delete;
+    FunctionSignature& operator=(const FunctionSignature&) = delete;
+
+    FunctionSignature(FunctionSignature&&) = default;
+    FunctionSignature& operator=(FunctionSignature&&) = default;
+    
     Identifier m_returnType;
     Identifier m_name;
-    std::vector<VariableDeclarationNode> m_parameters; 
+    std::vector<std::unique_ptr<AST::VariableDeclarationNode>> m_parameters; 
 };
 
 struct FunctionDefinitionNode : Node {

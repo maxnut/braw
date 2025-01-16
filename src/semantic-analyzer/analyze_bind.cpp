@@ -4,7 +4,7 @@
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::BindNode* node, BrawContext& ctx) {
     for(auto& func : node->m_functions) {
-        AST::FunctionSignature sig = func.second;
+        const AST::FunctionSignature& sig = func.second;
         if(!ctx.getTypeInfo(sig.m_returnType))
             return unknownType(node, sig.m_returnType);
 
@@ -13,10 +13,10 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::BindNode* node
         nativeFunc->m_signature.m_returnType = ctx.getTypeInfo(sig.m_returnType).value();
 
         for(auto& param : sig.m_parameters) {
-            if(!ctx.getTypeInfo(param.m_type.m_name))
-                return unknownType(node, param.m_type.m_name);
-            nativeFunc->m_signature.m_parameters.push_back(ctx.getTypeInfo(param.m_type).value());
-            nativeFunc->m_signature.m_parameterNames.push_back(param.m_name);
+            if(!ctx.getTypeInfo(param->m_type.m_name))
+                return unknownType(node, param->m_type.m_name);
+            nativeFunc->m_signature.m_parameters.push_back(ctx.getTypeInfo(param->m_type).value());
+            nativeFunc->m_signature.m_parameterNames.push_back(param->m_name);
         }
 
         if(ctx.functionExists(nativeFunc))

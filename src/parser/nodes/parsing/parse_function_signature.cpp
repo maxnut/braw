@@ -15,17 +15,17 @@ Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& curso
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN);
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_PAREN) {
-        AST::VariableDeclarationNode var;
+        std::unique_ptr<AST::VariableDeclarationNode> var = std::make_unique<AST::VariableDeclarationNode>();
         typeRes = parseTypename(cursor);
         if(!typeRes)
             return std::unexpected{typeRes.error()};
         
-        var.m_type = typeRes.value();
+        var->m_type = typeRes.value();
         
         if(cursor.get().value().m_type == Token::IDENTIFIER)
-            var.m_name = cursor.get().next().value().m_value;
+            var->m_name = cursor.get().next().value().m_value;
 
-        sig.m_parameters.push_back(var);
+        sig.m_parameters.push_back(std::move(var));
 
         if(cursor.get().value().m_type == Token::COMMA)
             cursor.next();

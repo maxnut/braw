@@ -8,7 +8,7 @@ Result<std::unique_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefini
     if(!signatureOpt)
         return std::unexpected{signatureOpt.error()};
 
-    node->m_signature = signatureOpt.value();
+    node->m_signature = std::move(signatureOpt.value());
 
     auto scopeOpt = parseScope(cursor);
     if(!scopeOpt)

@@ -7,6 +7,8 @@
 
 class WhileNode : public FunctionInstructionNode {
 public:
+    WhileNode() : FunctionInstructionNode(Type::While) {}
+
     virtual void visit(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         interpreter.visitWhile(this, stack, functionContext);
     }

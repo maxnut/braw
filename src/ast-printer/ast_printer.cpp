@@ -105,6 +105,8 @@ void ASTPrinter::print(const AST::ScopeNode* node, int indent) {
 
 void ASTPrinter::print(const AST::VariableDeclarationNode* node, int indent) {
     std::cout << indentString(fmt::format("VariableDeclarationNode: \"{}\" ({})\n", node->m_name.m_name, node->m_type.m_name), indent);
+    if(node->m_value)
+        print(node->m_value.get(), indent + 1);
 }
 
 void ASTPrinter::print(const AST::VariableAccessNode* node, int indent) {

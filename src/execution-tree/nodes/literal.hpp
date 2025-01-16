@@ -4,11 +4,11 @@
 
 #include <memory>
 #include <vector>
+#include <variant>
 
 class LiteralNode : public EvaluatableNode {
 public:
     LiteralNode() : EvaluatableNode(Type::Literal) {}
-    ~LiteralNode() override { free(m_value.m_data); }
 
     virtual Memory evaluate(Interpreter& interpreter, Stack& stack, FunctionContext& functionContext) override {
         return interpreter.visitLiteral(this, stack, functionContext);
@@ -20,8 +20,5 @@ public:
     }
 
 public:
-    Memory m_value;
-
-public:
-    static std::vector<std::shared_ptr<char>> s_strings;
+    std::variant<int, long, float, double, bool, std::string, std::nullptr_t> m_value;
 };

@@ -13,7 +13,7 @@ std::unique_ptr<EvaluatableNode> ETBuilder::buildEvaluatable(const AST::Node* no
         case AST::Node::Type::VariableAccess:
             return buildVariableAccess(static_cast<const AST::VariableAccessNode*>(node), context);
         case AST::Node::Type::UnaryOperator:
-            return buildCast(static_cast<const AST::UnaryOperatorNode*>(node), context);
+            return buildUnaryOperator(static_cast<const AST::UnaryOperatorNode*>(node), context);
         case AST::Node::Type::BinaryOperator:
             return buildBinaryOperator(static_cast<const AST::BinaryOperatorNode*>(node), context);
         case AST::Node::Type::FunctionCall:

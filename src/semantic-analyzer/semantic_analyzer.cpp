@@ -186,3 +186,11 @@ SemanticError SemanticAnalyzer::unknownFunction(const AST::FunctionCallNode* cau
         causer->m_rangeEnd
     );
 }
+
+SemanticError SemanticAnalyzer::unknownMember(const AST::Node* causer, const std::string& type, const std::string& member) {
+    return SemanticError(
+        fmt::format("Unknown member {} in {}", member, type),
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}

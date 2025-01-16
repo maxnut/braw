@@ -6,6 +6,7 @@ std::unique_ptr<FunctionInstructionNode> ETBuilder::buildVariableDeclaration(con
     std::unique_ptr<VariableDeclarationNode> variableDeclaration = std::make_unique<VariableDeclarationNode>();
 
     variableDeclaration->m_type = context.getTypeInfo(node->m_type).value();
+    variableDeclaration->size = variableDeclaration->m_type.m_size;
     if(node->m_value)
         variableDeclaration->m_assignmentValue = buildEvaluatable(node->m_value.get(), context);
 
@@ -14,7 +15,7 @@ std::unique_ptr<FunctionInstructionNode> ETBuilder::buildVariableDeclaration(con
         context.m_stackSize,
         0
     };
-    context.m_stackSize += context.getTypeInfo(node->m_type)->m_size;
+    context.m_stackSize += variableDeclaration->m_type.m_size;
 
     return variableDeclaration;
 }

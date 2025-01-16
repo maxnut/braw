@@ -52,5 +52,5 @@ public:
     static std::unique_ptr<FunctionInstructionNode> buildVariableDeclaration(const AST::VariableDeclarationNode* ast, BrawContext& context);
     static std::unique_ptr<FunctionInstructionNode> buildWhile(const AST::WhileNode* ast, BrawContext& context);
 
-    static std::vector<std::shared_ptr<NativeFunctionNode>> buildBind(const AST::BindNode* ast, BrawContext& context);
+    static std::vector<std::shared_ptr<FunctionDefinitionNode>> buildBind(const AST::BindNode* ast, BrawContext& context);
 };

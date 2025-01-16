@@ -15,5 +15,10 @@ std::shared_ptr<FileNode> ETBuilder::buildFile(const AST::FileNode* node, BrawCo
     for(auto& function : node->m_functions)
         file->m_functions.push_back(std::move(buildFunctionDefinition(function.get(), context)));
 
+    for(auto& bind : node->m_binds) {
+        auto binds = buildBind(bind.get(), context);
+        file->m_functions.insert(file->m_functions.end(), binds.begin(), binds.end());
+    }
+
     return file;
 }

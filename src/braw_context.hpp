@@ -30,5 +30,5 @@ struct BrawContext {
     std::unordered_map<std::string, TypeInfo> m_typeTable;
     std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionDefinitionNode>>> m_functionTable;
     
-    size_t m_stackSize;
+    size_t m_stackSize = 0;
 };

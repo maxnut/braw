@@ -1,5 +1,4 @@
 #include "interpreter.hpp"
-#include "execution-tree/nodes/function_call.hpp"
 #include "execution-tree/nodes/native_function_call.hpp"
 
 #include <cstring>

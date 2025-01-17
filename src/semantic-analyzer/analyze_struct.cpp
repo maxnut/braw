@@ -13,6 +13,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::StructNode* no
         size += ctx.getTypeInfo(member->m_type)->m_size;
     }
 
+    info.m_size = size;
     ctx.m_typeTable[node->m_name] = info;
 
     return std::nullopt;

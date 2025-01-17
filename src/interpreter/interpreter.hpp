@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <thread>
 
 class FunctionDefinitionNode;
 class ScopeNode;
@@ -48,7 +49,4 @@ public:
     Memory visitDot(DotNode* instruction, Stack& stack, FunctionContext& context);
     Memory visitArrow(ArrowNode* instruction, Stack& stack, FunctionContext& context);
     Memory visitCast(CastNode* instruction, Stack& stack, FunctionContext& context);
-
-public:
-    std::unordered_map<uint64_t, std::unique_ptr<Stack>> m_stacks;
 };

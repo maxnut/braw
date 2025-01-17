@@ -2,6 +2,7 @@
 #include "parser/parser.hpp"
 #include "semantic-analyzer/semantic_analyzer.hpp"
 #include "execution-tree/builder/et_builder.hpp"
+#include "interpreter/interpreter.hpp"
 
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
@@ -28,17 +29,27 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    auto ctx = SemanticAnalyzer::analyze(ast.value().get());
-    if(!ctx) {
-        spdlog::error("{}:{} {}", ctx.error().m_rangeBegin.first, ctx.error().m_rangeBegin.second, ctx.error().m_message);
+    auto ctxOr = SemanticAnalyzer::analyze(ast.value().get());
+    if(!ctxOr) {
+        spdlog::error("{}:{} {}", ctxOr.error().m_rangeBegin.first, ctxOr.error().m_rangeBegin.second, ctxOr.error().m_message);
         return 1;
     }
 
-    std::shared_ptr<FileNode> file = ETBuilder::buildFile(ast.value().get(), ctx.value());
+    BrawContext ctx = ctxOr.value();
+
+    std::shared_ptr<FileNode> file = ETBuilder::buildFile(ast.value().get(), ctx);
     if(!file) {
         spdlog::error("Failed to build execution tree");
         return 1;
     }
+
+    if(!ctx.m_functionTable.contains("main")) {
+        spdlog::error("No entrypoint found");
+        return 1;
+    }
+
+    Stack stack;
+    Interpreter().invokeFunction(ctx.m_functionTable.at("main").at(0).get(), stack, nullptr, 0);
 
     return 0;
 }

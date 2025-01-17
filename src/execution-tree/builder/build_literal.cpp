@@ -18,7 +18,7 @@ std::unique_ptr<EvaluatableNode> ETBuilder::buildLiteral(const AST::LiteralNode*
     };
     literal->m_value = node->m_value;
     literal->m_type = types.at(node->m_value.index());
-    std::visit([&literal](auto&& value) { literal->m_size = sizeof(value); }, literal->m_value);
+    literal->m_size = literal->m_type.m_size;
     
     return literal;
 }

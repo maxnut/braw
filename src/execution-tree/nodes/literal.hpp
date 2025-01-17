@@ -2,8 +2,6 @@
 
 #include "evaluatable.hpp"
 
-#include <memory>
-#include <vector>
 #include <variant>
 
 class LiteralNode : public EvaluatableNode {
@@ -21,4 +19,5 @@ public:
 
 public:
     std::variant<int, long, float, double, bool, std::string, std::nullptr_t> m_value;
+    char* m_strPtr = nullptr;
 };

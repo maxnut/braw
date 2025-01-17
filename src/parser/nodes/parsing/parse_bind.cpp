@@ -38,12 +38,12 @@ Result<std::unique_ptr<AST::BindNode>> Parser::parseBind(TokenCursor& cursor) {
         if(!signatureOpt)
             return std::unexpected{signatureOpt.error()};
 
-        binding.second = signatureOpt.value();
+        binding.second = std::move(signatureOpt.value());
 
         if(!expectTokenType(cursor.get().next().value(), Token::SEMICOLON))
             return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
 
-        bind->m_functions.push_back(binding);
+        bind->m_functions.push_back(std::move(binding));
     }
 
     if(!expectTokenType(cursor.get().value(), Token::RIGHT_BRACE))

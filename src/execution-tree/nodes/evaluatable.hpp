@@ -31,5 +31,4 @@ public:
 public:
     TypeInfo m_type;
     size_t m_size = 0;
-    ValueType m_memoryType = COUNT;
 };

@@ -14,17 +14,17 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
     std::unordered_map<std::string, ScopeInfo> scopeTable = std::unordered_map<std::string, ScopeInfo>();
 
     for(auto& param : node->m_signature.m_parameters) {
-        if(!ctx.getTypeInfo(param.m_type.m_name))
-            return unknownType(node, param.m_type.m_name);
-        func->m_signature.m_parameters.push_back(ctx.getTypeInfo(param.m_type).value());
-        func->m_signature.m_parameterNames.push_back(param.m_name);
+        if(!ctx.getTypeInfo(param->m_type.m_name))
+            return unknownType(node, param->m_type.m_name);
+        func->m_signature.m_parameters.push_back(ctx.getTypeInfo(param->m_type).value());
+        func->m_signature.m_parameterNames.push_back(param->m_name);
 
-        scopeTable[param.m_name] = ScopeInfo{
-            ctx.getTypeInfo(param.m_type).value(),
+        scopeTable[param->m_name] = ScopeInfo{
+            ctx.getTypeInfo(param->m_type).value(),
             ctx.m_stackSize,
             0
         };
-        ctx.m_stackSize += ctx.getTypeInfo(param.m_type)->m_size;
+        ctx.m_stackSize += ctx.getTypeInfo(param->m_type)->m_size;
     }
 
     if(ctx.functionExists(func))

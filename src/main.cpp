@@ -1,12 +1,10 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
-#include "ast-printer/ast_printer.hpp"
 #include "semantic-analyzer/semantic_analyzer.hpp"
+#include "execution-tree/builder/et_builder.hpp"
 
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
-
-#include <iostream>
 
 int main(int argc, char** argv) {
     spdlog::set_pattern("[%^%l%$] %v");
@@ -33,6 +31,12 @@ int main(int argc, char** argv) {
     auto ctx = SemanticAnalyzer::analyze(ast.value().get());
     if(!ctx) {
         spdlog::error("{}:{} {}", ctx.error().m_rangeBegin.first, ctx.error().m_rangeBegin.second, ctx.error().m_message);
+        return 1;
+    }
+
+    std::shared_ptr<FileNode> file = ETBuilder::buildFile(ast.value().get(), ctx.value());
+    if(!file) {
+        spdlog::error("Failed to build execution tree");
         return 1;
     }
 

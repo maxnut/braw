@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser/nodes/file.hpp"
+#include "execution-tree/nodes/evaluatable.hpp"
 #include "execution-tree/nodes/file.hpp"
 #include "braw_context.hpp"
 
@@ -24,49 +25,31 @@ struct LiteralNode;
 struct ReturnNode;
 }
 
-struct AddressNode;
-struct ArrowNode;
-struct AssignmentNode;
-struct BinaryOperatorNode;
-struct CastNode;
-struct DereferenceNode;
-struct DotNode;
-struct EvaluatableNode;
-struct FunctionCallNode;
-struct FunctionDefinitionNode;
-struct FunctionInstructionNode;
-struct IfNode;
-struct LiteralNode;
-struct NativeFunctionCallNode;
-struct NativeFunctionNode;
-struct ReturnNode;
 struct ScopeNode;
-struct VariableAccessNode;
-struct VariableDeclarationNode;
-struct WhileNode;
 
 class ETBuilder {
 public:
-    static std::shared_ptr<FileNode> build(const AST::FileNode* ast, BrawContext& context);
+    static std::shared_ptr<FileNode> buildFile(const AST::FileNode* ast, BrawContext& context);
 
 public:
-    static std::shared_ptr<AddressNode> buildAddress(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<ArrowNode> buildArrow(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<AssignmentNode> buildAssignment(const AST::BinaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<BinaryOperatorNode> buildBinaryOperator(const AST::BinaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<CastNode> buildCast(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<DereferenceNode> buildDereference(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<DotNode> buildDot(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<FunctionCallNode> buildFunctionCall(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<FunctionDefinitionNode> buildFunctionDefinition(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<IfNode> buildIf(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<LiteralNode> buildLiteral(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<NativeFunctionCallNode> buildNativeFunctionCall(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<ReturnNode> buildReturn(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<ScopeNode> buildScope(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<VariableAccessNode> buildVariableAccess(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<VariableDeclarationNode> buildVariableDeclaration(const AST::UnaryOperatorNode* ast, BrawContext& context);
-    static std::shared_ptr<WhileNode> buildWhile(const AST::UnaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<FunctionInstructionNode> buildInstruction(const AST::Node* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildEvaluatable(const AST::Node* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildAddress(const AST::UnaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildArrow(const AST::UnaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<FunctionInstructionNode> buildAssignment(const AST::BinaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildBinaryOperator(const AST::BinaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildCast(const AST::UnaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildDereference(const AST::UnaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildDot(const AST::UnaryOperatorNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildFunctionCall(const AST::FunctionCallNode* ast, BrawContext& context);
+    static std::shared_ptr<FunctionDefinitionNode> buildFunctionDefinition(const AST::FunctionDefinitionNode* ast, BrawContext& context);
+    static std::unique_ptr<FunctionInstructionNode> buildIf(const AST::IfNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildLiteral(const AST::LiteralNode* ast, BrawContext& context);
+    static std::unique_ptr<FunctionInstructionNode> buildReturn(const AST::ReturnNode* ast, BrawContext& context);
+    static std::unique_ptr<ScopeNode> buildScope(const AST::ScopeNode* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildVariableAccess(const AST::VariableAccessNode* ast, BrawContext& context);
+    static std::unique_ptr<FunctionInstructionNode> buildVariableDeclaration(const AST::VariableDeclarationNode* ast, BrawContext& context);
+    static std::unique_ptr<FunctionInstructionNode> buildWhile(const AST::WhileNode* ast, BrawContext& context);
 
     static std::vector<std::shared_ptr<NativeFunctionNode>> buildBind(const AST::BindNode* ast, BrawContext& context);
 };

@@ -3,6 +3,8 @@
 #include "node.hpp"
 #include "../identifier.hpp"
 
+#include <memory>
+
 namespace AST {
 
 struct VariableDeclarationNode : Node {
@@ -10,6 +12,7 @@ struct VariableDeclarationNode : Node {
 
     Identifier m_type;
     Identifier m_name;
+    std::unique_ptr<Node> m_value = nullptr;
 };
 
 }

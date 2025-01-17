@@ -2,6 +2,7 @@
 #include "execution-tree/nodes/native_function.hpp"
 #include "native_functions.hpp"
 #include "rules.hpp"
+#include <memory>
 
 #define DIRECT_CAST(_from, _to) \
     {#_to, {[](Memory& from, Stack& stack) -> Memory { \
@@ -258,4 +259,12 @@ std::optional<TypeInfo> BrawContext::getTypeInfo(const std::string& name) const 
         return m_typeTable.at(name);
 
     return std::nullopt;
+}
+
+std::shared_ptr<FunctionDefinitionNode> BrawContext::getFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>>& parameters) const {
+    std::vector<TypeInfo> types;
+    for(auto& param : parameters)
+        types.push_back(param->m_type);
+
+    return getFunction(name, types);
 }

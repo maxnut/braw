@@ -18,5 +18,5 @@ public:
     }
 
 public:
-    size_t m_stackIndex = 0;
+    size_t m_stackOffset = 0;
 };

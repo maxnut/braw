@@ -1,5 +1,6 @@
 #pragma once
 
+#include "execution-tree/nodes/evaluatable.hpp"
 #include "type_info.hpp"
 #include "execution-tree/nodes/function_definition.hpp"
 
@@ -22,6 +23,7 @@ struct BrawContext {
     std::optional<ScopeInfo> getScopeInfo(const std::string& name) const;
     std::optional<TypeInfo> getTypeInfo(const std::string& name) const;
     std::shared_ptr<FunctionDefinitionNode> getFunction(const std::string& name, const std::vector<TypeInfo>& parameters) const;
+    std::shared_ptr<FunctionDefinitionNode> getFunction(const std::string& name, const std::vector<std::unique_ptr<EvaluatableNode>>& parameters) const;
     bool isDefinedInScope(const std::string& name) const;
     bool functionExists(std::shared_ptr<FunctionDefinitionNode> func) const;
 

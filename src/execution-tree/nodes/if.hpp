@@ -16,4 +16,5 @@ public:
 public:
     std::unique_ptr<EvaluatableNode> m_condition;
     std::unique_ptr<ScopeNode> m_scope;
+    std::unique_ptr<FunctionInstructionNode> m_else = nullptr;
 };

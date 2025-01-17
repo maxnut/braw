@@ -194,3 +194,11 @@ SemanticError SemanticAnalyzer::unknownMember(const AST::Node* causer, const std
         causer->m_rangeEnd
     );
 }
+
+SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type) {
+    return SemanticError(
+        fmt::format("Invalid cast from {} to {}", type, causer->m_data.m_name),
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}

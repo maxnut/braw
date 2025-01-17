@@ -2,6 +2,9 @@
 #include "../struct.hpp"
 
 Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCursor& cursor) {
+    std::unique_ptr<AST::StructNode> structNode = std::make_unique<AST::StructNode>();
+    structNode->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+    
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
         return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
 
@@ -10,8 +13,7 @@ Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCurs
 
     if(!expectTokenType(cursor.next().get().value(), Token::IDENTIFIER))
         return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
-        
-    std::unique_ptr<AST::StructNode> structNode = std::make_unique<AST::StructNode>();
+    
     structNode->m_name = cursor.get().next().value().m_value;
 
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_BRACE))
@@ -35,7 +37,8 @@ Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCurs
 
     if(!expectTokenType(cursor.next().get().value(), Token::SEMICOLON))
         return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
-
+    
+    structNode->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     cursor.tryNext();
 
     return structNode;

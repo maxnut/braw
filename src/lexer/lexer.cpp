@@ -3,8 +3,6 @@
 #include <spdlog/spdlog.h>
 
 #include <fstream>
-#include <sstream>
-#include <iostream>
 
 static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"int", Token::KEYWORD},
@@ -162,7 +160,6 @@ std::optional<std::vector<Token>> Lexer::tokenize(std::filesystem::path path) {
                 cursor.next(2);
                 while(cursor.hasNext() && cursor.get().value() != '\n')
                     cursor.next();
-                lineNumber++;
                 continue;
             }
 

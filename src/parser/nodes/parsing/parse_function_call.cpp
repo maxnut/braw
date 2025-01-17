@@ -6,6 +6,7 @@ Result<std::unique_ptr<AST::FunctionCallNode>> Parser::parseFunctionCall(TokenCu
         return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
 
     std::unique_ptr<AST::FunctionCallNode> functionCall = std::make_unique<AST::FunctionCallNode>();
+    functionCall->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     functionCall->m_name = cursor.value().m_value;
 
     if(!expectTokenType(cursor.next().get().next().value(), Token::LEFT_PAREN))
@@ -26,6 +27,8 @@ Result<std::unique_ptr<AST::FunctionCallNode>> Parser::parseFunctionCall(TokenCu
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN);
+
+    functionCall->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     
     return functionCall;
 }

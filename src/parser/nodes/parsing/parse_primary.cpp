@@ -22,6 +22,8 @@ Result<std::unique_ptr<AST::Node>> Parser::parsePrimary(TokenCursor& cursor) {
         if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
             return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN);
     }
+    else
+        result = unexpectedToken(beg);
 
     return result;
 }

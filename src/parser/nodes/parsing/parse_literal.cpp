@@ -3,6 +3,7 @@
 
 Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor) {
     std::unique_ptr<AST::LiteralNode> literal = std::make_unique<AST::LiteralNode>();
+    literal->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     Token tkn = cursor.get().value();
 
     if(tkn.m_type == Token::INTEGER)
@@ -42,6 +43,8 @@ Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
                 tkn.m_line,
                 tkn.m_column,
             }};
+
+    literal->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
 
     cursor.tryNext();
 

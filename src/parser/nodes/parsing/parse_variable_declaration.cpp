@@ -5,12 +5,13 @@ Result<std::unique_ptr<AST::Node>> Parser::parseVariableDeclaration(TokenCursor&
     std::unique_ptr<AST::Node> ret = nullptr;
 
     bool assignment = Rules::isAssignment(cursor);
+    std::unique_ptr<AST::VariableDeclarationNode> variableDeclaration = std::make_unique<AST::VariableDeclarationNode>();
+    variableDeclaration->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
     auto typeOpt = parseTypename(cursor);
     if(!typeOpt)
         return std::unexpected{typeOpt.error()};
 
-    std::unique_ptr<AST::VariableDeclarationNode> variableDeclaration = std::make_unique<AST::VariableDeclarationNode>();
     variableDeclaration->m_type = typeOpt.value();
     variableDeclaration->m_name = cursor.get().next().value().m_value;
 
@@ -23,6 +24,7 @@ Result<std::unique_ptr<AST::Node>> Parser::parseVariableDeclaration(TokenCursor&
         variableDeclaration->m_value = std::move(exprOpt.value());
     }
 
+    variableDeclaration->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     ret = std::move(variableDeclaration);
 
     return ret;

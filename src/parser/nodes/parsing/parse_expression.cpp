@@ -28,6 +28,8 @@ Result<std::unique_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, 
         op->m_operator = opToken.m_value;
         op->m_left = std::move(left);
         op->m_right = std::move(rightOpt.value());
+        op->m_rangeBegin = op->m_left->m_rangeBegin;
+        op->m_rangeEnd = op->m_right->m_rangeEnd;
 
         left = std::move(op);
     }

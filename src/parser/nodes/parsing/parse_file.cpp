@@ -3,6 +3,7 @@
 
 Result<std::unique_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor) {
     std::unique_ptr<AST::FileNode> file = std::make_unique<AST::FileNode>();
+    file->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     
     while(cursor.hasNext()) {
         if(Rules::isFunctionDefinition(cursor)) {
@@ -45,5 +46,6 @@ Result<std::unique_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor) {
         return unexpectedToken(cursor.get().value());
     }
 
+    file->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     return file;
 }

@@ -32,9 +32,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
 
     ctx.m_functionTable[func->m_signature.m_name].push_back(func);
 
-    ctx.m_scopes.push_front(scopeTable);
+    ctx.m_scopes.push_back(scopeTable);
     std::optional<SemanticError> errOpt = analyze(node->m_scope.get(), ctx);
-    ctx.m_scopes.pop_front();
+    ctx.m_scopes.pop_back();
     if(errOpt) return errOpt;
 
     ctx.m_stackSize = initialStackSize;

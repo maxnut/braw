@@ -62,4 +62,5 @@ private:
     static SemanticError unknownOperator(const AST::UnaryOperatorNode* causer);
     static SemanticError unknownOperator(const AST::BinaryOperatorNode* causer);
     static SemanticError unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& types);
+    static SemanticError unknownMember(const AST::Node* causer, const std::string& type, const std::string& member);
 };

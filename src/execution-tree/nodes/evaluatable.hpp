@@ -4,24 +4,6 @@
 #include "type_info.hpp"
 #include "function_instruction.hpp"
 
-enum ValueType {
-    DECLARATION,
-    LVALUE,
-    PRVALUE,
-    XVALUE,
-    COUNT
-};
-
-static std::string valueTypeString(ValueType type) {
-    switch(type) {
-        case DECLARATION: return "DECLARATION";
-        case LVALUE: return "LVALUE";
-        case PRVALUE: return "PRVALUE";
-        case XVALUE: return "XVALUE";
-        default: case COUNT: return "COUNT";
-    }
-}
-
 class EvaluatableNode : public FunctionInstructionNode {
 public:
     EvaluatableNode(Node::Type type) : FunctionInstructionNode(type) {}

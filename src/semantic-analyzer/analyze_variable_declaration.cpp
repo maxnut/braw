@@ -5,7 +5,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableDeclar
     if(!ctx.getTypeInfo(node->m_type))
         return unknownType(node, node->m_type);
 
-    ctx.m_scopes.front()[node->m_name] = ScopeInfo{
+    ctx.m_scopes.back()[node->m_name] = ScopeInfo{
         ctx.getTypeInfo(node->m_type).value(),
         ctx.m_stackSize,
         0

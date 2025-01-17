@@ -7,7 +7,6 @@
 #include <memory>
 #include <unordered_map>
 #include <optional>
-#include <deque>
 
 struct ScopeInfo {
     size_t getSize() const {return m_type.m_size * (m_arraySize == 0 ? 1 : m_arraySize);}
@@ -27,7 +26,7 @@ struct BrawContext {
     bool isDefinedInScope(const std::string& name) const;
     bool functionExists(std::shared_ptr<FunctionDefinitionNode> func) const;
 
-    std::deque<std::unordered_map<std::string, ScopeInfo>> m_scopes;
+    std::vector<std::unordered_map<std::string, ScopeInfo>> m_scopes;
     std::unordered_map<std::string, TypeInfo> m_typeTable;
     std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionDefinitionNode>>> m_functionTable;
     

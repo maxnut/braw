@@ -34,6 +34,7 @@ public:
 public:
     static std::unique_ptr<FunctionInstructionNode> buildInstruction(const AST::Node* ast, BrawContext& context);
     static std::unique_ptr<EvaluatableNode> buildEvaluatable(const AST::Node* ast, BrawContext& context);
+    static std::unique_ptr<EvaluatableNode> buildUnaryOperator(const AST::UnaryOperatorNode* ast, BrawContext& context);
     static std::unique_ptr<EvaluatableNode> buildAddress(const AST::UnaryOperatorNode* ast, BrawContext& context);
     static std::unique_ptr<EvaluatableNode> buildArrow(const AST::UnaryOperatorNode* ast, BrawContext& context);
     static std::unique_ptr<FunctionInstructionNode> buildAssignment(const AST::BinaryOperatorNode* ast, BrawContext& context);

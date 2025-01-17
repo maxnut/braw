@@ -9,5 +9,12 @@ std::unique_ptr<FunctionInstructionNode> ETBuilder::buildVariableDeclaration(con
     if(node->m_value)
         variableDeclaration->m_assignmentValue = buildEvaluatable(node->m_value.get(), context);
 
+    context.m_scopes.back()[node->m_name] = ScopeInfo{
+        context.getTypeInfo(node->m_type).value(),
+        context.m_stackSize,
+        0
+    };
+    context.m_stackSize += context.getTypeInfo(node->m_type)->m_size;
+
     return variableDeclaration;
 }

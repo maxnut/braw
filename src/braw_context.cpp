@@ -51,9 +51,55 @@ BrawContext::BrawContext() {
             {
                 DIRECT_CAST(int, float),
                 DIRECT_CAST(int, double),
+                DIRECT_CAST(int, long),
                 {"bool", {[](Memory& from, Stack& stack) -> Memory {
                     Memory ret = stack.push(sizeof(bool));
                     ret.from(from.get<int>() != 0);
+                    return ret;
+                }}}
+            }
+        }},
+
+        {"long", TypeInfo{"long", 8, 
+            {
+                {"+", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() + rhs.get<long>());
+                }, "long"}},
+                {"-", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() - rhs.get<long>());
+                }, "long"}},
+                {"*", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() * rhs.get<long>());
+                }, "long"} },
+                {"/", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() / rhs.get<long>());
+                }, "long"}},
+                {"==", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() == rhs.get<long>());
+                }, "bool"}},
+                {"!=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() != rhs.get<long>());
+                }, "bool"}},
+                {">", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() > rhs.get<long>());
+                }, "bool"}},
+                {">=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() >= rhs.get<long>());
+                }, "bool"}},
+                {"<", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() < rhs.get<long>());
+                }, "bool"}},
+                {"<=", {[](Memory& dst, Memory& lhs, Memory& rhs) -> void {
+                    dst.from(lhs.get<long>() <= rhs.get<long>());
+                }, "bool"}}
+            },
+            {
+                DIRECT_CAST(long, int),
+                DIRECT_CAST(long, float),
+                DIRECT_CAST(long, double),
+                {"bool", {[](Memory& from, Stack& stack) -> Memory {
+                    Memory ret = stack.push(sizeof(bool));
+                    ret.from(from.get<long>() != 0);
                     return ret;
                 }}}
             }
@@ -94,6 +140,7 @@ BrawContext::BrawContext() {
             },
             {
                 DIRECT_CAST(float, int),
+                DIRECT_CAST(float, long),
                 DIRECT_CAST(float, double),
                 {"bool", {[](Memory& from, Stack& stack) -> Memory {
                     Memory ret = stack.push(sizeof(bool));
@@ -138,6 +185,7 @@ BrawContext::BrawContext() {
             },
             {
                 DIRECT_CAST(double, int),
+                DIRECT_CAST(double, long),
                 DIRECT_CAST(double, float),
                 {"bool", {[](Memory& from, Stack& stack) -> Memory {
                     Memory ret = stack.push(sizeof(bool));

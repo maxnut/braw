@@ -2,6 +2,8 @@
 #include "../bind.hpp"
 
 Result<std::unique_ptr<AST::BindNode>> Parser::parseBind(TokenCursor& cursor) {
+    std::unique_ptr<AST::BindNode> bind = std::make_unique<AST::BindNode>();
+    bind->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     if(!expectTokenType(cursor.get().next().value(), Token::KEYWORD))
         return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
@@ -10,8 +12,6 @@ Result<std::unique_ptr<AST::BindNode>> Parser::parseBind(TokenCursor& cursor) {
         return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE);
     if(!expectTokenType(cursor.get().value(), Token::STRING))
         return unexpectedTokenExpectedType(cursor.value(), Token::STRING);
-
-    std::unique_ptr<AST::BindNode> bind = std::make_unique<AST::BindNode>();
 
     bind->m_library = cursor.value().m_value;
 
@@ -48,6 +48,8 @@ Result<std::unique_ptr<AST::BindNode>> Parser::parseBind(TokenCursor& cursor) {
 
     if(!expectTokenType(cursor.get().value(), Token::RIGHT_BRACE))
         return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_BRACE);
+
+    bind->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
 
     cursor.tryNext();
 

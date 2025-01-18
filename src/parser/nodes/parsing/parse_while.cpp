@@ -7,9 +7,11 @@ Result<std::unique_ptr<AST::WhileNode>> Parser::parseWhile(TokenCursor& cursor) 
 
     if(!expectTokenValue(cursor.get().value(), "while"))
         return unexpectedTokenExpectedValue(cursor.value(), "while");
-    cursor.next();
 
     std::unique_ptr<AST::WhileNode> whileNode = std::make_unique<AST::WhileNode>();
+    whileNode->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+
+    cursor.next();
 
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN);
@@ -26,6 +28,7 @@ Result<std::unique_ptr<AST::WhileNode>> Parser::parseWhile(TokenCursor& cursor) 
     if(!scopeOpt)
         return std::unexpected{scopeOpt.error()};
     whileNode->m_then = std::move(scopeOpt.value());
+    whileNode->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
 
     return whileNode;
 }

@@ -6,7 +6,15 @@ struct Instruction {
         Point,
         Add,
         Subtract,
+        Multiply,
         Call,
+        Return,
+        CompareEquals,
+        CompareNotEquals,
+        CompareGreaterEquals,
+        CompareLessEquals,
+        JumpFalse,
+        Label,
         Count
     };
 

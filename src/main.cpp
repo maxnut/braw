@@ -3,6 +3,8 @@
 #include "semantic-analyzer/semantic_analyzer.hpp"
 #include "execution-tree/builder/et_builder.hpp"
 #include "interpreter/interpreter.hpp"
+#include "ir/builder/ir_builder.hpp"
+#include "ir/printer/ir_printer.hpp"
 
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
@@ -48,8 +50,11 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Stack stack;
-    Interpreter().invokeFunction(ctx.m_functionTable.at("main").at(0).get(), stack, nullptr, 0);
+    // Stack stack;
+    // Interpreter().invokeFunction(ctx.m_functionTable.at("main").at(0).get(), stack, nullptr, 0);
+
+    auto res = IRBuilder::build(ast.value().get(), ctx);
+    IRPrinter::print(std::cout, res.at(0));
 
     return 0;
 }

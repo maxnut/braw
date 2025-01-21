@@ -5,9 +5,6 @@ Result<std::unique_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor) {
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
         return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
 
-    if(!!expectTokenValue(cursor.get().value(), "if"))
-        return unexpectedTokenExpectedValue(cursor.value(), "if");
-
     std::unique_ptr<AST::IfNode> ifNode = std::make_unique<AST::IfNode>();
     ifNode->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     

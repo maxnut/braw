@@ -6,7 +6,7 @@
 #include <vector>
 #include <unordered_map>
 
-using TokenCursor = Cursor<std::vector<Token>::iterator, Token>;
+using TokenCursor = Cursor<std::vector<Token>::iterator>;
 
 namespace Rules {
     enum InstructionType {

@@ -3,11 +3,13 @@
 #include "ir/instructions/binary.hpp"
 #include "ir/label.hpp"
 
-void Compiler::compile(const Instruction* instr, const ColorResult& reg, std::ofstream& fs) {
+void Compiler::compile(const Instruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
     switch(instr->m_type) {
         case Instruction::Label:
             fs << ((const Label*)instr)->m_id << ":\n";
             break;
+        case Instruction::Return:
+            return compileReturn(instr, ctx, fs);
         case Instruction::Add:
         case Instruction::Move:
         case Instruction::Subtract:
@@ -18,7 +20,7 @@ void Compiler::compile(const Instruction* instr, const ColorResult& reg, std::of
         case Instruction::CompareLessEquals:
         case Instruction::CompareNotEquals:
         case Instruction::JumpFalse:
-            return compile((const BinaryInstruction*)instr, reg, fs);
+            return compile((const BinaryInstruction*)instr, ctx, fs);
         default:
             break;
     }

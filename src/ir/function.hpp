@@ -1,9 +1,13 @@
 #pragma once
 
-#include "label.hpp"
 #include "register.hpp"
+#include "instruction.hpp"
+
+#include <vector>
+#include <memory>
 
 struct Function {
     std::vector<Register> m_args;
-    Label m_label;
+    Register m_optReturn;
+    std::vector<std::unique_ptr<Instruction>> m_instructions;
 };

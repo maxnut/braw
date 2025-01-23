@@ -1,5 +1,8 @@
 #include "ir_printer.hpp"
 #include "ir/instruction.hpp"
+#include "ir/instructions/call.hpp"
+#include "ir/label.hpp"
+#include <cstdint>
 #include <string>
 #include <variant>
 
@@ -29,6 +32,9 @@ void IRPrinter::print(std::ostream& out, const Function& function) {
                 break;
             case Instruction::Return:
                 out << "    return\n";
+                break;
+            case Instruction::Call: 
+                print(out, static_cast<const CallInstruction*>(instr.get()));
                 break;
             case Instruction::Add:
             case Instruction::Move:
@@ -79,8 +85,6 @@ std::string operatorString(Operator op) {
             Address add = std::get<Address>(op);
             return "[" + add.m_base.m_id + "+" + std::to_string(add.m_offset) + "]";
         }
-        case 4:
-            return std::get<std::string>(op);
         case 0:
         default:
             break;
@@ -127,4 +131,21 @@ void IRPrinter::print(std::ostream& out, const BinaryInstruction* instr) {
     }
 
     out << operatorString(instr->m_left) << ", " << operatorString(instr->m_right) << "\n";
+}
+
+void IRPrinter::print(std::ostream& out, const CallInstruction* instr) {
+    out << "    call " + instr->m_id << "(";
+
+    for(uint32_t i = 0; i < instr->m_parameters.size(); i++) {
+        out << operatorString(instr->m_parameters[i]);
+        if(i < instr->m_parameters.size() - 1)
+            out << ", ";
+    }
+
+    out << ")";
+
+    if(instr->m_optReturn.m_id != "")
+        out << ", " << instr->m_optReturn.m_id;
+
+    out << "\n";
 }

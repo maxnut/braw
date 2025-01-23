@@ -1,3 +1,5 @@
+#include "compiler/compiler.hpp"
+#include "ir/graph-color/graph_color.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "semantic-analyzer/semantic_analyzer.hpp"
@@ -55,6 +57,8 @@ int main(int argc, char** argv) {
 
     auto res = IRBuilder::build(ast.value().get(), ctx);
     IRPrinter::print(std::cout, res.at(0));
+
+    Compiler::compile(res.at(0), filepath.stem().string() + ".asm");
 
     return 0;
 }

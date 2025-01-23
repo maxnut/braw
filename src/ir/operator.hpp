@@ -4,4 +4,4 @@
 #include "value.hpp"
 #include <variant>
 
-typedef std::variant<std::monostate, Register, Value, Address, std::string> Operator;
+typedef std::variant<std::monostate, Register, Value, Address> Operator;

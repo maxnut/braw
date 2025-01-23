@@ -30,6 +30,7 @@ struct ReturnNode;
 
 struct RegisterInfo {
     std::string m_type;
+    std::string m_name;
 };
 
 typedef std::vector<std::unique_ptr<Instruction>> Instructions;
@@ -63,6 +64,7 @@ private:
     static Operator buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx);
     static Operator buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx);
     static Operator buildBinaryOperator(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
+    static void buildAssignment(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
 
     static TypeInfo getOperatorType(Operator op, BrawContext& context, IRFunctionContext& ictx);
 };

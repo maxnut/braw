@@ -84,6 +84,8 @@ std::string operatorString(Operator op) {
             Address add = std::get<Address>(op);
             return "[" + add.m_base.m_id + "+" + std::to_string(add.m_offset) + "]";
         }
+        case 4:
+            return std::get<Label>(op).m_id;
         case 0:
         default:
             break;

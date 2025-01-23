@@ -10,11 +10,15 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
     ictx.m_tables.push_back(RegisterTable());
 
     for(auto& arg : node->m_signature.m_parameters) {
-        f.m_args.push_back(Register{"%" + arg->m_name.m_name});
+        f.m_args.push_back(Register{"%" + std::to_string((uintptr_t)arg.get())});
 
         ictx.m_tables.back().insert({
-            "%" + arg->m_name.m_name,
-            {arg->m_type}
+            arg->m_name.m_name,
+            {arg->m_type, "%" + std::to_string((uintptr_t)arg.get())}
+        });
+        ictx.m_tables.back().insert({
+            "%" + std::to_string((uintptr_t)arg.get()),
+            {arg->m_type, "%" + std::to_string((uintptr_t)arg.get())}
         });
     }
 
@@ -27,5 +31,6 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
         ictx.m_instructions.push_back(std::make_unique<Instruction>(Instruction::Return));
 
     f.m_instructions = std::move(ictx.m_instructions);
+    f.m_name = node->m_signature.m_name;
     return f;
 }

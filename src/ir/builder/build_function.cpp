@@ -1,26 +1,16 @@
 #include "ir_builder.hpp"
+#include <memory>
 
 Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& context) {
     Function f;
-
-    if(context.getTypeInfo(node->m_signature.m_returnType).value().m_size != 0)
-        f.m_optReturn = Register{"%return"};
-
+    
     IRFunctionContext ictx;
-    ictx.m_tables.push_back(RegisterTable());
+    
+    if(context.getTypeInfo(node->m_signature.m_returnType).value().m_size != 0)
+        f.m_optReturn = makeOrGetRegister("%return", ictx);
 
-    for(auto& arg : node->m_signature.m_parameters) {
-        f.m_args.push_back(Register{"%" + std::to_string((uintptr_t)arg.get())});
-
-        ictx.m_tables.back().insert({
-            arg->m_name.m_name,
-            {arg->m_type, "%" + std::to_string((uintptr_t)arg.get())}
-        });
-        ictx.m_tables.back().insert({
-            "%" + std::to_string((uintptr_t)arg.get()),
-            {arg->m_type, "%" + std::to_string((uintptr_t)arg.get())}
-        });
-    }
+    for(auto& arg : node->m_signature.m_parameters)
+        f.m_args.push_back(makeOrGetRegister("%" + arg->m_name.m_name + "_0", ictx));
 
     Label label;
     label.m_id = node->m_signature.m_name;

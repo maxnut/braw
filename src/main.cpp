@@ -11,6 +11,12 @@
 #include <fstream>
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
+#include <stdio.h>
+
+#ifdef WIN32
+    #define popen _popen
+    #define pclose _pclose
+#endif
 
 int main(int argc, char** argv) {
     spdlog::set_pattern("[%^%l%$] %v");
@@ -77,7 +83,7 @@ int main(int argc, char** argv) {
     while (fgets(buffer, sizeof(buffer), pipe)) {
         printf("%s", buffer);
     }
-
+    
     int status = pclose(pipe);
 
     if(status != 0)

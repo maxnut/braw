@@ -2,6 +2,7 @@
 
 #include "ir/label.hpp"
 #include "ir/operator.hpp"
+#include "ir/register.hpp"
 #include "parser/nodes/file.hpp"
 #include "ir/file.hpp"
 #include "parser/nodes/node.hpp"
@@ -34,20 +35,11 @@ struct RegisterInfo {
 };
 
 typedef std::vector<std::unique_ptr<Instruction>> Instructions;
-typedef std::unordered_map<std::string, RegisterInfo> RegisterTable;
 
 struct IRFunctionContext {
-    std::vector<RegisterTable> m_tables;
+    std::unordered_map<std::string, std::shared_ptr<Register>> m_registers;
     Instructions m_instructions;
-
-    RegisterInfo getRegisterInfo(const std::string& name) const {
-        for(int i = m_tables.size() - 1; i >= 0; i--) {
-            auto it = m_tables[i].find(name);
-            if(it != m_tables[i].end())
-                return it->second;
-        }
-        return {};
-    }
+    uint32_t m_scopeDepth = 0;
 };
 
 class IRBuilder {
@@ -67,4 +59,7 @@ private:
     static void buildAssignment(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
 
     static TypeInfo getOperatorType(Operator op, BrawContext& context, IRFunctionContext& ictx);
+
+    static void moveToRegister(const std::string& name, Operator& op, BrawContext& context, IRFunctionContext& ictx);
+    static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, IRFunctionContext& ictx);
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "type_info.hpp"
 #include <string>
 
 enum RegisterType {
@@ -14,5 +15,6 @@ enum RegisterType {
 
 struct Register {
     std::string m_id;
-    RegisterType m_type = Count;
+    TypeInfo m_type;
+    RegisterType m_registerType = Count;
 };

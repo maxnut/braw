@@ -8,7 +8,7 @@
 
 struct Function {
     std::string m_name;
-    std::vector<Register> m_args;
-    Register m_optReturn;
+    std::vector<std::shared_ptr<Register>> m_args;
+    std::shared_ptr<Register> m_optReturn = nullptr;
     std::vector<std::unique_ptr<Instruction>> m_instructions;
 };

@@ -7,5 +7,5 @@ void IRBuilder::buildAssignment(const AST::BinaryOperatorNode* node, BrawContext
     Operator op = buildExpression(node->m_right.get(), context, ictx);
 
     const AST::VariableAccessNode* var = dynamic_cast<const AST::VariableAccessNode*>(node->m_left.get());
-    ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::Move, Register{"%" + var->m_name.m_name}, op));
+    moveToRegister("%" + var->m_name.m_name, op, context, ictx);
 }

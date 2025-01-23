@@ -4,9 +4,10 @@
 #include <stdexcept>
 #include <stdint.h>
 
-template<typename Iterator, typename T>
+template<typename Iterator>
 class Cursor {
 public:
+    using T = typename std::iterator_traits<Iterator>::value_type;
     Cursor(Iterator begin, Iterator end) : m_current(begin), m_begin(begin), m_end(end) {}
 
     T& value() {

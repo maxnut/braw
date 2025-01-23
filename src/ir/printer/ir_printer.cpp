@@ -4,7 +4,6 @@
 #include "ir/label.hpp"
 #include <cstdint>
 #include <string>
-#include <variant>
 
 void IRPrinter::print(std::ostream& out, const File& file) {
     for(auto& func: file.m_functions)

@@ -60,7 +60,7 @@ static std::unordered_map<char, char> s_escapeMap = {
     {'t', '\t'},
 };
 
-Token parseNumber(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
+Token parseNumber(Cursor<std::string::iterator>& cursor, int lineNumber) {
     std::string n = "";
     size_t index = cursor.getIndex() + 1;
 
@@ -87,7 +87,7 @@ Token parseNumber(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
     return Token(Token::INTEGER, n, lineNumber, index);
 }
 
-Token parseAlphanumeric(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
+Token parseAlphanumeric(Cursor<std::string::iterator>& cursor, int lineNumber) {
     std::string n = "";
     size_t index = cursor.getIndex() + 1;
     while(cursor.hasNext() && (std::isalnum(cursor.get().value()) || cursor.get().value() == '_'))
@@ -95,7 +95,7 @@ Token parseAlphanumeric(Cursor<std::string::iterator, char>& cursor, int lineNum
     return Token(Token::IDENTIFIER, n, lineNumber, index);
 }
 
-Token parseString(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
+Token parseString(Cursor<std::string::iterator>& cursor, int lineNumber) {
     std::string ret = "";
     size_t index = cursor.getIndex() + 1;
     while(cursor.hasNext() && cursor.get().value() != '"') {
@@ -116,7 +116,7 @@ Token parseString(Cursor<std::string::iterator, char>& cursor, int lineNumber) {
 }
 
 
-Token tryParseSingleToken(Cursor<std::string::iterator, char> cursor, int lineNumber) {
+Token tryParseSingleToken(Cursor<std::string::iterator> cursor, int lineNumber) {
     Token token(Token::COUNT, lineNumber, cursor.getIndex() + 1);
     std::string val = "";
 
@@ -148,7 +148,7 @@ std::optional<std::vector<Token>> Lexer::tokenize(std::filesystem::path path) {
     int lineNumber = 1;
 
     while (std::getline(file, line)) {
-        Cursor<std::string::iterator, char> cursor(line.begin(), line.end());
+        Cursor<std::string::iterator> cursor(line.begin(), line.end());
 
         while(cursor.hasNext()) {
             if(std::isspace(cursor.get().value())) {

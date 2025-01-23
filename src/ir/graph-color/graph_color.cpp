@@ -8,13 +8,14 @@
 #include <climits>
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 
 ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers) {
     if(registers.size() < 3)
         throw std::runtime_error("Not enough registers");
 
     //reserve two registers for spill
-    registers.erase(registers.begin(), registers.end() - 2);
+    registers.erase(registers.end() - 2, registers.end());
 
     std::unordered_map<std::string, Range> ranges = fillRanges(function);
     ColorResult res;

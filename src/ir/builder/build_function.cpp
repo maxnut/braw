@@ -23,6 +23,9 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
     ictx.m_instructions.push_back(std::make_unique<Label>(label));
     build(node->m_scope.get(), context, ictx);
 
+    if(ictx.m_instructions.back()->m_type != Instruction::Return)
+        ictx.m_instructions.push_back(std::make_unique<Instruction>(Instruction::Return));
+
     f.m_instructions = std::move(ictx.m_instructions);
     return f;
 }

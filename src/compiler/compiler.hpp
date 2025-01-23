@@ -8,6 +8,11 @@
 #include <filesystem>
 #include <fstream>
 
+struct CompilerContext {
+    ColorResult m_reg;
+    size_t m_spillSize = 0;
+};
+
 class Compiler {
 public:
     static void compile(const File& file, std::filesystem::path out);
@@ -15,6 +20,7 @@ public:
 private:
     static void compile(const Function& function, std::ofstream& fs);
 
-    static void compile(const Instruction* instr, const ColorResult& reg, std::ofstream& fs);
-    static void compile(const BinaryInstruction* instr, const ColorResult& reg, std::ofstream& fs);
+    static void compile(const Instruction* instr, const CompilerContext& ctx, std::ofstream& fs);
+    static void compile(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs);
+    static void compileReturn(const Instruction* instr, const CompilerContext& ctx, std::ofstream& fs);
 };

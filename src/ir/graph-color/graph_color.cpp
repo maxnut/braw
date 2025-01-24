@@ -5,6 +5,7 @@
 #include "ir/operator.hpp"
 #include "ir/register.hpp"
 
+#include <algorithm>
 #include <climits>
 #include <cstdint>
 #include <memory>
@@ -19,7 +20,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
     precisionRegisters.erase(precisionRegisters.end() - 2, precisionRegisters.end());
 
     ColorResult res;
-    res.m_ranges = fillRanges(function);
+    fillRanges(function, res);
     std::vector<GraphNode> stack;
 
     std::vector<GraphNode> graph;
@@ -31,28 +32,30 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
     int registerIndex = 0;
     int registerPrecisionIndex = 0;
     for (auto& param : function.m_args) {
-        switch(res.m_ranges[param.m_id].m_registerType) {
+        switch(res.m_ranges[param->m_id].m_registerType) {
             case RegisterType::Single:
             case RegisterType::Double:
-                paramAssignments[param.m_id] = precisionRegisters[registerPrecisionIndex];
+                paramAssignments[param->m_id] = precisionRegisters[registerPrecisionIndex];
                 registerPrecisionIndex++;
                 break;
             default:
-                paramAssignments[param.m_id] = registers[registerIndex];
+                paramAssignments[param->m_id] = registers[registerIndex];
                 registerIndex++;
                 break;
         }
     }
 
-    for(auto& range : res.m_ranges) {
+    for(auto& range : res.m_rangeVector) {
         GraphNode node;
-        node.m_id = range.first;
+        node.m_id = range->m_id;
         if (paramAssignments.contains(node.m_id)) {
             node.m_tag = paramAssignments[node.m_id];
         }
         node.m_connections = getOverlaps(node.m_id, res.m_ranges);
         graph.push_back(node);
     }
+
+    std::reverse(graph.begin(), graph.end());
 
     while(!graph.empty()) {
         bool removed = false;
@@ -113,24 +116,26 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
     return res;
 }
 
-std::unordered_map<std::string, Range> GraphColor::fillRanges(const Function& function) {
-    std::unordered_map<std::string, Range> ranges;
+void GraphColor::fillRanges(const Function& function, ColorResult& result) {
     auto tryRegister = [&](Operator o, uint32_t i) {
         if(o.index() != 1)
             return;
 
-        Register r = std::get<Register>(o);
+        auto r = std::get<std::shared_ptr<Register>>(o);
 
-        if(r.m_id == "%return") // the return register will always be rax/eax
+        if(r->m_id == "%return") // the return register will always be rax/eax
             return;
 
-        if(r.m_type != RegisterType::Count)
-            ranges[r.m_id].m_registerType = r.m_type;
+        if(!result.m_ranges.contains(r->m_id)) {
+            result.m_ranges[r->m_id].m_range.first = i;
+            result.m_rangeVector.push_back(&result.m_ranges[r->m_id]);
+        }
 
-        if(!ranges.contains(r.m_id))
-            ranges[r.m_id].m_range.first = i;
+        if(r->m_registerType != RegisterType::Count)
+            result.m_ranges[r->m_id].m_registerType = r->m_registerType;
 
-        ranges[r.m_id].m_range.second = i;
+        result.m_ranges[r->m_id].m_range.second = i;
+        result.m_ranges[r->m_id].m_id = r->m_id;
     };
 
     for(auto& param : function.m_args)
@@ -142,7 +147,7 @@ std::unordered_map<std::string, Range> GraphColor::fillRanges(const Function& fu
         switch(instr->m_type) {
             case Instruction::Call: {
                 auto call = static_cast<const CallInstruction*>(instr.get());
-                if(call->m_optReturn.m_id != "")
+                if(call->m_optReturn)
                     tryRegister(call->m_optReturn, i);
 
                 for(auto& p : call->m_parameters)
@@ -168,8 +173,6 @@ std::unordered_map<std::string, Range> GraphColor::fillRanges(const Function& fu
                 break;
         }
     }
-
-    return ranges;
 }
 
 std::vector<std::string> GraphColor::getOverlaps(const std::string& id, const std::unordered_map<std::string, Range>& ranges) {

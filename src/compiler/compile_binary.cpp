@@ -4,14 +4,15 @@
 #include "ir/label.hpp"
 #include "ir/operator.hpp"
 #include "ir/register.hpp"
+#include <memory>
 
 std::string operatorString(Operator op, const CompilerContext& ctx) {
     switch(op.index()) {
         case 1: {
-            Register r = std::get<Register>(op);
-            if(r.m_id == "%return")
+            auto r = std::get<std::shared_ptr<Register>>(op);
+            if(r->m_id == "%return")
                 return "rax";
-            return ctx.m_reg.m_registers.at(r.m_id); //TODO: spills!
+            return ctx.m_reg.m_registers.at(r->m_id); //TODO: spills!
         }
         case 2: {
             Value value = std::get<Value>(op);

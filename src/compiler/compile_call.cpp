@@ -3,6 +3,8 @@
 #include "ir/instructions/call.hpp"
 #include "cursor.hpp"
 
+#include <array>
+#include <memory>
 #include <string>
 
 bool rangeOverlaps(Range r, int i) {
@@ -10,8 +12,7 @@ bool rangeOverlaps(Range r, int i) {
 }
 
 void Compiler::compile(const CallInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
-    std::array<std::string, 17> callerSaved = {"rax","rcx","rdx","rsi","rdi","r8","r9","r10","r11",
-    "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"};
+    std::array<std::string, 17> callerSaved = {"rax","rcx","rdx","rsi","rdi","r8","r9","r10","r11","xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"};
 
     std::vector<std::string> saveStack;
 
@@ -36,8 +37,8 @@ void Compiler::compile(const CallInstruction* instr, const CompilerContext& ctx,
             case 1: {
                 //TODO: handle float registers (xmm0 etc...)
                 //TODO: handle spills
-                Register r = std::get<Register>(p);
-                fs << "mov " << cursor.get().next().value() << ", " << ctx.m_reg.m_registers.at(r.m_id) << "\n";
+                auto r = std::get<std::shared_ptr<Register>>(p);
+                fs << "mov " << cursor.get().next().value() << ", " << ctx.m_reg.m_registers.at(r->m_id) << "\n";
                 break;
             }
             case 2: {

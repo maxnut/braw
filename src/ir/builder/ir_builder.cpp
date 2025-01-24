@@ -1,8 +1,11 @@
 #include "ir_builder.hpp"
+#include "ir/instruction.hpp"
+#include "ir/instructions/binary.hpp"
 #include "ir/register.hpp"
 #include "parser/nodes/variable_declaration.hpp"
 #include "parser/nodes/binary_operator.hpp"
 #include "utils.hpp"
+#include <memory>
 
 void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx) {
     switch(node->m_type) {
@@ -24,8 +27,7 @@ void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionCon
 TypeInfo IRBuilder::getOperatorType(Operator op, BrawContext& context, IRFunctionContext& ictx) {
     switch(op.index()) {
         case 1: {
-            Register r = std::get<Register>(op);
-            return context.getTypeInfo(ictx.getRegisterInfo(r.m_id).m_type).value();
+            return std::get<std::shared_ptr<Register>>(op)->m_type;
         }
         case 2: {
             std::array<TypeInfo, 7> types = {
@@ -41,4 +43,38 @@ TypeInfo IRBuilder::getOperatorType(Operator op, BrawContext& context, IRFunctio
     }
     
     return context.getTypeInfo("void").value();
+}
+
+RegisterType getRegisterType(const TypeInfo& type) {
+    if(type.m_name == "int")
+        return RegisterType::Dword;
+    else if(type.m_name == "long")
+        return RegisterType::Qword;
+    else if(type.m_name == "float")
+        return RegisterType::Single;
+    else if(type.m_name == "double")
+        return RegisterType::Double;
+    else if(type.m_name == "char")
+        return RegisterType::Byte;
+    else if(type.m_name == "bool")
+        return RegisterType::Byte;
+
+    return RegisterType::Count;
+}
+
+void IRBuilder::moveToRegister(const std::string& name, Operator& op, BrawContext& context, IRFunctionContext& ictx) {
+    std::shared_ptr<Register> reg = makeOrGetRegister(name, ictx);
+
+    reg->m_type = getOperatorType(op, context, ictx);
+    reg->m_registerType = getRegisterType(reg->m_type);
+    ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::Move, reg, op));
+}
+
+std::shared_ptr<Register> IRBuilder::makeOrGetRegister(const std::string& name, IRFunctionContext& ictx) {
+    if(ictx.m_registers.contains(name))
+        return ictx.m_registers[name];
+
+    std::shared_ptr<Register> reg = std::make_shared<Register>(name);
+    ictx.m_registers[name] = reg;
+    return reg;
 }

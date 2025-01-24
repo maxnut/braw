@@ -3,6 +3,7 @@
 #include "ir/instructions/call.hpp"
 #include "ir/label.hpp"
 #include <cstdint>
+#include <memory>
 #include <string>
 
 void IRPrinter::print(std::ostream& out, const File& file) {
@@ -13,14 +14,14 @@ void IRPrinter::print(std::ostream& out, const File& file) {
 void IRPrinter::print(std::ostream& out, const Function& function) {
     out << '(';
     for(int i = 0; i < function.m_args.size(); i++) {
-        out << function.m_args[i].m_id;
+        out << function.m_args[i]->m_id;
         if(i < function.m_args.size() - 1)
             out << ", ";
     }
     out << ")";
 
-    if(function.m_optReturn.m_id != "")
-        out << " -> " << function.m_optReturn.m_id;
+    if(function.m_optReturn)
+        out << " -> " << function.m_optReturn->m_id;
 
     out << "\n";
 
@@ -56,7 +57,7 @@ void IRPrinter::print(std::ostream& out, const Function& function) {
 std::string operatorString(Operator op) {
     switch(op.index()) {
         case 1:
-            return std::get<Register>(op).m_id;
+            return std::get<std::shared_ptr<Register>>(op)->m_id;
         case 2: {
             Value value = std::get<Value>(op);
 
@@ -145,8 +146,8 @@ void IRPrinter::print(std::ostream& out, const CallInstruction* instr) {
 
     out << ")";
 
-    if(instr->m_optReturn.m_id != "")
-        out << ", " << instr->m_optReturn.m_id;
+    if(instr->m_optReturn)
+        out << ", " << instr->m_optReturn->m_id;
 
     out << "\n";
 }

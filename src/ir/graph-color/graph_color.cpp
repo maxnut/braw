@@ -10,24 +10,47 @@
 #include <memory>
 #include <stdexcept>
 
-ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers) {
+ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters) {
     if(registers.size() < 3)
         throw std::runtime_error("Not enough registers");
 
     //reserve two registers for spill
     registers.erase(registers.end() - 2, registers.end());
+    precisionRegisters.erase(precisionRegisters.end() - 2, precisionRegisters.end());
 
-    std::unordered_map<std::string, Range> ranges = fillRanges(function);
     ColorResult res;
+    res.m_ranges = fillRanges(function);
     std::vector<GraphNode> stack;
 
     std::vector<GraphNode> graph;
     std::vector<GraphNode> spills;
 
-    for(auto& range : ranges) {
+    //TODO: ignore stack parameters
+    std::unordered_map<std::string, std::string> paramAssignments;
+
+    int registerIndex = 0;
+    int registerPrecisionIndex = 0;
+    for (auto& param : function.m_args) {
+        switch(res.m_ranges[param.m_id].m_registerType) {
+            case RegisterType::Single:
+            case RegisterType::Double:
+                paramAssignments[param.m_id] = precisionRegisters[registerPrecisionIndex];
+                registerPrecisionIndex++;
+                break;
+            default:
+                paramAssignments[param.m_id] = registers[registerIndex];
+                registerIndex++;
+                break;
+        }
+    }
+
+    for(auto& range : res.m_ranges) {
         GraphNode node;
         node.m_id = range.first;
-        node.m_connections = getOverlaps(node.m_id, ranges);
+        if (paramAssignments.contains(node.m_id)) {
+            node.m_tag = paramAssignments[node.m_id];
+        }
+        node.m_connections = getOverlaps(node.m_id, res.m_ranges);
         graph.push_back(node);
     }
 
@@ -53,21 +76,30 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
         GraphNode popped = stack.back();
         stack.pop_back();
 
-        for(const std::string& tag : registers) {
-            bool found = false;
-            for(auto& s : popped.m_connections) {
-                GraphNode node = findInGraph(s, graph);
-                if(node.m_tag == tag) {
-                    found = true;
+        if(popped.m_tag != "") {
+            graph.push_back(popped);
+            continue;
+        }
+
+        auto tryTag([&](const std::vector<std::string>& tags) {
+            for(const std::string& tag : tags) {
+                bool found = false;
+                for(auto& s : popped.m_connections) {
+                    GraphNode node = findInGraph(s, graph);
+                    if(node.m_tag == tag) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if(!found) {
+                    popped.m_tag = tag;
                     break;
                 }
             }
+        });
 
-            if(!found) {
-                popped.m_tag = tag;
-                break;
-            }
-        }
+        tryTag(registers);
 
         graph.push_back(popped);
     }
@@ -92,11 +124,17 @@ std::unordered_map<std::string, Range> GraphColor::fillRanges(const Function& fu
         if(r.m_id == "%return") // the return register will always be rax/eax
             return;
 
-        if(!ranges.contains(r.m_id))
-            ranges[r.m_id].first = i;
+        if(r.m_type != RegisterType::Count)
+            ranges[r.m_id].m_registerType = r.m_type;
 
-        ranges[r.m_id].second = i;
+        if(!ranges.contains(r.m_id))
+            ranges[r.m_id].m_range.first = i;
+
+        ranges[r.m_id].m_range.second = i;
     };
+
+    for(auto& param : function.m_args)
+        tryRegister(param, 0);
 
     for(uint32_t i = 0; i < function.m_instructions.size(); i++) {
         const std::unique_ptr<Instruction>& instr = function.m_instructions[i];
@@ -106,6 +144,9 @@ std::unordered_map<std::string, Range> GraphColor::fillRanges(const Function& fu
                 auto call = static_cast<const CallInstruction*>(instr.get());
                 if(call->m_optReturn.m_id != "")
                     tryRegister(call->m_optReturn, i);
+
+                for(auto& p : call->m_parameters)
+                    tryRegister(p, i);
                 break;
             }
             case Instruction::Add:
@@ -141,7 +182,8 @@ std::vector<std::string> GraphColor::getOverlaps(const std::string& id, const st
 
         Range cmp = r.second;
 
-        if(my.first >= cmp.first && my.first <= cmp.second || my.second <= cmp.second && my.second >= cmp.first)
+        if(my.m_range.first >= cmp.m_range.first && my.m_range.first <= cmp.m_range.second
+            || my.m_range.second <= cmp.m_range.second && my.m_range.second >= cmp.m_range.first)
             ret.push_back(r.first);
     }
 

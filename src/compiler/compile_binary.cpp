@@ -1,6 +1,7 @@
 #include "compiler.hpp"
 #include "ir/graph-color/graph_color.hpp"
 #include "ir/instruction.hpp"
+#include "ir/label.hpp"
 #include "ir/operator.hpp"
 #include "ir/register.hpp"
 
@@ -23,6 +24,8 @@ std::string operatorString(Operator op, const CompilerContext& ctx) {
             }
             break;
         }
+        case 4:
+            return std::get<Label>(op).m_id;
         default: //TODO: address!
             break;
     }
@@ -46,6 +49,35 @@ void compileMultiply(const BinaryInstruction* instr, const CompilerContext& ctx,
     fs << "imul " << operatorString(instr->m_left, ctx) << ", " << operatorString(instr->m_right, ctx) << "\n";
 }
 
+void compileCompareEquals(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
+    fs << "cmp " << operatorString(instr->m_left, ctx) << ", " << operatorString(instr->m_right, ctx) << "\n";
+    fs << "sete al\n";
+    fs << "mov " << operatorString(instr->m_left, ctx) << ", al\n";
+}
+
+void compileCompareNotEquals(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
+    fs << "cmp " << operatorString(instr->m_left, ctx) << ", " << operatorString(instr->m_right, ctx) << "\n";
+    fs << "setne al\n";
+    fs << "mov " << operatorString(instr->m_left, ctx) << ", al\n";
+}
+
+void compileCompareGreaterEquals(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
+    fs << "cmp " << operatorString(instr->m_left, ctx) << ", " << operatorString(instr->m_right, ctx) << "\n";
+    fs << "setge al\n";
+    fs << "mov " << operatorString(instr->m_left, ctx) << ", al\n";
+}
+
+void compileCompareLessEquals(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
+    fs << "cmp " << operatorString(instr->m_left, ctx) << ", " << operatorString(instr->m_right, ctx) << "\n";
+    fs << "setle al\n";
+    fs << "movzx " << operatorString(instr->m_left, ctx) << ", al\n";
+}
+
+void compileJumpFalse(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
+    fs << "cmp " << operatorString(instr->m_left, ctx) << ", 0\n";
+    fs << "je " << operatorString(instr->m_right, ctx) << "\n";
+}
+
 void Compiler::compile(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
     switch(instr->m_type) {
         case Instruction::Move:
@@ -56,6 +88,16 @@ void Compiler::compile(const BinaryInstruction* instr, const CompilerContext& ct
             return compileSubtract(instr, ctx, fs);
         case Instruction::Multiply:
             return compileMultiply(instr, ctx, fs);
+        case Instruction::CompareEquals:
+            return compileCompareEquals(instr, ctx, fs);
+        case Instruction::CompareNotEquals:
+            return compileCompareNotEquals(instr, ctx, fs);
+        case Instruction::CompareGreaterEquals:
+            return compileCompareGreaterEquals(instr, ctx, fs);
+        case Instruction::CompareLessEquals:
+            return compileCompareLessEquals(instr, ctx, fs);
+        case Instruction::JumpFalse:
+            return compileJumpFalse(instr, ctx, fs);
         default:
             break;
     }

@@ -8,6 +8,7 @@
 #include "ir/builder/ir_builder.hpp"
 #include "ir/printer/ir_printer.hpp"
 
+#include <fstream>
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
 
@@ -47,18 +48,42 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if(!ctx.m_functionTable.contains("main")) {
-        spdlog::error("No entrypoint found");
-        return 1;
-    }
+    // if(!ctx.m_functionTable.contains("main")) {
+    //     spdlog::error("No entrypoint found");
+    //     return 1;
+    // }
 
     // Stack stack;
     // Interpreter().invokeFunction(ctx.m_functionTable.at("main").at(0).get(), stack, nullptr, 0);
 
     auto res = IRBuilder::build(ast.value().get(), ctx);
-    IRPrinter::print(std::cout, res.at(0));
 
-    Compiler::compile(res.at(0), filepath.stem().string() + ".asm");
+    std::filesystem::create_directories("build");
+    std::filesystem::path buildPath = std::filesystem::current_path() / "build";
+
+    std::ofstream fs(buildPath / (filepath.stem().string() + ".ir"));
+    IRPrinter::print(fs, res.at(0));
+    fs.close();
+
+    Compiler::compile(res.at(0), buildPath / (filepath.stem().string() + ".asm"));
+
+    FILE *pipe = popen(("nasm -felf64 " + (buildPath / (filepath.stem().string() + ".asm")).string() + " -o " + (buildPath / (filepath.stem().string() + ".o")).string()).c_str(), "r");
+    if (!pipe) {
+        perror("popen failed");
+        return 1;
+    }
+
+    char buffer[128];
+    while (fgets(buffer, sizeof(buffer), pipe)) {
+        printf("%s", buffer);
+    }
+
+    int status = pclose(pipe);
+
+    if(status != 0)
+        spdlog::error("Assembler exited with status: {}", status);
+    else
+        spdlog::info("Assembler exited with status: {}", status);
 
     return 0;
 }

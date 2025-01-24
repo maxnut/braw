@@ -4,6 +4,7 @@
 #include "ir/instruction.hpp"
 #include "ir/instructions/binary.hpp"
 #include "ir/graph-color/graph_color.hpp"
+#include "ir/instructions/call.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -11,6 +12,7 @@
 struct CompilerContext {
     ColorResult m_reg;
     size_t m_spillSize = 0;
+    size_t m_instructionIndex = 0;
 };
 
 class Compiler {
@@ -22,5 +24,6 @@ private:
 
     static void compile(const Instruction* instr, const CompilerContext& ctx, std::ofstream& fs);
     static void compile(const BinaryInstruction* instr, const CompilerContext& ctx, std::ofstream& fs);
+    static void compile(const CallInstruction* instr, const CompilerContext& ctx, std::ofstream& fs);
     static void compileReturn(const Instruction* instr, const CompilerContext& ctx, std::ofstream& fs);
 };

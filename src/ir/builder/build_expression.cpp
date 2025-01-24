@@ -11,7 +11,7 @@ Operator IRBuilder::buildExpression(const AST::Node* node, BrawContext& context,
         case AST::Node::Literal:
             return Value(static_cast<const AST::LiteralNode*>(node)->m_value);
         case AST::Node::VariableAccess:
-            return Register("%" + static_cast<const AST::VariableAccessNode*>(node)->m_name.m_name);
+            return Register(ictx.getRegisterInfo(static_cast<const AST::VariableAccessNode*>(node)->m_name.m_name).m_name);
         case AST::Node::FunctionCall:
             return buildCall(static_cast<const AST::FunctionCallNode*>(node), context, ictx);
         default:

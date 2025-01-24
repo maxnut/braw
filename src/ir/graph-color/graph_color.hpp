@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ir/function.hpp"
+#include "ir/register.hpp"
 
 #include <cstdint>
 #include <string>
@@ -9,7 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
-typedef std::pair<uint32_t, uint32_t> Range;
+struct Range {
+    std::pair<uint32_t, uint32_t> m_range;
+    RegisterType m_registerType;
+};
 
 struct GraphNode {
     std::string m_id;
@@ -20,11 +24,12 @@ struct GraphNode {
 struct ColorResult {
     std::unordered_map<std::string, std::string> m_registers;
     std::unordered_set<std::string> m_spills;
+    std::unordered_map<std::string, Range> m_ranges;
 };
 
 class GraphColor {
 public:
-    static ColorResult build(const Function& function, std::vector<std::string> registers);
+    static ColorResult build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters);
 
 private:
     static std::unordered_map<std::string, Range> fillRanges(const Function& function);

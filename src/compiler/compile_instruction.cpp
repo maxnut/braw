@@ -10,6 +10,8 @@ void Compiler::compile(const Instruction* instr, const CompilerContext& ctx, std
             break;
         case Instruction::Return:
             return compileReturn(instr, ctx, fs);
+        case Instruction::Call:
+            return compile((const CallInstruction*)instr, ctx, fs);
         case Instruction::Add:
         case Instruction::Move:
         case Instruction::Subtract:

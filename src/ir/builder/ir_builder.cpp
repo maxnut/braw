@@ -1,6 +1,7 @@
 #include "ir_builder.hpp"
 #include "ir/register.hpp"
 #include "parser/nodes/variable_declaration.hpp"
+#include "parser/nodes/binary_operator.hpp"
 #include "utils.hpp"
 
 void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx) {
@@ -11,6 +12,9 @@ void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionCon
             return build((const AST::IfNode*)node, context, ictx);
         case AST::Node::Return:
             return build((const AST::ReturnNode*)node, context, ictx);
+        case AST::Node::Type::BinaryOperator:
+            if(static_cast<const AST::BinaryOperatorNode*>(node)->m_operator == "=")
+                return buildAssignment(static_cast<const AST::BinaryOperatorNode*>(node), context, ictx);
         default:
             buildExpression(node, context, ictx);
             break;

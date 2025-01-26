@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <memory>
 
-namespace CodeGen::x86_64 {
+namespace CodeGen::x86_64::Operands {
 
 struct Address : Operand {
     Address() : Operand(Type::Address) {}

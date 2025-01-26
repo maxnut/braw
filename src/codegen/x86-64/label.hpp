@@ -1,18 +1,12 @@
 #pragma once
 
-#include "../operand.hpp"
+#include "instruction.hpp"
 
 namespace CodeGen::x86_64 {
 
-struct Label : Operand {
-    Label() : Operand(Type::Label) {}
-    Label(const std::string& id) : Operand(Type::Label), m_id(id) {}
-
+struct Label {
     std::string m_id;
-
-    virtual void emit(std::ostream& os) const override {
-        os << m_id;
-    }
+    std::vector<Instruction> m_instructions;
 };
 
 }

@@ -23,7 +23,7 @@ private:
     void initializeRegisters();
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<Register>> m_registers;
+    std::unordered_map<std::string, std::shared_ptr<Operands::Register>> m_registers;
 };
     
 }

@@ -2,17 +2,21 @@
 
 #include "operand.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
 namespace CodeGen {
 
 struct Instruction {
-    const char* m_code;
+    uint16_t m_opcode;
     std::vector<std::shared_ptr<Operand>> m_operands;
 
+    virtual void opcodeInstruction(std::ostream& os) const = 0;
+
     friend std::ostream& operator<<(std::ostream& os, const Instruction& obj) {
-        os << obj.m_code << " ";
+        obj.opcodeInstruction(os);
+        os << " ";
         for(int i = 0; i < obj.m_operands.size(); i++) {
             os << obj.m_operands[i];
             if(i < obj.m_operands.size() - 1)

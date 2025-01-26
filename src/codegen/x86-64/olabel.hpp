@@ -4,9 +4,9 @@
 
 namespace CodeGen::x86_64::Operands {
 
-struct Register : Operand {
-    Register() : Operand(Type::Register) {}
-    Register(const std::string& id) : Operand(Type::Register), m_id(id) {}
+struct Label : Operand {
+    Label() : Operand(Type::Label) {}
+    Label(const std::string& id) : Operand(Type::Label), m_id(id) {}
 
     std::string m_id;
 

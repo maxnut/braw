@@ -19,14 +19,14 @@ CodeGenerator::CodeGenerator(const File& src) {
                 ctx.m_virtualRegisters[range->m_id] = m_registers.at(result.m_registers.at(range->m_id));
             }
             else {
-                ctx.m_virtualRegisters[range->m_id] = std::make_shared<Address>(m_registers.at("rsp"), spills);
+                ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at("rsp"), spills);
                 spills += range->size();
             }
         }
     }
 }
 
-#define REGISTER(ID) m_registers[ID] = std::make_shared<Register>(ID)
+#define REGISTER(ID) m_registers[ID] = std::make_shared<Operands::Register>(ID)
 
 void CodeGenerator::initializeRegisters() {
     REGISTER("rsp");

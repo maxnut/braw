@@ -54,14 +54,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // if(!ctx.m_functionTable.contains("main")) {
-    //     spdlog::error("No entrypoint found");
-    //     return 1;
-    // }
-
-    // Stack stack;
-    // Interpreter().invokeFunction(ctx.m_functionTable.at("main").at(0).get(), stack, nullptr, 0);
-
     auto res = IRBuilder::build(ast.value().get(), ctx);
 
     std::filesystem::create_directories("build");

@@ -9,8 +9,10 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
     if(context.getTypeInfo(node->m_signature.m_returnType).value().m_size != 0)
         f.m_optReturn = makeOrGetRegister("%return", ictx);
 
-    for(auto& arg : node->m_signature.m_parameters)
+    for(auto& arg : node->m_signature.m_parameters) {
         f.m_args.push_back(makeOrGetRegister("%" + arg->m_name.m_name + "_0", ictx));
+        f.m_args.back()->m_type = context.getTypeInfo(arg->m_type).value();
+    }
 
     Label label;
     label.m_id = node->m_signature.m_name;

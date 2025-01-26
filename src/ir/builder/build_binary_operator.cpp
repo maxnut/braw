@@ -6,9 +6,9 @@
 #include <memory>
 #include <string>
 
-Operator IRBuilder::buildBinaryOperator(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx) {
-    Operator left = buildExpression(node->m_left.get(), context, ictx);
-    Operator right = buildExpression(node->m_right.get(), context, ictx);
+Operand IRBuilder::buildBinaryOperator(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx) {
+    Operand left = buildExpression(node->m_left.get(), context, ictx);
+    Operand right = buildExpression(node->m_right.get(), context, ictx);
 
     std::string name = "%" + std::to_string((uintptr_t)node);
     std::shared_ptr<Register> target = makeOrGetRegister(name, ictx);

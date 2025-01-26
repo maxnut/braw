@@ -54,7 +54,7 @@ void IRPrinter::print(std::ostream& out, const Function& function) {
     }
 }
 
-std::string operatorString(Operator op) {
+std::string operatorString(Operand op) {
     switch(op.index()) {
         case 1:
             return std::get<std::shared_ptr<Register>>(op)->m_id;

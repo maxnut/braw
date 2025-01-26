@@ -1,10 +1,10 @@
 #pragma once
 
 #include "ir/instruction.hpp"
-#include "ir/operator.hpp"
+#include "ir/operand.hpp"
 
 struct UnaryInstruction : Instruction {
     UnaryInstruction(Type type) : Instruction(type) {}
 
-    Operator m_operator;
+    Operand m_operator;
 };

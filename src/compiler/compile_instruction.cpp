@@ -3,7 +3,7 @@
 #include "ir/instructions/binary.hpp"
 #include "ir/label.hpp"
 
-void Compiler::compile(const Instruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
+void Compiler::compile(const Instruction* instr, CompilerContext& ctx, std::ofstream& fs) {
     switch(instr->m_type) {
         case Instruction::Label:
             fs << ((const Label*)instr)->m_id << ":\n";

@@ -2,16 +2,16 @@
 #include "ir/instructions/call.hpp"
 #include "parser/nodes/function_call.hpp"
 
-Operator IRBuilder::buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx) {
+Operand IRBuilder::buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx) {
     CallInstruction call;
     call.m_id = node->m_name;
 
     std::vector<TypeInfo> tmpTypes;
 
     for(auto& param : node->m_parameters) {
-        Operator op = buildExpression(param.get(), context, ictx);
+        Operand op = buildExpression(param.get(), context, ictx);
         call.m_parameters.push_back(op);
-        tmpTypes.push_back(getOperatorType(op, context, ictx));
+        tmpTypes.push_back(getOperandType(op, context, ictx));
     }
 
     auto fun = context.getFunction(node->m_name, tmpTypes);

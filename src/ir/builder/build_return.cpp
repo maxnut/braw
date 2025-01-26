@@ -4,7 +4,7 @@
 
 void IRBuilder::build(const AST::ReturnNode* node, BrawContext& context, IRFunctionContext& ictx) {
     if(node->m_value) {
-        Operator op = buildExpression(node->m_value.get(), context, ictx);
+        Operand op = buildExpression(node->m_value.get(), context, ictx);
         moveToRegister("%return", op, context, ictx);
     }
 

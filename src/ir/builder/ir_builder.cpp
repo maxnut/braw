@@ -24,7 +24,7 @@ void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionCon
     }
 }
 
-TypeInfo IRBuilder::getOperatorType(Operator op, BrawContext& context, IRFunctionContext& ictx) {
+TypeInfo IRBuilder::getOperandType(Operand op, BrawContext& context, IRFunctionContext& ictx) {
     switch(op.index()) {
         case 1: {
             return std::get<std::shared_ptr<Register>>(op)->m_type;
@@ -62,10 +62,10 @@ RegisterType getRegisterType(const TypeInfo& type) {
     return RegisterType::Count;
 }
 
-void IRBuilder::moveToRegister(const std::string& name, Operator& op, BrawContext& context, IRFunctionContext& ictx) {
+void IRBuilder::moveToRegister(const std::string& name, Operand& op, BrawContext& context, IRFunctionContext& ictx) {
     std::shared_ptr<Register> reg = makeOrGetRegister(name, ictx);
 
-    reg->m_type = getOperatorType(op, context, ictx);
+    reg->m_type = getOperandType(op, context, ictx);
     reg->m_registerType = getRegisterType(reg->m_type);
     ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::Move, reg, op));
 }

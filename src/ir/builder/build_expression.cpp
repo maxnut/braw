@@ -5,7 +5,7 @@
 #include "parser/nodes/variable_access.hpp"
 #include "parser/nodes/function_call.hpp"
 
-Operator IRBuilder::buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx) {
+Operand IRBuilder::buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx) {
     switch(node->m_type) {
         case AST::Node::BinaryOperator:
             return buildBinaryOperator(static_cast<const AST::BinaryOperatorNode*>(node), context, ictx);

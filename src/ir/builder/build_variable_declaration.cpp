@@ -2,7 +2,7 @@
 #include "parser/nodes/variable_declaration.hpp"
 
 void IRBuilder::build(const AST::VariableDeclarationNode* node, BrawContext& context, IRFunctionContext& ictx) {
-    Operator op = Value(0);
+    Operand op = Value(0);
 
     //TODO: check type size, put in stack if too big!
 

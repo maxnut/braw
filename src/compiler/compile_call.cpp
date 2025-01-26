@@ -11,7 +11,7 @@ bool rangeOverlaps(Range r, int i) {
     return r.m_range.first < i && i < r.m_range.second;
 }
 
-void Compiler::compile(const CallInstruction* instr, const CompilerContext& ctx, std::ofstream& fs) {
+void Compiler::compile(const CallInstruction* instr, CompilerContext& ctx, std::ofstream& fs) {
     std::array<std::string, 17> callerSaved = {"rax","rcx","rdx","rsi","rdi","r8","r9","r10","r11","xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"};
 
     std::vector<std::string> saveStack;
@@ -32,7 +32,7 @@ void Compiler::compile(const CallInstruction* instr, const CompilerContext& ctx,
     std::array<std::string, 6> parameterRegisters = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
     Cursor<std::array<std::string, 6>::iterator> cursor(parameterRegisters.begin(), parameterRegisters.end());
     
-    for(const Operator& p : instr->m_parameters) {
+    for(const Operand& p : instr->m_parameters) {
         switch(p.index()) {
             case 1: {
                 //TODO: handle float registers (xmm0 etc...)

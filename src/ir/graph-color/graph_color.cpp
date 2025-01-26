@@ -2,7 +2,7 @@
 #include "ir/instruction.hpp"
 #include "ir/instructions/binary.hpp"
 #include "ir/instructions/call.hpp"
-#include "ir/operator.hpp"
+#include "ir/operand.hpp"
 #include "ir/register.hpp"
 
 #include <algorithm>
@@ -12,7 +12,7 @@
 #include <stdexcept>
 
 ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters) {
-    if(registers.size() < 3)
+    if(registers.size() < 3 || precisionRegisters.size() < 3)
         throw std::runtime_error("Not enough registers");
 
     //reserve two registers for spill
@@ -48,9 +48,9 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
     for(auto& range : res.m_rangeVector) {
         GraphNode node;
         node.m_id = range->m_id;
-        if (paramAssignments.contains(node.m_id)) {
+        if (paramAssignments.contains(node.m_id))
             node.m_tag = paramAssignments[node.m_id];
-        }
+
         node.m_connections = getOverlaps(node.m_id, res.m_ranges);
         graph.push_back(node);
     }
@@ -102,7 +102,15 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
             }
         });
 
-        tryTag(registers);
+        switch(res.m_ranges[popped.m_id].m_registerType) {
+            case RegisterType::Single:
+            case RegisterType::Double:
+                tryTag(precisionRegisters);
+                break;
+            default:
+                tryTag(registers);
+                break;
+        }
 
         graph.push_back(popped);
     }
@@ -117,7 +125,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
 }
 
 void GraphColor::fillRanges(const Function& function, ColorResult& result) {
-    auto tryRegister = [&](Operator o, uint32_t i) {
+    auto tryRegister = [&](Operand o, uint32_t i) {
         if(o.index() != 1)
             return;
 

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "ir/label.hpp"
-#include "ir/operator.hpp"
+#include "ir/operand.hpp"
 #include "ir/register.hpp"
 #include "parser/nodes/file.hpp"
 #include "ir/file.hpp"
@@ -53,13 +52,13 @@ private:
     static void build(const AST::VariableDeclarationNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::IfNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::ReturnNode* node, BrawContext& context, IRFunctionContext& ictx);
-    static Operator buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx);
-    static Operator buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx);
-    static Operator buildBinaryOperator(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
+    static Operand buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx);
+    static Operand buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx);
+    static Operand buildBinaryOperator(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void buildAssignment(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
 
-    static TypeInfo getOperatorType(Operator op, BrawContext& context, IRFunctionContext& ictx);
+    static TypeInfo getOperandType(Operand op, BrawContext& context, IRFunctionContext& ictx);
 
-    static void moveToRegister(const std::string& name, Operator& op, BrawContext& context, IRFunctionContext& ictx);
+    static void moveToRegister(const std::string& name, Operand& op, BrawContext& context, IRFunctionContext& ictx);
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, IRFunctionContext& ictx);
 };

@@ -1,10 +1,6 @@
-#include "compiler/compiler.hpp"
-#include "ir/graph-color/graph_color.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "semantic-analyzer/semantic_analyzer.hpp"
-#include "execution-tree/builder/et_builder.hpp"
-#include "interpreter/interpreter.hpp"
 #include "ir/builder/ir_builder.hpp"
 #include "ir/printer/ir_printer.hpp"
 
@@ -12,11 +8,6 @@
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
 #include <stdio.h>
-
-#ifdef WIN32
-    #define popen _popen
-    #define pclose _pclose
-#endif
 
 int main(int argc, char** argv) {
     spdlog::set_pattern("[%^%l%$] %v");
@@ -48,13 +39,7 @@ int main(int argc, char** argv) {
 
     BrawContext ctx = ctxOr.value();
 
-    std::shared_ptr<FileNode> file = ETBuilder::buildFile(ast.value().get(), ctx);
-    if(!file) {
-        spdlog::error("Failed to build execution tree");
-        return 1;
-    }
-
-    auto res = IRBuilder::build(ast.value().get(), ctx);
+    std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
 
     std::filesystem::create_directories("build");
     std::filesystem::path buildPath = std::filesystem::current_path() / "build";
@@ -62,26 +47,6 @@ int main(int argc, char** argv) {
     std::ofstream fs(buildPath / (filepath.stem().string() + ".ir"));
     IRPrinter::print(fs, res.at(0));
     fs.close();
-
-    Compiler::compile(res.at(0), buildPath / (filepath.stem().string() + ".asm"));
-
-    FILE *pipe = popen(("nasm -felf64 " + (buildPath / (filepath.stem().string() + ".asm")).string() + " -o " + (buildPath / (filepath.stem().string() + ".o")).string()).c_str(), "r");
-    if (!pipe) {
-        perror("popen failed");
-        return 1;
-    }
-
-    char buffer[128];
-    while (fgets(buffer, sizeof(buffer), pipe)) {
-        printf("%s", buffer);
-    }
-    
-    int status = pclose(pipe);
-
-    if(status != 0)
-        spdlog::error("Assembler exited with status: {}", status);
-    else
-        spdlog::info("Assembler exited with status: {}", status);
 
     return 0;
 }

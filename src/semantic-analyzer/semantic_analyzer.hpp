@@ -47,7 +47,6 @@ private:
     static std::optional<SemanticError> analyze(const AST::BinaryOperatorNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::StructNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::FunctionCallNode*, BrawContext&);
-    static std::optional<SemanticError> analyze(const AST::BindNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::IfNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::WhileNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::LiteralNode*, BrawContext&);

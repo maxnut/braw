@@ -56,7 +56,6 @@ private:
     static Result<std::unique_ptr<AST::IfNode>> parseIf(TokenCursor& cursor);
     static Result<std::unique_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor);
     static Result<std::unique_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::BindNode>> parseBind(TokenCursor& cursor);
     static Result<std::unique_ptr<AST::FileNode>> parseImport(TokenCursor& cursor);
     static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor);
     static Result<Identifier> parseTypename(TokenCursor& cursor);

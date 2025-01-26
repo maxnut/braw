@@ -19,7 +19,6 @@ struct Node {
         If,
         While,
         Struct,
-        Bind,
         Return,
     };
 

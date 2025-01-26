@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stack.hpp"
 #include "type_info.hpp"
 #include "braw_context.hpp"
 #include "parser/nodes/function_definition.hpp"
@@ -9,10 +8,6 @@
 #include <optional>
 
 namespace Utils {
-    template <typename T, size_t offset>
-    inline T fromStack(Stack& stack) {
-        return *(T*)(stack.ptrHead(offset));
-    }
 
     inline std::string functionSignatureString(const AST::FunctionSignature& signature) {
         std::string funcString = signature.m_name.m_name + "(";

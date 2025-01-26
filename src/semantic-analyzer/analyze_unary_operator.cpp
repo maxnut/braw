@@ -28,7 +28,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
     else if(node->m_operator == "cast") {
         TypeInfo type = getType(node->m_operand.get(), ctx).value();
 
-        if(!type.m_casts.contains(node->m_data))
+        if(!type.m_validCasts.contains(node->m_data))
             return invalidCast(node, type.m_name);
     }
 

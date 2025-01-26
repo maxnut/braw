@@ -8,7 +8,6 @@
 #include "parser/nodes/binary_operator.hpp"
 #include "parser/nodes/struct.hpp"
 #include "parser/nodes/function_call.hpp"
-#include "parser/nodes/bind.hpp"
 #include "parser/nodes/if.hpp"
 #include "parser/nodes/while.hpp"
 #include "parser/nodes/literal.hpp"
@@ -46,8 +45,6 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::Node* root, Br
             return analyze(static_cast<const AST::StructNode*>(root), context);
         case AST::Node::FunctionCall:
             return analyze(static_cast<const AST::FunctionCallNode*>(root), context);
-        case AST::Node::Bind:
-            return analyze(static_cast<const AST::BindNode*>(root), context);
         case AST::Node::If:
             return analyze(static_cast<const AST::IfNode*>(root), context);
         case AST::Node::While:
@@ -100,7 +97,7 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
             params.reserve(call->m_parameters.size());
             for(auto& param : call->m_parameters)
                 params.push_back(getType(param.get(), ctx).value());
-            return ctx.getFunction(call->m_name, params)->m_signature.m_returnType;
+            return ctx.getFunction(call->m_name, params)->m_returnType;
         }
         case AST::Node::Literal: {
             const AST::LiteralNode* literal = static_cast<const AST::LiteralNode*>(node);

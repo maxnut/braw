@@ -8,7 +8,6 @@
 #include "parser/nodes/binary_operator.hpp"
 #include "parser/nodes/struct.hpp"
 #include "parser/nodes/function_call.hpp"
-#include "parser/nodes/bind.hpp"
 #include "parser/nodes/if.hpp"
 #include "parser/nodes/while.hpp"
 #include "parser/nodes/literal.hpp"
@@ -56,9 +55,6 @@ void ASTPrinter::print(const AST::Node* node, int indent) {
         case AST::Node::Type::FunctionCall:
             print(static_cast<const AST::FunctionCallNode*>(node), indent);
             break;
-        case AST::Node::Type::Bind:
-            print(static_cast<const AST::BindNode*>(node), indent);
-            break;
         case AST::Node::Type::If:
             print(static_cast<const AST::IfNode*>(node), indent);
             break;
@@ -84,9 +80,6 @@ void ASTPrinter::print(const AST::FileNode* node, int indent) {
 
     for(auto& struct_ : node->m_structs)
         print(struct_.get(), indent + 1);
-
-    for(auto& bind : node->m_binds)
-        print(bind.get(), indent + 1);
 
     for(auto& function : node->m_functions)
         print(function.get(), indent + 1);
@@ -144,12 +137,6 @@ void ASTPrinter::print(const AST::FunctionCallNode* node, int indent) {
     }
 
     std::cout << indentString(fmt::format("FunctionCallNode: {}()\n", node->m_name.m_name), indent);
-}
-
-void ASTPrinter::print(const AST::BindNode* node, int indent) {
-    std::cout << indentString(fmt::format("BindNode: {}\n", node->m_library.m_name), indent);
-    for(auto& function : node->m_functions)
-        std::cout << indentString(fmt::format("Function: {} ({})\n", Utils::functionSignatureString(function.second), function.first.m_name), indent + 1);
 }
 
 void ASTPrinter::print(const AST::IfNode* node, int indent) {

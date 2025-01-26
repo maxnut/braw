@@ -14,11 +14,6 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FileNode* file
         if(errOpt) return errOpt;
     }
 
-    for(auto& bind : file->m_binds) {
-        errOpt = analyze(bind.get(), ctx);
-        if(errOpt) return errOpt;
-    }
-
     for(auto& function : file->m_functions) {
         errOpt = analyze(function.get(), ctx);
         if(errOpt) return errOpt;

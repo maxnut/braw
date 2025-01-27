@@ -1,4 +1,5 @@
 #include "code_generator.hpp"
+#include "codegen/operand.hpp"
 #include "codegen/x86-64/address.hpp"
 #include "codegen/x86-64/immediate.hpp"
 #include "codegen/x86-64/instruction.hpp"
@@ -19,6 +20,11 @@ namespace CodeGen::x86_64 {
 
 const char* SPILL1 = "r14";
 const char* SPILL2 = "r15";
+
+template <typename T>
+std::shared_ptr<T> cast(const std::shared_ptr<void>& ptr) {
+    return std::static_pointer_cast<T>(ptr);
+}
 
 File CodeGenerator::generate(const ::File& src) {
     File file;
@@ -101,6 +107,31 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             mul(convertOperand(bin->m_left, ctx), convertOperand(bin->m_right, ctx), ctx); 
             break;
         }
+        case ::Instruction::CompareEquals: {
+            auto bin = (const ::BinaryInstruction*)instr;
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_left, ctx)), convertOperand(bin->m_right, ctx), Opcode::Sete, ctx); 
+            break;
+        }
+        case ::Instruction::CompareNotEquals: {
+            auto bin = (const ::BinaryInstruction*)instr;
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_left, ctx)), convertOperand(bin->m_right, ctx), Opcode::Setne, ctx); 
+            break;
+        }
+        case ::Instruction::CompareGreaterEquals: {
+            auto bin = (const ::BinaryInstruction*)instr;
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_left, ctx)), convertOperand(bin->m_right, ctx), Opcode::Setge, ctx); 
+            break;
+        }
+        case ::Instruction::CompareLessEquals: {
+            auto bin = (const ::BinaryInstruction*)instr;
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_left, ctx)), convertOperand(bin->m_right, ctx), Opcode::Setle, ctx); 
+            break;
+        }
+        case ::Instruction::JumpFalse: {
+            auto bin = (const ::BinaryInstruction*)instr;
+            compareAndJump(cast<Operands::Register>(convertOperand(bin->m_left, ctx)), std::make_shared<Operands::Immediate>(0), cast<Operands::Label>(convertOperand(bin->m_right, ctx)), Opcode::Je, ctx);
+            break;
+        }
         case ::Instruction::Return:
             return ret(ctx);
         default: break;
@@ -109,8 +140,9 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
 
 void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     Instruction in;
-    if(bothAddress(target, source)) source = memoryToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
-    in.m_opcode = isFloat(source) ? Opcode::Movss : Opcode::Mov;
+    if(bothAddress(target, source)) source = memoryToRegister(cast<Operands::Address>(source), ctx);
+    in.m_opcode = isFloat(source) ? Opcode::Movss :
+        (bothRegisters(target, source) && isSmaller(cast<Operands::Register>(source), cast<Operands::Register>(target))) ? Opcode::Movzx : Opcode::Mov;
     target->m_valueType = source->m_valueType; assert(source->m_valueType != Operand::ValueType::Count);
     in.m_operands.push_back(target);
     in.m_operands.push_back(source);
@@ -176,6 +208,29 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryToRegister(std::shared_
     return m_registers[SPILL1];
 }
 
+void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, Opcode setOpcode, FunctionContext& ctx) {
+    Instruction cmp, set;
+    cmp.m_opcode = Opcode::Cmp;
+    cmp.m_operands.push_back(reg);
+    cmp.m_operands.push_back(op);
+    ctx.f.m_text.m_instructions.push_back(cmp);
+    set.m_opcode = setOpcode;
+    set.m_operands.push_back(m_registers.at("al"));
+    ctx.f.m_text.m_instructions.push_back(set);
+    move(reg, m_registers.at("al"), ctx);
+}
+
+void CodeGenerator::compareAndJump(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, Opcode jumpOpcode, FunctionContext& ctx) {
+    Instruction cmp, jmp;
+    cmp.m_opcode = Opcode::Cmp;
+    cmp.m_operands.push_back(reg);
+    cmp.m_operands.push_back(op);
+    ctx.f.m_text.m_instructions.push_back(cmp);
+    jmp.m_opcode = jumpOpcode;
+    jmp.m_operands.push_back(label);
+    ctx.f.m_text.m_instructions.push_back(jmp);
+}
+
 
 std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, FunctionContext& ctx) {
     switch(source.index()) {
@@ -223,41 +278,42 @@ bool CodeGenerator::bothAddress(std::shared_ptr<Operand> o1, std::shared_ptr<Ope
     return o1->m_type == Operand::Type::Address && o2->m_type == Operand::Type::Address;
 }
 
-#define REGISTER(ID) m_registers[ID] = std::make_shared<Operands::Register>(ID)
+#define REGISTER(ID, size) m_registers[ID] = std::make_shared<Operands::Register>(ID, size)
 
 void CodeGenerator::initializeRegisters() {
-    REGISTER("rsp");
-    REGISTER("rbp");
-    REGISTER("rax");
-    REGISTER("rdi");
-    REGISTER("rsi");
-    REGISTER("rdx");
-    REGISTER("rcx");
-    REGISTER("rbx");
-    REGISTER("r8");
-    REGISTER("r9");
-    REGISTER("r10");
-    REGISTER("r11");
-    REGISTER("r12");
-    REGISTER("r13");
-    REGISTER("r14");
-    REGISTER("r15");
-    REGISTER("xmm0");
-    REGISTER("xmm1");
-    REGISTER("xmm2");
-    REGISTER("xmm3");
-    REGISTER("xmm4");
-    REGISTER("xmm5");
-    REGISTER("xmm6");
-    REGISTER("xmm7");
-    REGISTER("xmm8");
-    REGISTER("xmm9");
-    REGISTER("xmm10");
-    REGISTER("xmm11");
-    REGISTER("xmm12");
-    REGISTER("xmm13");
-    REGISTER("xmm14");
-    REGISTER("xmm15");
+    REGISTER("rsp", Operands::Register::Qword);
+    REGISTER("rbp", Operands::Register::Qword);
+    REGISTER("rax", Operands::Register::Qword);
+    REGISTER("rdi", Operands::Register::Qword);
+    REGISTER("rsi", Operands::Register::Qword);
+    REGISTER("rdx", Operands::Register::Qword);
+    REGISTER("rcx", Operands::Register::Qword);
+    REGISTER("rbx", Operands::Register::Qword);
+    REGISTER("r8", Operands::Register::Qword);
+    REGISTER("r9", Operands::Register::Qword);
+    REGISTER("r10", Operands::Register::Qword);
+    REGISTER("r11", Operands::Register::Qword);
+    REGISTER("r12", Operands::Register::Qword);
+    REGISTER("r13", Operands::Register::Qword);
+    REGISTER("r14", Operands::Register::Qword);
+    REGISTER("r15", Operands::Register::Qword);
+    REGISTER("xmm0", Operands::Register::Oword);
+    REGISTER("xmm1", Operands::Register::Oword);
+    REGISTER("xmm2", Operands::Register::Oword);
+    REGISTER("xmm3", Operands::Register::Oword);
+    REGISTER("xmm4", Operands::Register::Oword);
+    REGISTER("xmm5", Operands::Register::Oword);
+    REGISTER("xmm6", Operands::Register::Oword);
+    REGISTER("xmm7", Operands::Register::Oword);
+    REGISTER("xmm8", Operands::Register::Oword);
+    REGISTER("xmm9", Operands::Register::Oword);
+    REGISTER("xmm10", Operands::Register::Oword);
+    REGISTER("xmm11", Operands::Register::Oword);
+    REGISTER("xmm12", Operands::Register::Oword);
+    REGISTER("xmm13", Operands::Register::Oword);
+    REGISTER("xmm14", Operands::Register::Oword);
+    REGISTER("xmm15", Operands::Register::Oword);
+    REGISTER("al", Operands::Register::Byte);
 }
 
 }

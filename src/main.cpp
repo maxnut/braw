@@ -1,3 +1,6 @@
+#include "codegen/x86-64/code_generator.hpp"
+#include "codegen/x86-64/emitter.hpp"
+#include "codegen/x86-64/file.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "semantic-analyzer/semantic_analyzer.hpp"
@@ -47,6 +50,10 @@ int main(int argc, char** argv) {
     std::ofstream fs(buildPath / (filepath.stem().string() + ".ir"));
     IRPrinter::print(fs, res.at(0));
     fs.close();
+
+    CodeGen::x86_64::CodeGenerator codegen;
+    CodeGen::x86_64::File file = codegen.generate(res.at(0));
+    CodeGen::x86_64::Emitter::emit(file, std::cout);
 
     return 0;
 }

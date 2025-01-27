@@ -5,8 +5,8 @@
 namespace CodeGen::x86_64::Operands {
 
 struct Label : Operand {
-    Label() : Operand(Type::Label) {}
-    Label(const std::string& id) : Operand(Type::Label), m_id(id) {}
+    Label() : Operand(Type::Label, ValueType::Pointer) {}
+    Label(const std::string& id) : Operand(Type::Label, ValueType::Pointer), m_id(id) {}
 
     std::string m_id;
 

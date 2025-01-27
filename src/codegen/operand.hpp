@@ -5,18 +5,31 @@
 namespace CodeGen {
 
 struct Operand {
-    enum Type {
+    enum class Type {
         Register,
         Address,
-        Integer,
         Label,
+        Immediate,
         Count
     };
 
-    Operand(Type t) : m_type(t) {}
+    enum class ValueType {
+        Signed,
+        Unsigned,
+        SinglePrecision,
+        DoublePrecision,
+        Pointer,
+        Function,
+        Structure,
+        Count
+    };
+
+    Operand(Type t, ValueType vt) : m_type(t), m_valueType(vt) {}
     virtual ~Operand() = default;
 
     Type m_type;
+    ValueType m_valueType = ValueType::Count;
+
 
     virtual void emit(std::ostream& os) const = 0;
 

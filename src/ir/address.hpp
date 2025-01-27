@@ -2,8 +2,9 @@
 
 #include "register.hpp"
 #include <cstdint>
+#include <memory>
 
 struct Address {
-    Register m_base;
+    std::shared_ptr<Register> m_base;
     uint64_t m_offset;
 };

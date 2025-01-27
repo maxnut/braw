@@ -18,7 +18,7 @@ struct Instruction {
         obj.opcodeInstruction(os);
         os << " ";
         for(int i = 0; i < obj.m_operands.size(); i++) {
-            os << obj.m_operands[i];
+            os << *obj.m_operands[i];
             if(i < obj.m_operands.size() - 1)
                 os << ", ";
         }

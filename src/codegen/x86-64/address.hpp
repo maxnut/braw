@@ -8,9 +8,9 @@
 namespace CodeGen::x86_64::Operands {
 
 struct Address : Operand {
-    Address() : Operand(Type::Address) {}
-    Address(std::shared_ptr<Operand> base) : Operand(Type::Address), m_base(base) {}
-    Address(std::shared_ptr<Operand> base, size_t offset) : Operand(Type::Address), m_base(base), m_offset(offset) {}
+    Address() : Operand(Type::Address, ValueType::Signed) {}
+    Address(std::shared_ptr<Operand> base) : Operand(Type::Address, ValueType::Signed), m_base(base) {}
+    Address(std::shared_ptr<Operand> base, size_t offset) : Operand(Type::Address, ValueType::Signed), m_base(base), m_offset(offset) {}
 
     std::shared_ptr<Operand> m_base;
     size_t m_offset;

@@ -10,7 +10,7 @@
 namespace CodeGen::x86_64 {
 
 struct DataSection {
-    std::unordered_map<std::string, Value> m_labels;
+    std::vector<std::pair<std::string, Value>> m_labels;
 };
 
 struct TextSection {

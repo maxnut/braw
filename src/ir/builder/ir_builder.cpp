@@ -5,6 +5,8 @@
 #include "parser/nodes/variable_declaration.hpp"
 #include "parser/nodes/binary_operator.hpp"
 #include "utils.hpp"
+
+#include <array>
 #include <memory>
 
 void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx) {
@@ -45,7 +47,7 @@ TypeInfo IRBuilder::getOperandType(Operand op, BrawContext& context, IRFunctionC
     return context.getTypeInfo("void").value();
 }
 
-RegisterType getRegisterType(const TypeInfo& type) {
+RegisterType IRBuilder::getRegisterType(const TypeInfo& type) {
     if(type.m_name == "int")
         return RegisterType::Dword;
     else if(type.m_name == "long")

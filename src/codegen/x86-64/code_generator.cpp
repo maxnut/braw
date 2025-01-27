@@ -9,6 +9,7 @@
 #include "ir/instruction.hpp"
 #include "ir/instructions/binary.hpp"
 #include "ir/label.hpp"
+#include "ir/value.hpp"
 #include <cassert>
 #include <cstdint>
 #include <memory>
@@ -189,13 +190,15 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                 case 1:
                     return std::make_shared<Operands::Immediate>(std::get<long>(v));
                 case 2:
-                case 3: {
+                case 3:
+                case 5: {
                     static uint32_t id = 0;
                     Label l{".v_" + std::to_string(id)};
-                    ctx.f.m_data.m_labels[l.m_id] = v;
+                    ctx.f.m_data.m_labels.push_back({l.m_id, v});
                     id++;
                     auto la = std::make_shared<Operands::Label>(l.m_id);
-                    return std::make_shared<Operands::Address>(la);
+                    return std::make_shared<Operands::Address>(
+                        la, v.index() == 2 ? Operand::ValueType::SinglePrecision : v.index() == 3 ? Operand::ValueType::DoublePrecision : Operand::ValueType::Pointer);
                 }
                 case 4:
                     return std::make_shared<Operands::Immediate>(std::get<bool>(v));

@@ -1,6 +1,6 @@
 #include "ir_builder.hpp"
 #include "ir/instruction.hpp"
-#include "ir/instructions/binary.hpp"
+#include "ir/instructions/basic.hpp"
 #include "ir/register.hpp"
 #include "parser/nodes/variable_declaration.hpp"
 #include "parser/nodes/binary_operator.hpp"
@@ -69,7 +69,7 @@ void IRBuilder::moveToRegister(const std::string& name, Operand& op, BrawContext
 
     reg->m_type = getOperandType(op, context, ictx);
     reg->m_registerType = getRegisterType(reg->m_type);
-    ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::Move, reg, op));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Move, reg, op));
 }
 
 std::shared_ptr<Register> IRBuilder::makeOrGetRegister(const std::string& name, IRFunctionContext& ictx) {

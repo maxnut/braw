@@ -14,10 +14,14 @@ Operand IRBuilder::buildCall(const AST::FunctionCallNode* node, BrawContext& con
         tmpTypes.push_back(getOperandType(op, context, ictx));
     }
 
+    std::string name = "%" + std::to_string((uintptr_t)node);
+
     auto fun = context.getFunction(node->m_name, tmpTypes);
-    if(fun->m_returnType.m_size != 0)
-        call.m_optReturn = makeOrGetRegister("%return", ictx);
+    if(fun->m_returnType.m_size != 0) {
+        call.m_optReturn = makeOrGetRegister(name, ictx);
+        call.m_optReturn->m_registerType = getRegisterType(fun->m_returnType);
+    }
 
     ictx.m_instructions.push_back(std::make_unique<CallInstruction>(call));
-    return makeOrGetRegister("%return", ictx);
+    return makeOrGetRegister(name, ictx);
 }

@@ -20,11 +20,15 @@ enum Opcode : uint16_t {
     Movzx = 0x0F + 0xB6,
     Jmp = 0xE9,
     Cmp = 0x3D,
+    Ucomiss = 0xF3 + 0x0F + 0x2E,
     Sete = 0x0F + 0x94,
     Setne = 0x0F + 0x95,
     Setge = 0x0F + 0x9D,
     Setle = 0x0F + 0x9E,
     Je = 0x0F + 0x84,
+    Call = 0xE8,
+    Movdqu = 0xF3 + 0x0F + 0x6F,
+    Lea = 0x8D,
 };
 
 struct Instruction : CodeGen::Instruction {
@@ -50,6 +54,10 @@ struct Instruction : CodeGen::Instruction {
             case Opcode::Setge: os << "setge"; break;
             case Opcode::Setle: os << "setle"; break;
             case Opcode::Je: os << "je"; break;
+            case Opcode::Ucomiss: os << "ucomiss"; break;
+            case Opcode::Call: os << "call"; break;
+            case Opcode::Movdqu: os << "movdqu"; break;
+            case Opcode::Lea: os << "lea"; break;
         }
     }
 };

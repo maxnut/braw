@@ -1,4 +1,4 @@
-#include "ir/instructions/binary.hpp"
+#include "ir/instructions/basic.hpp"
 #include "ir/register.hpp"
 #include "ir_builder.hpp"
 #include "parser/nodes/binary_operator.hpp"
@@ -15,39 +15,51 @@ Operand IRBuilder::buildBinaryOperator(const AST::BinaryOperatorNode* node, Braw
 
     if(node->m_operator == "+") {
         moveToRegister(name, left, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::Add, target, right));
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Add, target, right));
     }
     else if(node->m_operator == "*") {
         moveToRegister(name, left, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::Multiply, target, right));
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Multiply, target, right));
     }
     else if(node->m_operator == "-") {
         moveToRegister(name, left, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::Subtract, target, right));
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Subtract, target, right));
     }
     else if(node->m_operator == "==") {
         moveToRegister(name, left, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::CompareEquals, target, right));
+        auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareEquals, target, right, newTarget));
+        target = newTarget;
     }
     else if(node->m_operator == "!=") {
         moveToRegister(name, left, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::CompareNotEquals, target, right));
+        auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareNotEquals, target, right, newTarget));
+        target = newTarget;
     }
     else if(node->m_operator == ">") {
         moveToRegister(name, right, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::CompareLessEquals, target, left));
+        auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareLessEquals, target, left, newTarget));
+        target = newTarget;
     }
     else if(node->m_operator == "<") {
         moveToRegister(name, right, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::CompareGreaterEquals, target, left));
+        auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareGreaterEquals, target, left, newTarget));
+        target = newTarget;
     }
     else if(node->m_operator == "<=") {
         moveToRegister(name, left, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::CompareLessEquals, target, right));
+        auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareLessEquals, target, right, newTarget));
+        target = newTarget;
     }
     else if(node->m_operator == ">=") {
         moveToRegister(name, left, context, ictx);
-        ictx.m_instructions.push_back(std::make_unique<BinaryInstruction>(Instruction::CompareGreaterEquals, target, right));
+        auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareGreaterEquals, target, right, newTarget));
+        target = newTarget;
     }
     
     return target;

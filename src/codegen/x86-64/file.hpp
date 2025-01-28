@@ -16,6 +16,7 @@ struct DataSection {
 struct TextSection {
     std::vector<Instruction> m_instructions;
     std::unordered_map<uint32_t, Label> m_labels;
+    std::vector<Label> m_globals;
 };
 
 struct File {

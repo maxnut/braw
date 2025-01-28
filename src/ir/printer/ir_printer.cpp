@@ -46,7 +46,7 @@ void IRPrinter::print(std::ostream& out, const Function& function) {
             case Instruction::CompareLessEquals:
             case Instruction::CompareNotEquals:
             case Instruction::JumpFalse:
-                print(out, static_cast<const BinaryInstruction*>(instr.get()));
+                print(out, static_cast<const BasicInstruction*>(instr.get()));
                 break;
             default:
                 break;
@@ -95,7 +95,7 @@ std::string operatorString(Operand op) {
     return "";
 }
 
-void IRPrinter::print(std::ostream& out, const BinaryInstruction* instr) {
+void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
     out << "    ";
     switch(instr->m_type) {
         case Instruction::Add:
@@ -132,7 +132,11 @@ void IRPrinter::print(std::ostream& out, const BinaryInstruction* instr) {
             return;
     }
 
-    out << operatorString(instr->m_left) << ", " << operatorString(instr->m_right) << "\n";
+    out << operatorString(instr->m_o1);
+    if(instr->m_o2.index() != 0) out << ", " << operatorString(instr->m_o2);
+    if(instr->m_o3.index() != 0) out << ", " << operatorString(instr->m_o3);
+    if(instr->m_o4.index() != 0) out << ", " << operatorString(instr->m_o4);
+    out << "\n";
 }
 
 void IRPrinter::print(std::ostream& out, const CallInstruction* instr) {

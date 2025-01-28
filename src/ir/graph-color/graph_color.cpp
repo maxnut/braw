@@ -1,6 +1,6 @@
 #include "graph_color.hpp"
 #include "ir/instruction.hpp"
-#include "ir/instructions/binary.hpp"
+#include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
 #include "ir/operand.hpp"
 #include "ir/register.hpp"
@@ -131,7 +131,7 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
 
         auto r = std::get<std::shared_ptr<Register>>(o);
 
-        if(r->m_id == "%return") // the return register will always be rax/eax
+        if(r->m_id == "%return" || r->m_id == "%returnF") // the return register will always be rax/xmm0
             return;
 
         if(!result.m_ranges.contains(r->m_id)) {
@@ -172,9 +172,11 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
             case Instruction::CompareLessEquals:
             case Instruction::CompareNotEquals:
             case Instruction::JumpFalse: {
-                auto binary = static_cast<const BinaryInstruction*>(instr.get());
-                tryRegister(binary->m_left, i);
-                tryRegister(binary->m_right, i);
+                auto basic = static_cast<const BasicInstruction*>(instr.get());
+                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o2, i);
+                tryRegister(basic->m_o3, i);
+                tryRegister(basic->m_o4, i);
                 break;
             }
             default:

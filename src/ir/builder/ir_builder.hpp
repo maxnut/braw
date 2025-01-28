@@ -39,6 +39,7 @@ struct IRFunctionContext {
     std::unordered_map<std::string, std::shared_ptr<Register>> m_registers;
     Instructions m_instructions;
     uint32_t m_scopeDepth = 0;
+    std::shared_ptr<Register> m_returnRegister;
 };
 
 class IRBuilder {

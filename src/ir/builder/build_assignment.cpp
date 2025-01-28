@@ -1,4 +1,4 @@
-#include "ir/instructions/binary.hpp"
+#include "ir/instructions/basic.hpp"
 #include "ir_builder.hpp"
 #include "parser/nodes/binary_operator.hpp"
 #include "parser/nodes/variable_access.hpp"

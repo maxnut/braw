@@ -5,7 +5,7 @@
 void IRBuilder::build(const AST::ReturnNode* node, BrawContext& context, IRFunctionContext& ictx) {
     if(node->m_value) {
         Operand op = buildExpression(node->m_value.get(), context, ictx);
-        moveToRegister("%return", op, context, ictx);
+        moveToRegister(ictx.m_returnRegister->m_id, op, context, ictx);
     }
 
     ictx.m_instructions.push_back(std::make_unique<Instruction>(Instruction::Return));

@@ -3,7 +3,7 @@
 namespace CodeGen::x86_64 {
 
 void Emitter::emit(const File& f, std::ostream& out) {
-    out << "bits 64\n";
+    out << "bits 64\n\n";
 
     out << "section .data\n";
 
@@ -31,7 +31,11 @@ void Emitter::emit(const File& f, std::ostream& out) {
         }
     }
 
-    out << "section .text\n";
+    out << "\nsection .text\n";
+
+    for(auto& global : f.m_text.m_globals) {
+        out << "global " << global.m_id << "\n";
+    }
 
     for(uint32_t i = 0; i < f.m_text.m_instructions.size(); i++) {
         if(f.m_text.m_labels.contains(i))

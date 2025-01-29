@@ -14,8 +14,13 @@ struct Register : Operand {
         Yword = 32
     };
 
-    Register() : Operand(Type::Register, ValueType::Signed) {}
-    Register(const std::string& id, Size size) : Operand(Type::Register, ValueType::Signed), m_id(id), m_size(size) {}
+    enum RegisterType {
+        General,
+        Simd
+    };
+
+    Register() : Operand(Type::Register, ValueType::Count) {}
+    Register(const std::string& id, Size size, ValueType vtype, RegisterType registerType) : Operand(Type::Register, vtype), m_id(id), m_size(size), m_registerType(registerType) {}
 
     virtual void emit(std::ostream& os) const override {
         os << m_id;
@@ -23,6 +28,7 @@ struct Register : Operand {
 
     std::string m_id;
     Size m_size = Dword;
+    RegisterType m_registerType = General;
 };
 
 }

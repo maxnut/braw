@@ -12,6 +12,7 @@
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
 #include "ir/label.hpp"
+#include "ir/register.hpp"
 #include "ir/value.hpp"
 #include <cassert>
 #include <cstdint>
@@ -68,19 +69,19 @@ File CodeGenerator::generate(const ::File& src) {
         for(auto arg : f.m_args) {
             auto op = ctx.m_virtualRegisters.at(arg->m_id);
             if(arg->m_type.m_name == "int")
-                op->m_valueType = Operand::ValueType::Signed;
+                op->setValueType(Operand::ValueType::Signed);
             else if(arg->m_type.m_name == "long")
-                op->m_valueType = Operand::ValueType::Signed;
+                op->setValueType(Operand::ValueType::Signed);
             else if(arg->m_type.m_name == "bool")
-                op->m_valueType = Operand::ValueType::Signed;
+                op->setValueType(Operand::ValueType::Signed);
             else if(arg->m_type.m_name == "char")
-                op->m_valueType = Operand::ValueType::Signed;
+                op->setValueType(Operand::ValueType::Signed);
             else if(arg->m_type.m_name == "float")
-                op->m_valueType = Operand::ValueType::SinglePrecision;
+                op->setValueType(Operand::ValueType::SinglePrecision);
             else if(arg->m_type.m_name == "double")
-                op->m_valueType = Operand::ValueType::DoublePrecision;
+                op->setValueType(Operand::ValueType::DoublePrecision);
             else
-                op->m_valueType = Operand::ValueType::Structure;
+                op->setValueType(Operand::ValueType::Structure);
         }
 
         //skip label
@@ -121,32 +122,38 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
         }
         case ::Instruction::CompareEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Opcode::Sete, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Sete, ctx); 
             break;
         }
         case ::Instruction::CompareNotEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Opcode::Setne, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setne, ctx); 
             break;
         }
         case ::Instruction::CompareGreaterEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Opcode::Setge, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setge, ctx); 
             break;
         }
         case ::Instruction::CompareLessEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Opcode::Setle, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setle, ctx); 
             break;
         }
         case ::Instruction::JumpFalse: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Opcode::Je, ctx);
+            compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Je, ctx);
             break;
         }
         case ::Instruction::Call: {
             auto callIn = (const ::CallInstruction*)instr;
-            call(std::make_shared<Operands::Label>(callIn->m_id), cast<Operands::Register>(convertOperand(callIn->m_optReturn, ctx)), callIn->m_parameters, ctx);
+            auto optRet = cast<Operands::Register>(convertOperand(callIn->m_optReturn, ctx));
+            
+            if(callIn->m_optReturn->m_registerType == RegisterType::Single) optRet->setValueType(Operand::ValueType::SinglePrecision);
+            else if(callIn->m_optReturn->m_registerType == RegisterType::Double) optRet->setValueType(Operand::ValueType::DoublePrecision);
+            else optRet->setValueType(Operand::ValueType::Signed);
+
+            call(std::make_shared<Operands::Label>(callIn->m_id), optRet, callIn->m_parameters, ctx);
             break;
         }
         case ::Instruction::Return:
@@ -158,10 +165,13 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
 void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(cast<Operands::Address>(source), ctx);
-    in.m_opcode = (isRegister(target) && isFloat(target) && source->m_type == Operand::Type::Address) || (isRegister(source) && isFloat(source) && target->m_type == Operand::Type::Address) ? Opcode::Movdqu :
-        isFloat(source) ? Opcode::Movss :
-        (bothRegisters(target, source) && isSmaller(cast<Operands::Register>(source), cast<Operands::Register>(target))) ? Opcode::Movzx : Opcode::Mov;
-    if(!isRegister(target)) target->m_valueType = source->m_valueType; assert(source->m_valueType != Operand::ValueType::Count);
+    
+    if(isFloat(source)) in.m_opcode = Movss;
+    else if(isDouble(source)) in.m_opcode = Movsd;
+    else if(bothRegisters(target, source) && cast<Operands::Register>(target)->m_size > cast<Operands::Register>(source)->m_size) in.m_opcode = Movzx;
+    else in.m_opcode = Mov;
+    
+    moveValueType(target, source, ctx);
     in.m_operands.push_back(target);
     in.m_operands.push_back(source);
     ctx.f.m_text.m_instructions.push_back(std::move(in));
@@ -170,8 +180,7 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
 void CodeGenerator::add(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
-    in.m_opcode = isFloat(source) ? Opcode::Addss : Opcode::Add;
-    target->m_valueType = source->m_valueType; assert(source->m_valueType != Operand::ValueType::Count);
+    in.m_opcode = isFloat(source) ? Addss : isDouble(source) ? Addsd : Add;
     in.m_operands.push_back(target);
     in.m_operands.push_back(source);
     ctx.f.m_text.m_instructions.push_back(std::move(in));
@@ -180,8 +189,7 @@ void CodeGenerator::add(std::shared_ptr<Operand> target, std::shared_ptr<Operand
 void CodeGenerator::sub(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
-    in.m_opcode = isFloat(source) ? Opcode::Subss : Opcode::Sub;
-    target->m_valueType = source->m_valueType; assert(source->m_valueType != Operand::ValueType::Count);
+    in.m_opcode = isFloat(source) ? Subss : isDouble(source) ? Subsd : Sub;
     in.m_operands.push_back(target);
     in.m_operands.push_back(source);
     ctx.f.m_text.m_instructions.push_back(std::move(in));
@@ -190,8 +198,7 @@ void CodeGenerator::sub(std::shared_ptr<Operand> target, std::shared_ptr<Operand
 void CodeGenerator::mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
-    in.m_opcode = isFloat(source) ? Opcode::Mulss : Opcode::Imul;
-    target->m_valueType = source->m_valueType; assert(source->m_valueType != Operand::ValueType::Count);
+    in.m_opcode = isFloat(source) ? Mulss : isDouble(source) ? Mulsd : Imul;
     in.m_operands.push_back(target);
     in.m_operands.push_back(source);
     ctx.f.m_text.m_instructions.push_back(std::move(in));
@@ -243,7 +250,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     }
 
     Instruction i;
-    i.m_opcode = Opcode::Call;
+    i.m_opcode = Call;
     i.m_operands.push_back(label);
     ctx.f.m_text.m_instructions.push_back(i);
 
@@ -266,14 +273,14 @@ void CodeGenerator::ret(FunctionContext& ctx) {
     
     pop(m_registers.at("rbp"), ctx);
     Instruction i;
-    i.m_opcode = Opcode::Ret;
+    i.m_opcode = Ret;
     ctx.f.m_text.m_instructions.push_back(i);
 }
 
 void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) {
     if(target->m_type == Operand::Type::Immediate) {
         Instruction i;
-        i.m_opcode = Opcode::Push;
+        i.m_opcode = Push;
         i.m_operands.push_back(target);
         ctx.f.m_text.m_instructions.push_back(i);
         return;
@@ -283,7 +290,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
         Instruction i;
 
         if(!isFloat(reg)) {
-            i.m_opcode = Opcode::Push;
+            i.m_opcode = Push;
             i.m_operands.push_back(target);
             ctx.f.m_text.m_instructions.push_back(i);
             return;
@@ -296,7 +303,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
 
     auto addrReg = memoryAddressToRegister(cast<Operands::Address>(target), ctx);
     Instruction i;
-    i.m_opcode = Opcode::Push;
+    i.m_opcode = Push;
     i.m_operands.push_back(addrReg);
     ctx.f.m_text.m_instructions.push_back(i);
 }
@@ -308,7 +315,7 @@ void CodeGenerator::pop(std::shared_ptr<Operands::Register> target, FunctionCont
         return;
     }
     Instruction i;
-    i.m_opcode = Opcode::Pop;
+    i.m_opcode = Pop;
     i.m_operands.push_back(target);
     ctx.f.m_text.m_instructions.push_back(i);
 }
@@ -321,28 +328,30 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryValueToRegister(std::sh
 
 std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx) {
     Instruction i;
-    i.m_opcode = Opcode::Lea;
+    i.m_opcode = Lea;
     i.m_operands.push_back(m_registers[SPILL1]);
     i.m_operands.push_back(address);
     ctx.f.m_text.m_instructions.push_back(i);
+    m_registers[SPILL1]->setValueType(address->getValueType());
     return m_registers[SPILL1];
 }
 
-void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, FunctionContext& ctx) {
+void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, InstructionOpcode setOpcode, FunctionContext& ctx) {
     Instruction cmp, set;
-    cmp.m_opcode = isFloat(op) || isFloat(reg) ? Opcode::Ucomiss : Opcode::Cmp;
+    cmp.m_opcode = isFloat(op) || isFloat(reg) ? Ucomiss : Cmp;
     cmp.m_operands.push_back(reg);
     cmp.m_operands.push_back(op);
     ctx.f.m_text.m_instructions.push_back(cmp);
     set.m_opcode = setOpcode;
+    m_registers.at("al")->setValueType(Operand::ValueType::Signed);
     set.m_operands.push_back(m_registers.at("al"));
     ctx.f.m_text.m_instructions.push_back(set);
     move(store, m_registers.at("al"), ctx);
 }
 
-void CodeGenerator::compareAndJump(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, Opcode jumpOpcode, FunctionContext& ctx) {
+void CodeGenerator::compareAndJump(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, InstructionOpcode jumpOpcode, FunctionContext& ctx) {
     Instruction cmp, jmp;
-    cmp.m_opcode = Opcode::Cmp;
+    cmp.m_opcode = Cmp;
     cmp.m_operands.push_back(reg);
     cmp.m_operands.push_back(op);
     ctx.f.m_text.m_instructions.push_back(cmp);
@@ -372,8 +381,8 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                     ctx.f.m_data.m_labels.push_back({l.m_id, v});
                     id++;
                     auto la = std::make_shared<Operands::Label>(l.m_id);
-                    return std::make_shared<Operands::Address>(
-                        la, v.index() == 2 ? Operand::ValueType::SinglePrecision : v.index() == 3 ? Operand::ValueType::DoublePrecision : Operand::ValueType::Pointer);
+                    la->setValueType(v.index() == 2 ? Operand::ValueType::SinglePrecision : v.index() == 3 ? Operand::ValueType::DoublePrecision : Operand::ValueType::Pointer);
+                    return std::make_shared<Operands::Address>(la);
                 }
                 case 4:
                     return std::make_shared<Operands::Immediate>(std::get<bool>(v));
@@ -399,51 +408,55 @@ bool CodeGenerator::bothAddress(std::shared_ptr<Operand> o1, std::shared_ptr<Ope
 }
 
 bool CodeGenerator::isFloat(std::shared_ptr<Operand> o) const {
-    if(o->m_valueType == Operand::ValueType::SinglePrecision || o->m_valueType == Operand::ValueType::DoublePrecision)
-        return true;
-
-    if(o->m_type != Operand::Type::Register)
-        return false;
-
-    return cast<Operands::Register>(o)->m_id.contains("xmm");
+    return o->getValueType() == Operand::ValueType::SinglePrecision;
 }
 
-#define REGISTER(ID, size) m_registers[ID] = std::make_shared<Operands::Register>(ID, size)
+bool CodeGenerator::isDouble(std::shared_ptr<Operand> o) const {
+    return o->getValueType() == Operand::ValueType::DoublePrecision;
+}
+
+void CodeGenerator::moveValueType(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
+    assert(source->getValueType() != Operand::ValueType::Count);
+    target->setValueType(source->getValueType());
+}
+
+#define REGISTERT(ID, size, vtype, type) m_registers[ID] = std::make_shared<Operands::Register>(ID, size, vtype, type)
+#define REGISTER(ID, size, type) m_registers[ID] = std::make_shared<Operands::Register>(ID, size, Operand::ValueType::Count, type)
 
 void CodeGenerator::initializeRegisters() {
-    REGISTER("rsp", Operands::Register::Qword);
-    REGISTER("rbp", Operands::Register::Qword);
-    REGISTER("rax", Operands::Register::Qword);
-    REGISTER("rdi", Operands::Register::Qword);
-    REGISTER("rsi", Operands::Register::Qword);
-    REGISTER("rdx", Operands::Register::Qword);
-    REGISTER("rcx", Operands::Register::Qword);
-    REGISTER("rbx", Operands::Register::Qword);
-    REGISTER("r8", Operands::Register::Qword);
-    REGISTER("r9", Operands::Register::Qword);
-    REGISTER("r10", Operands::Register::Qword);
-    REGISTER("r11", Operands::Register::Qword);
-    REGISTER("r12", Operands::Register::Qword);
-    REGISTER("r13", Operands::Register::Qword);
-    REGISTER("r14", Operands::Register::Qword);
-    REGISTER("r15", Operands::Register::Qword);
-    REGISTER("xmm0", Operands::Register::Oword);
-    REGISTER("xmm1", Operands::Register::Oword);
-    REGISTER("xmm2", Operands::Register::Oword);
-    REGISTER("xmm3", Operands::Register::Oword);
-    REGISTER("xmm4", Operands::Register::Oword);
-    REGISTER("xmm5", Operands::Register::Oword);
-    REGISTER("xmm6", Operands::Register::Oword);
-    REGISTER("xmm7", Operands::Register::Oword);
-    REGISTER("xmm8", Operands::Register::Oword);
-    REGISTER("xmm9", Operands::Register::Oword);
-    REGISTER("xmm10", Operands::Register::Oword);
-    REGISTER("xmm11", Operands::Register::Oword);
-    REGISTER("xmm12", Operands::Register::Oword);
-    REGISTER("xmm13", Operands::Register::Oword);
-    REGISTER("xmm14", Operands::Register::Oword);
-    REGISTER("xmm15", Operands::Register::Oword);
-    REGISTER("al", Operands::Register::Byte);
+    REGISTERT("rsp", Operands::Register::Qword, Operand::ValueType::Pointer, Operands::Register::General);
+    REGISTER("rbp", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("rax", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("rdi", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("rsi", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("rdx", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("rcx", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("rbx", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r8", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r9", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r10", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r11", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r12", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r13", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r14", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("r15", Operands::Register::Qword, Operands::Register::General);
+    REGISTER("xmm0", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm1", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm2", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm3", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm4", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm5", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm6", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm7", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm8", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm9", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm10", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm11", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm12", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm13", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm14", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("xmm15", Operands::Register::Oword, Operands::Register::Simd);
+    REGISTER("al", Operands::Register::Byte, Operands::Register::General);
 }
 
 }

@@ -1,63 +1,93 @@
 #pragma once
 
 #include "../instruction.hpp"
+#include <map>
 
 namespace CodeGen::x86_64 {
 
-enum Opcode : uint16_t {
-    Nop = 0x90,
-    Ret = 0xC3,
-    Add = 0x01,
-    Addss = 0xF3 + 0x0F + 0x58,
-    Sub = 0x29,
-    Subss = 0xF3 + 0x0F + 0x5C,
-    Imul = 0x69,
-    Mulss = 0xF3 + 0x0F + 0x59,
-    Push = 0x50,
-    Pop = 0x58,
-    Mov = 0x89,
-    Movss = 0xF3 + 0x0F + 0x10,
-    Movzx = 0x0F + 0xB6,
-    Jmp = 0xE9,
-    Cmp = 0x3D,
-    Ucomiss = 0xF3 + 0x0F + 0x2E,
-    Sete = 0x0F + 0x94,
-    Setne = 0x0F + 0x95,
-    Setge = 0x0F + 0x9D,
-    Setle = 0x0F + 0x9E,
-    Je = 0x0F + 0x84,
-    Call = 0xE8,
-    Movdqu = 0xF3 + 0x0F + 0x6F,
-    Lea = 0x8D,
+struct InstructionOpcode {
+    uint8_t prefix;
+    uint8_t opcode1;
+    uint8_t opcode2;
+
+    constexpr InstructionOpcode(uint8_t p, uint8_t o1, uint8_t o2 = 0)
+        : prefix(p), opcode1(o1), opcode2(o2) {}
+
+    bool operator<(const InstructionOpcode& other) const {
+        return std::tie(prefix, opcode1, opcode2) < std::tie(other.prefix, other.opcode1, other.opcode2);
+    }
+};
+
+constexpr InstructionOpcode Nop      = {0x00, 0x90};          // NOP
+constexpr InstructionOpcode Ret      = {0x00, 0xC3};          // RET
+constexpr InstructionOpcode Add      = {0x00, 0x01};          // ADD (register/memory)
+constexpr InstructionOpcode Addss    = {0xF3, 0x0F, 0x58};    // ADDSS (SSE)
+constexpr InstructionOpcode Addsd    = {0xF2, 0x0F, 0x58};    // ADDSD (SSE2)
+constexpr InstructionOpcode Sub      = {0x00, 0x29};          // SUB
+constexpr InstructionOpcode Subss    = {0xF3, 0x0F, 0x5C};    // SUBSS (SSE)
+constexpr InstructionOpcode Subsd    = {0xF2, 0x0F, 0x5C};    // SUBSD (SSE2)
+constexpr InstructionOpcode Imul     = {0x00, 0x69};          // IMUL (with immediate operand)
+constexpr InstructionOpcode Mulss    = {0xF3, 0x0F, 0x59};    // MULSS (SSE)
+constexpr InstructionOpcode Mulsd    = {0xF2, 0x0F, 0x59};    // MULSD (SSE2)
+constexpr InstructionOpcode Push     = {0x00, 0x50};          // PUSH (register)
+constexpr InstructionOpcode Pop      = {0x00, 0x58};          // POP (register)
+constexpr InstructionOpcode Mov      = {0x00, 0x89};          // MOV (register/memory)
+constexpr InstructionOpcode Movss    = {0xF3, 0x0F, 0x10};    // MOVSS (SSE)
+constexpr InstructionOpcode Movsd    = {0xF2, 0x0F, 0x10};    // MOVSD (SSE2)
+constexpr InstructionOpcode Movzx    = {0x00, 0x0F, 0xB6};    // MOVZX
+constexpr InstructionOpcode Jmp      = {0x00, 0xE9};          // JMP (near jump)
+constexpr InstructionOpcode Cmp      = {0x00, 0x3D};          // CMP (immediate to register/memory)
+constexpr InstructionOpcode Ucomiss  = {0xF3, 0x0F, 0x2E};    // UCOMISS (SSE comparison)
+constexpr InstructionOpcode Sete     = {0x00, 0x0F, 0x94};    // SETE (set if equal)
+constexpr InstructionOpcode Setne    = {0x00, 0x0F, 0x95};    // SETNE (set if not equal)
+constexpr InstructionOpcode Setge    = {0x00, 0x0F, 0x9D};    // SETGE (set if greater or equal)
+constexpr InstructionOpcode Setle    = {0x00, 0x0F, 0x9E};    // SETLE (set if less or equal)
+constexpr InstructionOpcode Je       = {0x00, 0x0F, 0x84};    // JE (jump if equal)
+constexpr InstructionOpcode Call     = {0x00, 0xE8};          // CALL (near call)
+constexpr InstructionOpcode Movdqu   = {0xF3, 0x0F, 0x6F};    // MOVDQU (SSE, unaligned load)
+constexpr InstructionOpcode Lea      = {0x00, 0x8D};          // LEA (load effective address)
+
+static const std::map<InstructionOpcode, std::string> opcodeMap = {
+    {Nop, "nop"},
+    {Ret, "ret"},
+    {Add, "add"},
+    {Addss, "addss"},
+    {Addsd, "addsd"},
+    {Sub, "sub"},
+    {Subss, "subss"},
+    {Subsd, "subsd"},
+    {Imul, "imul"},
+    {Mulss, "mulss"},
+    {Mulsd, "mulsd"},
+    {Push, "push"},
+    {Pop, "pop"},
+    {Mov, "mov"},
+    {Movss, "movss"},
+    {Movsd, "movsd"},
+    {Movzx, "movzx"},
+    {Jmp, "jmp"},
+    {Cmp, "cmp"},
+    {Ucomiss, "ucomiss"},
+    {Sete, "sete"},
+    {Setne, "setne"},
+    {Setge, "setge"},
+    {Setle, "setle"},
+    {Je, "je"},
+    {Call, "call"},
+    {Movdqu, "movdqu"},
+    {Lea, "lea"},
 };
 
 struct Instruction : CodeGen::Instruction {
+
+    InstructionOpcode m_opcode = {0x00, 0x00};
+
     virtual void opcodeInstruction(std::ostream& os) const override {
-        switch((Opcode)m_opcode) {
-            case Opcode::Nop: os << "nop"; break;
-            case Opcode::Ret: os << "ret"; break;
-            case Opcode::Add: os << "add"; break;
-            case Opcode::Sub: os << "sub"; break;
-            case Opcode::Imul: os << "imul"; break;
-            case Opcode::Push: os << "push"; break;
-            case Opcode::Pop: os << "pop"; break;
-            case Opcode::Mov: os << "mov"; break;
-            case Opcode::Jmp: os << "jmp"; break;
-            case Opcode::Movss: os << "movss"; break;
-            case Opcode::Addss: os << "addss"; break;
-            case Opcode::Subss: os << "subss"; break;
-            case Opcode::Mulss: os << "mulss"; break;
-            case Opcode::Movzx: os << "movzx"; break;
-            case Opcode::Cmp: os << "cmp"; break;
-            case Opcode::Sete: os << "sete"; break;
-            case Opcode::Setne: os << "setne"; break;
-            case Opcode::Setge: os << "setge"; break;
-            case Opcode::Setle: os << "setle"; break;
-            case Opcode::Je: os << "je"; break;
-            case Opcode::Ucomiss: os << "ucomiss"; break;
-            case Opcode::Call: os << "call"; break;
-            case Opcode::Movdqu: os << "movdqu"; break;
-            case Opcode::Lea: os << "lea"; break;
+        auto it = opcodeMap.find(m_opcode);
+        if (it != opcodeMap.end()) {
+            os << it->second;
+        } else {
+            os << "unknown_opcode";
         }
     }
 };

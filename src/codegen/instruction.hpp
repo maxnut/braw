@@ -9,7 +9,6 @@
 namespace CodeGen {
 
 struct Instruction {
-    uint16_t m_opcode;
     std::vector<std::shared_ptr<Operand>> m_operands;
 
     virtual void opcodeInstruction(std::ostream& os) const = 0;

@@ -40,7 +40,7 @@ public:
 private:
     static Result<std::unique_ptr<AST::FileNode>> parseFile(TokenCursor& cursor);
     static Result<std::unique_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor, bool allowOneLine = true);
     static Result<std::unique_ptr<AST::Node>> parseInstruction(TokenCursor& cursor);
     static Result<std::unique_ptr<AST::Node>> parseVariableDeclaration(TokenCursor& cursor);
     static Result<std::unique_ptr<AST::Node>> parseExpression(TokenCursor& cursor, int minPrecedence = 0);

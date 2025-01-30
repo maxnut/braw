@@ -28,7 +28,7 @@ struct Address : Operand {
 
         os << '[' << *m_base;
         if(m_offset != 0)
-            os << " + " << m_offset;
+            os << "+" << m_offset;
         os << ']';
     }
 

@@ -25,8 +25,9 @@ Result<std::unique_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor)
 
     switch(instructionType) {
         default: {
-            if(!expectTokenType(cursor.get().next().value(), Token::SEMICOLON))
+            if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
                 return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
+            cursor.tryNext();
             break;
         }
         case Rules::InstructionType::WHILE:

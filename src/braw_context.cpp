@@ -7,7 +7,7 @@ BrawContext::BrawContext() {
     m_typeTable = {
         {"void", TypeInfo{"void", 0}},
 
-        {"int", TypeInfo{"int", 4, 
+        {"int", TypeInfo{"int", 8, //TODO: this should be 4, but until i have proper register size handling force 8 
             {
                 {"+", {"int"}},
                 {"-", {"int"}},

@@ -35,7 +35,7 @@ File CodeGenerator::generate(const ::File& src) {
     for(const Function& f : src.m_functions) {
         initializeRegisters();
         file.m_text.m_globals.push_back({f.m_name});
-        ColorResult result = GraphColor::build(f, {"rdi","rsi","rdx","rcx","r8","r9","rbx","r10","r11","r12","r13","r14","r15"}, {"xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm5","xmm6","xmm7","xmm8","xmm9","xmm10","xmm11","xmm12","xmm13","xmm14","xmm15"});
+        ColorResult result = GraphColor::build(f, {"rdi","rsi",/* "rdx","rcx","r8","r9","rbx","r10","r11","r12","r13","r14", */"r15"}, {"xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm5","xmm6","xmm7","xmm8","xmm9","xmm10","xmm11","xmm12","xmm13","xmm14","xmm15"});
         FunctionContext ctx{file};
         ctx.m_virtualRegisters["%return"] = m_registers.at("rax");
         ctx.m_virtualRegisters["%returnF"] = m_registers.at("xmm0");
@@ -65,13 +65,13 @@ File CodeGenerator::generate(const ::File& src) {
             push(reg, ctx);
 
         if(spills > 0)
-            sub(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(spills), ctx);
+            sub(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(spills, Operand::ValueType::Signed, Operand::Size::Qword), ctx);
 
         for(auto arg : f.m_args) {
             auto op = ctx.m_virtualRegisters.at(arg->m_id);
             if(arg->m_type.m_name == "int") {
                 op->setValueType(Operand::ValueType::Signed);
-                op->setSize(Operand::Size::Dword);
+                op->setSize(Operand::Size::Qword); //TODO: this should actually be a dword but until i have proper register size handling force qword
             }
             else if(arg->m_type.m_name == "long") {
                 op->setValueType(Operand::ValueType::Signed);
@@ -157,7 +157,7 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
         }
         case ::Instruction::JumpFalse: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Je, ctx);
+            compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0, Operand::ValueType::Signed, Operand::Size::Qword), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Je, ctx);
             break;
         }
         case ::Instruction::Call: {
@@ -183,7 +183,8 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     
     if(isFloat(source)) in.m_opcode = Movss;
     else if(isDouble(source)) in.m_opcode = Movsd;
-    else if(bothRegisters(target, source) && cast<Operands::Register>(target)->getSize() > cast<Operands::Register>(source)->getSize()) in.m_opcode = Movzx;
+    else if(bothRegisters(target, source) && cast<Operands::Register>(target)->getSize() > cast<Operands::Register>(source)->getSize())
+        in.m_opcode = Movzx;
     else in.m_opcode = Mov;
     
     moveValueType(target, source, ctx);
@@ -271,7 +272,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     ctx.f.m_text.m_instructions.push_back(i);
 
     if(spilled > 0)
-        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(spilled * 8), ctx);
+        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(spilled * Operand::Qword, Operand::ValueType::Signed, Operand::Size::Qword), ctx);
 
     if(optReturn)
         move(optReturn, isFloat(optReturn) || isDouble(optReturn) ? m_registers.at("xmm0") : m_registers.at("rax"), ctx);
@@ -282,7 +283,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
 
 void CodeGenerator::ret(FunctionContext& ctx) {
     if(ctx.m_spills > 0)
-        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(ctx.m_spills), ctx);
+        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(ctx.m_spills,  Operand::ValueType::Signed, Operand::Size::Qword), ctx);
     
     for(auto reg : ctx.m_savedRegisters)
         pop(reg, ctx);
@@ -312,7 +313,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
             return;
         }
 
-        sub(m_registers.at("rsp"), std::make_shared<Operands::Immediate>((int)reg->getSize()), ctx);
+        sub(m_registers.at("rsp"), std::make_shared<Operands::Immediate>((int)reg->getSize(), Operand::ValueType::Signed, Operand::Size::Qword), ctx);
         move(std::make_shared<Operands::Address>(m_registers.at("rsp")), reg, ctx);
         return;
     }
@@ -327,7 +328,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
 void CodeGenerator::pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx) {
     if(isFloat(target) || isDouble(target)) {
         move(target, std::make_shared<Operands::Address>(m_registers.at("rsp")), ctx);
-        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>((int)target->getSize()), ctx);
+        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>((int)target->getSize(), Operand::ValueType::Signed, Operand::Size::Qword), ctx);
         return;
     }
     Instruction i;
@@ -338,13 +339,13 @@ void CodeGenerator::pop(std::shared_ptr<Operands::Register> target, FunctionCont
 
 
 std::shared_ptr<Operands::Register> CodeGenerator::memoryValueToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx) {
-    auto reg = isFloat(address) || isDouble(address) ? m_registers.at(SPILL1) : m_registers.at(PRCSPILL1);
+    auto reg = isFloat(address) || isDouble(address) ? m_registers.at(PRCSPILL1) : m_registers.at(SPILL1);
     move(reg, address, ctx);
     return reg;
 }
 
 std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx) {
-    auto reg = isFloat(address) || isDouble(address) ? m_registers.at(SPILL1) : m_registers.at(PRCSPILL1);
+    auto reg = isFloat(address) || isDouble(address) ? m_registers.at(PRCSPILL1) : m_registers.at(SPILL1);
     Instruction i;
     i.m_opcode = Lea;
     i.m_operands.push_back(reg->clone());
@@ -388,9 +389,9 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
 
             switch(v.index()) {
                 case 0:
-                    return std::make_shared<Operands::Immediate>(std::get<int>(v));
+                    return std::make_shared<Operands::Immediate>(std::get<int>(v), Operand::ValueType::Signed, Operand::Size::Qword); //TODO: this should actually be a dword but until i have proper register size handling force qword
                 case 1:
-                    return std::make_shared<Operands::Immediate>(std::get<long>(v));
+                    return std::make_shared<Operands::Immediate>(std::get<long>(v), Operand::ValueType::Signed, Operand::Size::Qword);
                 case 2:
                 case 3:
                 case 5: {
@@ -405,7 +406,7 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                     return std::make_shared<Operands::Address>(la);
                 }
                 case 4:
-                    return std::make_shared<Operands::Immediate>(std::get<bool>(v));
+                    return std::make_shared<Operands::Immediate>(std::get<bool>(v), Operand::ValueType::Signed, Operand::Size::Byte);
                 default: break;
             }
             break;

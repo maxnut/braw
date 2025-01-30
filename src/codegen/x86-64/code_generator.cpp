@@ -356,7 +356,7 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::
 
 void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, InstructionOpcode setOpcode, FunctionContext& ctx) {
     Instruction cmp, set;
-    cmp.m_opcode = isFloat(op) || isFloat(reg) ? Ucomiss : Cmp;
+    cmp.m_opcode = isFloat(op) ? Ucomiss : isDouble(op) ? Ucomisd : Cmp;
     cmp.m_operands.push_back(reg->clone());
     cmp.m_operands.push_back(op->clone());
     ctx.f.m_text.m_instructions.push_back(cmp);

@@ -38,6 +38,7 @@ constexpr InstructionOpcode Movzx    = {0x00, 0x0F, 0xB6};    // MOVZX
 constexpr InstructionOpcode Jmp      = {0x00, 0xE9};          // JMP (near jump)
 constexpr InstructionOpcode Cmp      = {0x00, 0x3D};          // CMP (immediate to register/memory)
 constexpr InstructionOpcode Ucomiss  = {0xF3, 0x0F, 0x2E};    // UCOMISS (SSE comparison)
+constexpr InstructionOpcode Ucomisd  = {0xF2, 0x0F, 0x2E};    // UCOMISD (SSE2 comparison)
 constexpr InstructionOpcode Sete     = {0x00, 0x0F, 0x94};    // SETE (set if equal)
 constexpr InstructionOpcode Setne    = {0x00, 0x0F, 0x95};    // SETNE (set if not equal)
 constexpr InstructionOpcode Setge    = {0x00, 0x0F, 0x9D};    // SETGE (set if greater or equal)
@@ -68,6 +69,7 @@ static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Jmp, "jmp"},
     {Cmp, "cmp"},
     {Ucomiss, "ucomiss"},
+    {Ucomisd, "ucomisd"},
     {Sete, "sete"},
     {Setne, "setne"},
     {Setge, "setge"},

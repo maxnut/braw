@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <unordered_set>
 
-ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters) {
+ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters, int maxParamReg, int maxParamPReg) {
     if(registers.size() < 2 || precisionRegisters.size() < 2)
         throw std::runtime_error("Not enough registers");
 
@@ -40,7 +40,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
                 break;
             case RegisterType::Single:
             case RegisterType::Double:
-                if(registerPrecisionIndex >= precisionRegisters.size()) {
+                if(registerPrecisionIndex >= precisionRegisters.size() || registerPrecisionIndex >= maxParamPReg) {
                     paramStack.insert(param->m_id);
                     break;
                 }
@@ -48,7 +48,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
                 registerPrecisionIndex++;
                 break;
             default:
-                if(registerIndex >= registers.size()) {
+                if(registerIndex >= registers.size() || registerIndex >= maxParamReg) {
                     paramStack.insert(param->m_id);
                     break;
                 }

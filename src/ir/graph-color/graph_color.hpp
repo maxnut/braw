@@ -33,7 +33,7 @@ struct ColorResult {
 
 class GraphColor {
 public:
-    static ColorResult build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters);
+    static ColorResult build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters, int maxParamReg, int maxParamPReg);
 
 private:
     static void fillRanges(const Function& function, ColorResult& result);

@@ -4,12 +4,10 @@
 #include <string>
 
 enum RegisterType {
-    Byte,
-    Word,
-    Dword,
-    Qword,
+    Signed,
     Single,
     Double,
+    Struct,
     Count
 };
 

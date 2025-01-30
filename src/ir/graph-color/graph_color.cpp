@@ -10,14 +10,15 @@
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
+#include <unordered_set>
 
 ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters) {
-    if(registers.size() < 3 || precisionRegisters.size() < 3)
+    if(registers.size() < 2 || precisionRegisters.size() < 2)
         throw std::runtime_error("Not enough registers");
 
     //reserve two registers for spill
-    registers.erase(registers.end() - 2, registers.end());
-    precisionRegisters.erase(precisionRegisters.end() - 2, precisionRegisters.end());
+    registers.erase(registers.end() - 1, registers.end());
+    precisionRegisters.erase(precisionRegisters.end() - 1, precisionRegisters.end());
 
     ColorResult res;
     fillRanges(function, res);
@@ -28,17 +29,29 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
 
     //TODO: ignore stack parameters
     std::unordered_map<std::string, std::string> paramAssignments;
+    std::unordered_set<std::string> paramStack;
 
     int registerIndex = 0;
     int registerPrecisionIndex = 0;
     for (auto& param : function.m_args) {
         switch(res.m_ranges[param->m_id].m_registerType) {
+            case RegisterType::Struct:
+                paramStack.insert(param->m_id);
+                break;
             case RegisterType::Single:
             case RegisterType::Double:
+                if(registerPrecisionIndex >= precisionRegisters.size()) {
+                    paramStack.insert(param->m_id);
+                    break;
+                }
                 paramAssignments[param->m_id] = precisionRegisters[registerPrecisionIndex];
                 registerPrecisionIndex++;
                 break;
             default:
+                if(registerIndex >= registers.size()) {
+                    paramStack.insert(param->m_id);
+                    break;
+                }
                 paramAssignments[param->m_id] = registers[registerIndex];
                 registerIndex++;
                 break;
@@ -47,11 +60,16 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
 
     for(auto& range : res.m_rangeVector) {
         GraphNode node;
+        node.m_registerType = range->m_registerType;
         node.m_id = range->m_id;
         if (paramAssignments.contains(node.m_id))
             node.m_tag = paramAssignments[node.m_id];
 
         node.m_connections = getOverlaps(node.m_id, res.m_ranges);
+        if(paramStack.contains(node.m_id)) {
+            spills.push_back(node);
+            continue;
+        }
         graph.push_back(node);
     }
 
@@ -60,7 +78,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
     while(!graph.empty()) {
         bool removed = false;
         for(GraphNode& node : graph) {
-            if(node.m_connections.size() < registers.size()) {
+            if(node.m_connections.size() < (node.m_registerType == RegisterType::Single || node.m_registerType == RegisterType::Double ? precisionRegisters.size() : registers.size())) {
                 stack.push_back(node);
                 removeFromGraph(node.m_id, graph);
                 removed = true;
@@ -144,6 +162,7 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
 
         result.m_ranges[r->m_id].m_range.second = i;
         result.m_ranges[r->m_id].m_id = r->m_id;
+        result.m_ranges[r->m_id].m_size = r->m_type.m_size;
     };
 
     for(auto& param : function.m_args)
@@ -195,6 +214,10 @@ std::vector<std::string> GraphColor::getOverlaps(const std::string& id, const st
 
         Range cmp = r.second;
 
+        if((cmp.m_registerType == RegisterType::Single || cmp.m_registerType == RegisterType::Double) && 
+            (my.m_registerType != RegisterType::Single && my.m_registerType != RegisterType::Double))
+            continue;
+
         if(my.m_range.first >= cmp.m_range.first && my.m_range.first <= cmp.m_range.second
             || my.m_range.second <= cmp.m_range.second && my.m_range.second >= cmp.m_range.first)
             ret.push_back(r.first);
@@ -221,7 +244,7 @@ GraphNode GraphColor::getMostRelevantNode(std::vector<GraphNode>& graph) {
     GraphNode res;
 
     for(GraphNode& node : graph) {
-        if(node.m_connections.size() > max) {
+        if((int)node.m_connections.size() > max) {
             max = node.m_connections.size();
             res = node;
         }

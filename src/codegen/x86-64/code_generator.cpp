@@ -21,8 +21,8 @@
 
 namespace CodeGen::x86_64 {
 
-const char* SPILL1 = "r14";
-const char* SPILL2 = "r15";
+const char* SPILL1 = "r15";
+const char* PRCSPILL1 = "xmm15";
 
 template <typename T>
 std::shared_ptr<T> cast(const std::shared_ptr<void>& ptr) {
@@ -33,6 +33,7 @@ File CodeGenerator::generate(const ::File& src) {
     File file;
 
     for(const Function& f : src.m_functions) {
+        initializeRegisters();
         file.m_text.m_globals.push_back({f.m_name});
         ColorResult result = GraphColor::build(f, {"rdi","rsi","rdx","rcx","r8","r9","rbx","r10","r11","r12","r13","r14","r15"}, {"xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm5","xmm6","xmm7","xmm8","xmm9","xmm10","xmm11","xmm12","xmm13","xmm14","xmm15"});
         FunctionContext ctx{file};
@@ -55,7 +56,7 @@ File CodeGenerator::generate(const ::File& src) {
             }
             else {
                 ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at("rsp"), spills);
-                spills += range->size();
+                spills += range->m_size;
             }
         }
         ctx.m_spills = spills;
@@ -68,20 +69,34 @@ File CodeGenerator::generate(const ::File& src) {
 
         for(auto arg : f.m_args) {
             auto op = ctx.m_virtualRegisters.at(arg->m_id);
-            if(arg->m_type.m_name == "int")
+            if(arg->m_type.m_name == "int") {
                 op->setValueType(Operand::ValueType::Signed);
-            else if(arg->m_type.m_name == "long")
+                op->setSize(Operand::Size::Dword);
+            }
+            else if(arg->m_type.m_name == "long") {
                 op->setValueType(Operand::ValueType::Signed);
-            else if(arg->m_type.m_name == "bool")
+                op->setSize(Operand::Size::Qword);
+            }
+            else if(arg->m_type.m_name == "bool") {
                 op->setValueType(Operand::ValueType::Signed);
-            else if(arg->m_type.m_name == "char")
+                op->setSize(Operand::Size::Byte);
+            }
+            else if(arg->m_type.m_name == "char") {
                 op->setValueType(Operand::ValueType::Signed);
-            else if(arg->m_type.m_name == "float")
+                op->setSize(Operand::Size::Byte);
+            }
+            else if(arg->m_type.m_name == "float") {
                 op->setValueType(Operand::ValueType::SinglePrecision);
-            else if(arg->m_type.m_name == "double")
+                op->setSize(Operand::Size::Dword);
+            }
+            else if(arg->m_type.m_name == "double") {
                 op->setValueType(Operand::ValueType::DoublePrecision);
-            else
-                op->setValueType(Operand::ValueType::Structure);
+                op->setSize(Operand::Size::Qword);
+            }
+            else {
+                op->setValueType(Operand::ValueType::Pointer);
+                op->setSize(Operand::Size::Qword);
+            }
         }
 
         //skip label
@@ -153,7 +168,7 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             else if(callIn->m_optReturn->m_registerType == RegisterType::Double) optRet->setValueType(Operand::ValueType::DoublePrecision);
             else optRet->setValueType(Operand::ValueType::Signed);
 
-            call(std::make_shared<Operands::Label>(callIn->m_id), optRet, callIn->m_parameters, ctx);
+            call(std::make_shared<Operands::Label>(callIn->m_id, Operand::ValueType::Pointer, Operand::Size::Qword), optRet, callIn->m_parameters, ctx);
             break;
         }
         case ::Instruction::Return:
@@ -168,12 +183,13 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     
     if(isFloat(source)) in.m_opcode = Movss;
     else if(isDouble(source)) in.m_opcode = Movsd;
-    else if(bothRegisters(target, source) && cast<Operands::Register>(target)->m_size > cast<Operands::Register>(source)->m_size) in.m_opcode = Movzx;
+    else if(bothRegisters(target, source) && cast<Operands::Register>(target)->getSize() > cast<Operands::Register>(source)->getSize()) in.m_opcode = Movzx;
     else in.m_opcode = Mov;
     
     moveValueType(target, source, ctx);
-    in.m_operands.push_back(target);
-    in.m_operands.push_back(source);
+    target->setSize(source->getSize());
+    in.m_operands.push_back(target->clone());
+    in.m_operands.push_back(source->clone());
     ctx.f.m_text.m_instructions.push_back(std::move(in));
 }
 
@@ -181,8 +197,8 @@ void CodeGenerator::add(std::shared_ptr<Operand> target, std::shared_ptr<Operand
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
     in.m_opcode = isFloat(source) ? Addss : isDouble(source) ? Addsd : Add;
-    in.m_operands.push_back(target);
-    in.m_operands.push_back(source);
+    in.m_operands.push_back(target->clone());
+    in.m_operands.push_back(source->clone());
     ctx.f.m_text.m_instructions.push_back(std::move(in));
 }
 
@@ -190,8 +206,8 @@ void CodeGenerator::sub(std::shared_ptr<Operand> target, std::shared_ptr<Operand
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
     in.m_opcode = isFloat(source) ? Subss : isDouble(source) ? Subsd : Sub;
-    in.m_operands.push_back(target);
-    in.m_operands.push_back(source);
+    in.m_operands.push_back(target->clone());
+    in.m_operands.push_back(source->clone());
     ctx.f.m_text.m_instructions.push_back(std::move(in));
 }
 
@@ -199,8 +215,8 @@ void CodeGenerator::mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
     in.m_opcode = isFloat(source) ? Mulss : isDouble(source) ? Mulsd : Imul;
-    in.m_operands.push_back(target);
-    in.m_operands.push_back(source);
+    in.m_operands.push_back(target->clone());
+    in.m_operands.push_back(source->clone());
     ctx.f.m_text.m_instructions.push_back(std::move(in));
 }
 
@@ -251,14 +267,14 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
 
     Instruction i;
     i.m_opcode = Call;
-    i.m_operands.push_back(label);
+    i.m_operands.push_back(label->clone());
     ctx.f.m_text.m_instructions.push_back(i);
 
     if(spilled > 0)
         add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(spilled * 8), ctx);
 
     if(optReturn)
-        move(optReturn, isFloat(optReturn) ? m_registers.at("xmm0") : m_registers.at("rax"), ctx);
+        move(optReturn, isFloat(optReturn) || isDouble(optReturn) ? m_registers.at("xmm0") : m_registers.at("rax"), ctx);
 
     for(auto reg : saveStack)
         pop(reg, ctx);
@@ -281,7 +297,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
     if(target->m_type == Operand::Type::Immediate) {
         Instruction i;
         i.m_opcode = Push;
-        i.m_operands.push_back(target);
+        i.m_operands.push_back(target->clone());
         ctx.f.m_text.m_instructions.push_back(i);
         return;
     }
@@ -289,14 +305,14 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
         auto reg = cast<Operands::Register>(target);
         Instruction i;
 
-        if(!isFloat(reg)) {
+        if(!isFloat(reg) && !isDouble(reg)) {
             i.m_opcode = Push;
-            i.m_operands.push_back(target);
+            i.m_operands.push_back(target->clone());
             ctx.f.m_text.m_instructions.push_back(i);
             return;
         }
 
-        sub(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(16), ctx);
+        sub(m_registers.at("rsp"), std::make_shared<Operands::Immediate>((int)reg->getSize()), ctx);
         move(std::make_shared<Operands::Address>(m_registers.at("rsp")), reg, ctx);
         return;
     }
@@ -304,47 +320,49 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
     auto addrReg = memoryAddressToRegister(cast<Operands::Address>(target), ctx);
     Instruction i;
     i.m_opcode = Push;
-    i.m_operands.push_back(addrReg);
+    i.m_operands.push_back(addrReg->clone());
     ctx.f.m_text.m_instructions.push_back(i);
 }
 
 void CodeGenerator::pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx) {
-    if(isFloat(target)) {
+    if(isFloat(target) || isDouble(target)) {
         move(target, std::make_shared<Operands::Address>(m_registers.at("rsp")), ctx);
-        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>(16), ctx);
+        add(m_registers.at("rsp"), std::make_shared<Operands::Immediate>((int)target->getSize()), ctx);
         return;
     }
     Instruction i;
     i.m_opcode = Pop;
-    i.m_operands.push_back(target);
+    i.m_operands.push_back(target->clone());
     ctx.f.m_text.m_instructions.push_back(i);
 }
 
 
 std::shared_ptr<Operands::Register> CodeGenerator::memoryValueToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx) {
-    move(m_registers[SPILL1], address, ctx);
-    return m_registers[SPILL1];
+    auto reg = isFloat(address) || isDouble(address) ? m_registers.at(SPILL1) : m_registers.at(PRCSPILL1);
+    move(reg, address, ctx);
+    return reg;
 }
 
 std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx) {
+    auto reg = isFloat(address) || isDouble(address) ? m_registers.at(SPILL1) : m_registers.at(PRCSPILL1);
     Instruction i;
     i.m_opcode = Lea;
-    i.m_operands.push_back(m_registers[SPILL1]);
-    i.m_operands.push_back(address);
+    i.m_operands.push_back(reg->clone());
+    i.m_operands.push_back(address->clone());
     ctx.f.m_text.m_instructions.push_back(i);
-    m_registers[SPILL1]->setValueType(address->getValueType());
-    return m_registers[SPILL1];
+    reg->setValueType(address->getValueType());
+    return reg;
 }
 
 void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, InstructionOpcode setOpcode, FunctionContext& ctx) {
     Instruction cmp, set;
     cmp.m_opcode = isFloat(op) || isFloat(reg) ? Ucomiss : Cmp;
-    cmp.m_operands.push_back(reg);
-    cmp.m_operands.push_back(op);
+    cmp.m_operands.push_back(reg->clone());
+    cmp.m_operands.push_back(op->clone());
     ctx.f.m_text.m_instructions.push_back(cmp);
     set.m_opcode = setOpcode;
     m_registers.at("al")->setValueType(Operand::ValueType::Signed);
-    set.m_operands.push_back(m_registers.at("al"));
+    set.m_operands.push_back(m_registers.at("al")->clone());
     ctx.f.m_text.m_instructions.push_back(set);
     move(store, m_registers.at("al"), ctx);
 }
@@ -352,11 +370,11 @@ void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std
 void CodeGenerator::compareAndJump(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, InstructionOpcode jumpOpcode, FunctionContext& ctx) {
     Instruction cmp, jmp;
     cmp.m_opcode = Cmp;
-    cmp.m_operands.push_back(reg);
-    cmp.m_operands.push_back(op);
+    cmp.m_operands.push_back(reg->clone());
+    cmp.m_operands.push_back(op->clone());
     ctx.f.m_text.m_instructions.push_back(cmp);
     jmp.m_opcode = jumpOpcode;
-    jmp.m_operands.push_back(label);
+    jmp.m_operands.push_back(label->clone());
     ctx.f.m_text.m_instructions.push_back(jmp);
 }
 
@@ -377,10 +395,12 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                 case 3:
                 case 5: {
                     static uint32_t id = 0;
+                    Operand::ValueType vt = v.index() == 2 ? Operand::ValueType::SinglePrecision : v.index() == 3 ? Operand::ValueType::DoublePrecision : Operand::ValueType::Pointer;
+                    Operand::Size sz = v.index() == 2 ? Operand::Size::Dword : v.index() == 3 ? Operand::Size::Qword : Operand::Size::Qword;
                     Label l{"v_" + std::to_string(id)};
                     ctx.f.m_data.m_labels.push_back({l.m_id, v});
                     id++;
-                    auto la = std::make_shared<Operands::Label>(l.m_id);
+                    auto la = std::make_shared<Operands::Label>(l.m_id, vt, sz);
                     la->setValueType(v.index() == 2 ? Operand::ValueType::SinglePrecision : v.index() == 3 ? Operand::ValueType::DoublePrecision : Operand::ValueType::Pointer);
                     return std::make_shared<Operands::Address>(la);
                 }
@@ -395,7 +415,7 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
             return std::make_shared<Operands::Address>(reg, std::get<Address>(source).m_offset);
         }
         case 4:
-            return std::make_shared<Operands::Label>(std::get<::Label>(source).m_id);
+            return std::make_shared<Operands::Label>(std::get<::Label>(source).m_id, Operand::ValueType::Pointer, Operand::Size::Qword);
         default: break;
     }
 
@@ -424,6 +444,7 @@ void CodeGenerator::moveValueType(std::shared_ptr<Operand> target, std::shared_p
 #define REGISTER(ID, size, type) m_registers[ID] = std::make_shared<Operands::Register>(ID, size, Operand::ValueType::Count, type)
 
 void CodeGenerator::initializeRegisters() {
+    m_registers.clear();
     REGISTERT("rsp", Operands::Register::Qword, Operand::ValueType::Pointer, Operands::Register::General);
     REGISTER("rbp", Operands::Register::Qword, Operands::Register::General);
     REGISTER("rax", Operands::Register::Qword, Operands::Register::General);

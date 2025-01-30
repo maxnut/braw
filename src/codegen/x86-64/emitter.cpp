@@ -1,4 +1,5 @@
 #include "emitter.hpp"
+#include <iomanip>
 
 namespace CodeGen::x86_64 {
 
@@ -13,14 +14,12 @@ void Emitter::emit(const File& f, std::ostream& out) {
 
         switch(value.index()) {
             case 2:
-                out << "dd " << std::bit_cast<unsigned int>(std::get<float>(value)) << "\n";
+                out << "dd " << std::fixed << std::setprecision(std::numeric_limits<float>::max_digits10)
+                    << std::get<float>(value) << "\n";
                 break;
             case 3: {
-                uint32_t lower, upper;
-                memcpy(&lower, &std::get<double>(value), sizeof(lower));
-                memcpy(&upper, &std::get<double>(value) + sizeof(lower), sizeof(upper));
-                out << "dd " << lower;
-                out << ", " << upper << "\n";
+                out << "dq " << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10)
+                    << std::get<double>(value) << "\n";
                 break;
             }
             case 5: {

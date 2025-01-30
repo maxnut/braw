@@ -49,19 +49,19 @@ TypeInfo IRBuilder::getOperandType(Operand op, BrawContext& context, IRFunctionC
 
 RegisterType IRBuilder::getRegisterType(const TypeInfo& type) {
     if(type.m_name == "int")
-        return RegisterType::Dword;
+        return RegisterType::Signed;
     else if(type.m_name == "long")
-        return RegisterType::Qword;
+        return RegisterType::Signed;
     else if(type.m_name == "float")
         return RegisterType::Single;
     else if(type.m_name == "double")
         return RegisterType::Double;
     else if(type.m_name == "char")
-        return RegisterType::Byte;
+        return RegisterType::Signed;
     else if(type.m_name == "bool")
-        return RegisterType::Byte;
+        return RegisterType::Signed;
 
-    return RegisterType::Count;
+    return RegisterType::Struct;
 }
 
 void IRBuilder::moveToRegister(const std::string& name, Operand& op, BrawContext& context, IRFunctionContext& ictx) {

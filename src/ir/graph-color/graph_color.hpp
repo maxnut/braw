@@ -14,27 +14,14 @@ struct Range {
     std::string m_id;
     std::pair<uint32_t, uint32_t> m_range;
     RegisterType m_registerType;
-
-    uint8_t size() {
-        switch(m_registerType) {
-            case Byte: return 1;
-            case Word: return 2;
-            case Dword: return 4;
-            case Qword: return 8;
-            case Single: return 4;
-            case Double: return 8;
-            default:
-                break;
-        }
-
-        return 0;
-    }
+    size_t m_size;
 };
 
 struct GraphNode {
     std::string m_id;
     std::vector<std::string> m_connections;
     std::string m_tag = "";
+    RegisterType m_registerType;
 };
 
 struct ColorResult {

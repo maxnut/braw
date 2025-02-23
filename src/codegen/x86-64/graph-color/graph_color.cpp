@@ -12,7 +12,9 @@
 #include <stdexcept>
 #include <unordered_set>
 
-ColorResult GraphColor::build(const Function& function, std::vector<std::string> registers, std::vector<std::string> precisionRegisters, int maxParamReg, int maxParamPReg) {
+namespace CodeGen::x86_64 {
+
+ColorResult GraphColor::build(const Function& function, std::vector<Operands::Register::RegisterGroup> registers, std::vector<Operands::Register::RegisterGroup> precisionRegisters, int maxParamReg, int maxParamPReg) {
     if(registers.size() < 2 || precisionRegisters.size() < 2)
         throw std::runtime_error("Not enough registers");
 
@@ -27,17 +29,13 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
     std::vector<GraphNode> graph;
     std::vector<GraphNode> spills;
 
-    //TODO: ignore stack parameters
-    std::unordered_map<std::string, std::string> paramAssignments;
+    std::unordered_map<std::string, Operands::Register::RegisterGroup> paramAssignments;
     std::unordered_set<std::string> paramStack;
 
     int registerIndex = 0;
     int registerPrecisionIndex = 0;
     for (auto& param : function.m_args) {
-        switch(res.m_ranges[param->m_id].m_registerType) {
-            case RegisterType::Struct:
-                paramStack.insert(param->m_id);
-                break;
+        switch(res.m_ranges[param->m_id]->m_registerType) {
             case RegisterType::Single:
             case RegisterType::Double:
                 if(registerPrecisionIndex >= precisionRegisters.size() || registerPrecisionIndex >= maxParamPReg) {
@@ -65,11 +63,12 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
         if (paramAssignments.contains(node.m_id))
             node.m_tag = paramAssignments[node.m_id];
 
-        node.m_connections = getOverlaps(node.m_id, res.m_ranges);
-        if(paramStack.contains(node.m_id)) {
+        if(paramStack.contains(node.m_id) || (node.m_registerType == RegisterType::Struct && !paramAssignments.contains(node.m_id))) {
             spills.push_back(node);
+            res.m_ranges.erase(node.m_id);
             continue;
         }
+        node.m_connections = getOverlaps(node.m_id, res.m_ranges);
         graph.push_back(node);
     }
 
@@ -97,13 +96,13 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
         GraphNode popped = stack.back();
         stack.pop_back();
 
-        if(popped.m_tag != "") {
+        if(popped.m_tag != Operands::Register::Count) {
             graph.push_back(popped);
             continue;
         }
 
-        auto tryTag([&](const std::vector<std::string>& tags) {
-            for(const std::string& tag : tags) {
+        auto tryTag([&](const std::vector<Operands::Register::RegisterGroup>& tags) {
+            for(const auto& tag : tags) {
                 bool found = false;
                 for(auto& s : popped.m_connections) {
                     GraphNode node = findInGraph(s, graph);
@@ -120,7 +119,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
             }
         });
 
-        switch(res.m_ranges[popped.m_id].m_registerType) {
+        switch(res.m_ranges[popped.m_id]->m_registerType) {
             case RegisterType::Single:
             case RegisterType::Double:
                 tryTag(precisionRegisters);
@@ -143,7 +142,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<std::string>
 }
 
 void GraphColor::fillRanges(const Function& function, ColorResult& result) {
-    auto tryRegister = [&](Operand o, uint32_t i) {
+    auto tryRegister = [&](::Operand o, uint32_t i) {
         if(o.index() != 1)
             return;
 
@@ -153,16 +152,17 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
             return;
 
         if(!result.m_ranges.contains(r->m_id)) {
-            result.m_ranges[r->m_id].m_range.first = i;
-            result.m_rangeVector.push_back(&result.m_ranges[r->m_id]);
+            result.m_ranges[r->m_id] = std::make_shared<Range>();
+            result.m_ranges[r->m_id]->m_range.first = i;
+            result.m_rangeVector.push_back(result.m_ranges[r->m_id]);
         }
 
         if(r->m_registerType != RegisterType::Count)
-            result.m_ranges[r->m_id].m_registerType = r->m_registerType;
+            result.m_ranges[r->m_id]->m_registerType = r->m_registerType;
 
-        result.m_ranges[r->m_id].m_range.second = i;
-        result.m_ranges[r->m_id].m_id = r->m_id;
-        result.m_ranges[r->m_id].m_size = r->m_type.m_size;
+        result.m_ranges[r->m_id]->m_range.second = i;
+        result.m_ranges[r->m_id]->m_id = r->m_id;
+        result.m_ranges[r->m_id]->m_typeInfo = r->m_type;
     };
 
     for(auto& param : function.m_args)
@@ -181,6 +181,7 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
                     tryRegister(p, i);
                 break;
             }
+            case Instruction::Allocate:
             case Instruction::Add:
             case Instruction::Move:
             case Instruction::Subtract:
@@ -204,22 +205,22 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
     }
 }
 
-std::vector<std::string> GraphColor::getOverlaps(const std::string& id, const std::unordered_map<std::string, Range>& ranges) {
+std::vector<std::string> GraphColor::getOverlaps(const std::string& id, const std::unordered_map<std::string, std::shared_ptr<Range>>& ranges) {
     std::vector<std::string> ret;
-    const Range& my = ranges.at(id);
+    const auto my = ranges.at(id);
 
     for(auto& r : ranges) {
         if(r.first == id)
             continue;
 
-        Range cmp = r.second;
+        const auto cmp = r.second;
 
-        if((cmp.m_registerType == RegisterType::Single || cmp.m_registerType == RegisterType::Double) && 
-            (my.m_registerType != RegisterType::Single && my.m_registerType != RegisterType::Double))
+        if((cmp->m_registerType == RegisterType::Single || cmp->m_registerType == RegisterType::Double) && 
+            (my->m_registerType != RegisterType::Single && my->m_registerType != RegisterType::Double))
             continue;
 
-        if(my.m_range.first >= cmp.m_range.first && my.m_range.first <= cmp.m_range.second
-            || my.m_range.second <= cmp.m_range.second && my.m_range.second >= cmp.m_range.first)
+        if(my->m_range.first >= cmp->m_range.first && my->m_range.first <= cmp->m_range.second
+            || my->m_range.second <= cmp->m_range.second && my->m_range.second >= cmp->m_range.first)
             ret.push_back(r.first);
     }
 
@@ -260,4 +261,6 @@ GraphNode GraphColor::findInGraph(const std::string& id, std::vector<GraphNode>&
     }
 
     return {};
+}
+
 }

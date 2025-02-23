@@ -17,9 +17,18 @@ struct OperatorInfo {
 struct TypeInfo {
     std::string m_name = "";
     size_t m_size = 0;
+    bool m_builtin = false;
     std::unordered_map<std::string, OperatorInfo> m_operators;
     std::unordered_set<std::string> m_validCasts;
     std::unordered_map<std::string, MemberInfo> m_members;
+
+    std::optional<MemberInfo> memberByOffset(size_t offset) {
+        for(auto& pair : m_members) {
+            if(pair.second.m_offset == offset)
+                return pair.second;
+        }
+        return std::nullopt;
+    }
 
     friend bool operator==(const TypeInfo&, const TypeInfo&);
 };

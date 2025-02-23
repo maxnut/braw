@@ -5,7 +5,9 @@ Result<std::unique_ptr<AST::ScopeNode>> Parser::parseScope(TokenCursor& cursor, 
     std::unique_ptr<AST::ScopeNode> scope = std::make_unique<AST::ScopeNode>();
     scope->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
-    bool oneLine = cursor.get().value().m_type != Token::LEFT_BRACE && allowOneLine;
+    bool oneLine = cursor.get().value().m_type == Token::COLON && allowOneLine;
+    if(oneLine)
+        cursor.tryNext();
 
     if(!oneLine && !expectTokenType(cursor.get().next().value(), Token::LEFT_BRACE))
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_BRACE);

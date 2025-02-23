@@ -56,6 +56,7 @@ private:
     static Operand buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx);
     static Operand buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx);
     static Operand buildBinaryOperator(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
+    static Operand buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void buildAssignment(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
 
     static TypeInfo getOperandType(Operand op, BrawContext& context, IRFunctionContext& ictx);

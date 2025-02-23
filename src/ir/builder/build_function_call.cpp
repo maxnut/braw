@@ -17,6 +17,7 @@ Operand IRBuilder::buildCall(const AST::FunctionCallNode* node, BrawContext& con
     std::string name = "%" + std::to_string((uintptr_t)node);
 
     auto fun = context.getFunction(node->m_name, tmpTypes);
+    call.m_returnType = fun->m_returnType;
     if(fun->m_returnType.m_size != 0) {
         call.m_optReturn = makeOrGetRegister(name, ictx);
         call.m_optReturn->m_registerType = getRegisterType(fun->m_returnType);

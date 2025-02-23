@@ -31,7 +31,8 @@ public:
         Dword = 4,
         Qword = 8,
         Oword = 16,
-        Yword = 32
+        Yword = 32,
+        Uninitialized = -1
     };
 
     Operand(Type t, ValueType vt, Size size) : m_type(t), m_valueType(vt), m_size(size) {}

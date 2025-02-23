@@ -6,5 +6,5 @@
 
 struct Address {
     std::shared_ptr<Register> m_base;
-    uint64_t m_offset;
+    int64_t m_offset;
 };

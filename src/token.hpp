@@ -24,6 +24,7 @@ public:
         COMMA,
         QUOTE,
         STRING,
+        COLON,
         COUNT
     };
 
@@ -51,6 +52,7 @@ public:
             case COMMA: return "COMMA";
             case QUOTE: return "QUOTE";
             case STRING: return "STRING";
+            case COLON: return "COLON";
             case COUNT: return "UNKNOWN";
         }
         return "UNKNOWN";

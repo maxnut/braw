@@ -1,8 +1,10 @@
 #pragma once
 
 #include "../operand.hpp"
+#include "codegen/x86-64/register.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace CodeGen::x86_64::Operands {
@@ -13,10 +15,10 @@ struct Address : Operand {
     Address(std::shared_ptr<Operand> base, size_t offset, ValueType vt = ValueType::Pointer) : Operand(Type::Address, vt, Size::Qword), m_base(base), m_offset(offset) {}
 
     std::shared_ptr<Operand> m_base;
-    size_t m_offset = 0;
+    int64_t m_offset = 0;
 
     virtual void emit(std::ostream& os) const override {
-        switch(m_base->getSize()) {
+        switch(m_size) {
             case Size::Byte: os << "byte "; break;
             case Size::Word: os << "word "; break;
             case Size::Dword: os << "dword "; break;
@@ -26,20 +28,24 @@ struct Address : Operand {
             default: break;
         }
 
-        os << '[' << *m_base;
+        auto reg = std::dynamic_pointer_cast<Operands::Register>(m_base);
+
+        os << '[' << reg->m_ids.at(Size::Qword);
         if(m_offset != 0)
-            os << "+" << m_offset;
+            os << (m_offset > 0 ? "+" : "") << m_offset;
         os << ']';
     }
 
-    virtual ValueType getValueType() const override {return m_base->getValueType();}
-    virtual void setValueType(ValueType vt) override {m_base->setValueType(vt);}
-    virtual Size getSize() const override {return m_base->getSize();}
-    virtual void setSize(Size size) override {m_base->setSize(size);}
+    virtual ValueType getValueType() const override {return m_valueType;}
+    virtual void setValueType(ValueType vt) override {m_valueType = vt; m_base->setValueType(ValueType::Pointer);}
+    virtual Size getSize() const override {return m_size;}
+    virtual void setSize(Size size) override {m_size = size; m_base->setSize(Size::Qword);}
 
     virtual std::shared_ptr<Operand> clone() const override {
         auto base = m_base->clone();
-        return std::make_shared<Address>(base, m_offset, getValueType());
+        auto ptr = std::make_shared<Address>(base, m_offset, getValueType());
+        ptr->setSize(getSize());
+        return ptr;
     }
 };
 

@@ -5,9 +5,9 @@
 
 BrawContext::BrawContext() {
     m_typeTable = {
-        {"void", TypeInfo{"void", 0}},
+        {"void", TypeInfo{"void", 0, true}},
 
-        {"int", TypeInfo{"int", 8, //TODO: this should be 4, but until i have proper register size handling force 8 
+        {"int", TypeInfo{"int", 4, true,
             {
                 {"+", {"int"}},
                 {"-", {"int"}},
@@ -23,7 +23,7 @@ BrawContext::BrawContext() {
             {"float", "double", "long", "bool"}
         }},
 
-        {"long", TypeInfo{"long", 8, 
+        {"long", TypeInfo{"long", 8, true,
             {
                 {"+", {"long"}},
                 {"-", {"long"}},
@@ -39,7 +39,7 @@ BrawContext::BrawContext() {
             {"int", "float", "double", "bool"}
         }},
 
-        {"float", TypeInfo{"float", 4, 
+        {"float", TypeInfo{"float", 4, true,
             {
                 {"+", {"float"}},
                 {"-", {"float"}},
@@ -55,7 +55,7 @@ BrawContext::BrawContext() {
             {"int", "long", "double", "bool"}
         }},
 
-        {"double", TypeInfo{"double", 8, 
+        {"double", TypeInfo{"double", 8, true,
             {
                 {"+", {"double"}},
                 {"-", {"double"}},
@@ -71,9 +71,9 @@ BrawContext::BrawContext() {
             {"int", "long", "float", "bool"}
         }},
 
-        {"bool", TypeInfo{"bool", 1}},
+        {"bool", TypeInfo{"bool", 1, true}},
 
-        {"char", TypeInfo{"char", 1}}
+        {"char", TypeInfo{"char", 1, true}}
     };
 }
 

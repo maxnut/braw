@@ -1,9 +1,10 @@
 #include "emitter.hpp"
+#include "ir/printer/ir_printer.hpp"
 #include <iomanip>
 
 namespace CodeGen::x86_64 {
 
-void Emitter::emit(const File& f, std::ostream& out) {
+void Emitter::emit(const File& f, const ::File& ir, std::ostream& out) {
     out << "bits 64\n\n";
 
     out << "section .data\n";
@@ -40,7 +41,8 @@ void Emitter::emit(const File& f, std::ostream& out) {
         if(f.m_text.m_labels.contains(i))
             out << f.m_text.m_labels.at(i).m_id << ":\n";
 
-        out << f.m_text.m_instructions[i] << "\n";
+        out << f.m_text.m_instructions[i] << "\t; ";
+        IRPrinter::print(out, ir.m_functions[f.m_text.m_instructions[i].m_irFunctionIndex].m_instructions[f.m_text.m_instructions[i].m_irIndex].get());
     }
 }
 

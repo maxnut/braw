@@ -4,11 +4,14 @@
 #include "parser/nodes/literal.hpp"
 #include "parser/nodes/variable_access.hpp"
 #include "parser/nodes/function_call.hpp"
+#include "parser/nodes/unary_operator.hpp"
 
 Operand IRBuilder::buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx) {
     switch(node->m_type) {
         case AST::Node::BinaryOperator:
             return buildBinaryOperator(static_cast<const AST::BinaryOperatorNode*>(node), context, ictx);
+        case AST::Node::UnaryOperator:
+            return buildUnaryOperator(static_cast<const AST::UnaryOperatorNode*>(node), context, ictx);
         case AST::Node::Literal:
             return Value(static_cast<const AST::LiteralNode*>(node)->m_value);
         case AST::Node::VariableAccess:{
@@ -17,8 +20,7 @@ Operand IRBuilder::buildExpression(const AST::Node* node, BrawContext& context, 
                 if(ictx.m_registers.contains("%" + var->m_name.m_name + "_" + std::to_string(i)))
                     return ictx.m_registers["%" + var->m_name.m_name + "_" + std::to_string(i)];
             }
-
-            return Value(-69);
+            break;
         }
         case AST::Node::FunctionCall:
             return buildCall(static_cast<const AST::FunctionCallNode*>(node), context, ictx);

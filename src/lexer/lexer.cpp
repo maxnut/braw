@@ -54,6 +54,7 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"--", Token::OPERATOR},
     {",", Token::COMMA},
     {"\"", Token::QUOTE},
+    {":", Token::COLON}
 };
 static std::unordered_map<char, char> s_escapeMap = {
     {'n', '\n'},

@@ -15,6 +15,7 @@ struct Instruction {
         CompareLessEquals,
         JumpFalse,
         Label,
+        Allocate,
         Count
     };
 

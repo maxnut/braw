@@ -52,10 +52,10 @@ int main(int argc, char** argv) {
     fs.close();
 
     CodeGen::x86_64::CodeGenerator codegen;
-    CodeGen::x86_64::File file = codegen.generate(res.at(0));
+    CodeGen::x86_64::File file = codegen.generate(res.at(0), ctx);
 
     fs = std::ofstream(buildPath / (filepath.stem().string() + ".asm"));
-    CodeGen::x86_64::Emitter::emit(file, fs);
+    CodeGen::x86_64::Emitter::emit(file, res.at(0), fs);
     fs.close();
 
     return 0;

@@ -26,31 +26,36 @@ void IRPrinter::print(std::ostream& out, const Function& function) {
     out << "\n";
 
     for(auto& instr : function.m_instructions) {
-        switch(instr->m_type) {
-            case Instruction::Label:
-                out << static_cast<const Label*>(instr.get())->m_id << ":\n";
-                break;
-            case Instruction::Return:
-                out << "    return\n";
-                break;
-            case Instruction::Call: 
-                print(out, static_cast<const CallInstruction*>(instr.get()));
-                break;
-            case Instruction::Add:
-            case Instruction::Move:
-            case Instruction::Subtract:
-            case Instruction::Multiply:
-            case Instruction::Point:
-            case Instruction::CompareEquals:
-            case Instruction::CompareGreaterEquals:
-            case Instruction::CompareLessEquals:
-            case Instruction::CompareNotEquals:
-            case Instruction::JumpFalse:
-                print(out, static_cast<const BasicInstruction*>(instr.get()));
-                break;
-            default:
-                break;
-        }
+        print(out, instr.get());
+    }
+}
+
+void IRPrinter::print(std::ostream& out, const Instruction* instr) {
+    switch(instr->m_type) {
+        case Instruction::Label:
+            out << static_cast<const Label*>(instr)->m_id << ":\n";
+            break;
+        case Instruction::Return:
+            out << "    return\n";
+            break;
+        case Instruction::Call: 
+            print(out, static_cast<const CallInstruction*>(instr));
+            break;
+        case Instruction::Add:
+        case Instruction::Move:
+        case Instruction::Subtract:
+        case Instruction::Multiply:
+        case Instruction::Point:
+        case Instruction::CompareEquals:
+        case Instruction::CompareGreaterEquals:
+        case Instruction::CompareLessEquals:
+        case Instruction::CompareNotEquals:
+        case Instruction::JumpFalse:
+        case Instruction::Allocate:
+            print(out, static_cast<const BasicInstruction*>(instr));
+            break;
+        default:
+            break;
     }
 }
 
@@ -127,6 +132,9 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
             break;
         case Instruction::JumpFalse:
             out << "jmpf ";
+            break;
+        case Instruction::Allocate:
+            out << "alloc ";
             break;
         default:
             return;

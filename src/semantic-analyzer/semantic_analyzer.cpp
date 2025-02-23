@@ -79,8 +79,9 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
             else if(op->m_operator == "cast")
                 return ctx.getTypeInfo(op->m_data);
             else if(op->m_operator == "." || op->m_operator == "->") {
-                ScopeInfo info = ctx.getScopeInfo(op->m_data).value();
-                return info.m_type;
+                auto typeOpt2 = ctx.getTypeInfo(typeOpt.value().m_members.at(op->m_data).m_type);
+                if(!typeOpt2) return std::nullopt;
+                return typeOpt2.value();
             }
         }
         case AST::Node::BinaryOperator: {

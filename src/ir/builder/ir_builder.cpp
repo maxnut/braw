@@ -38,8 +38,11 @@ TypeInfo IRBuilder::getOperandType(Operand op, BrawContext& context, IRFunctionC
             };
             return types.at(std::get<Value>(op).index());
         }
-        case 3:
-            return Utils::makePointer(context.getTypeInfo("void").value());
+        case 3: {
+            auto addr = std::get<Address>(op);
+            return context.getTypeInfo(addr.m_base->m_type.memberByOffset(addr.m_offset).value().m_type).value();
+            // return Utils::makePointer(context.getTypeInfo("void").value());
+        }
         default:
             break;
     }

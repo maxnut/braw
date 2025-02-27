@@ -1,4 +1,5 @@
 #include "graph_color.hpp"
+#include "ir/address.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
@@ -143,10 +144,10 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
 
 void GraphColor::fillRanges(const Function& function, ColorResult& result) {
     auto tryRegister = [&](::Operand o, uint32_t i) {
-        if(o.index() != 1)
+        if(o.index() != 1 && o.index() != 3)
             return;
 
-        auto r = std::get<std::shared_ptr<Register>>(o);
+        auto r = o.index() == 3 ? std::get<Address>(o).m_base : std::get<std::shared_ptr<Register>>(o);
 
         if(r->m_id == "%return" || r->m_id == "%returnF") // the return register will always be rax/xmm0
             return;

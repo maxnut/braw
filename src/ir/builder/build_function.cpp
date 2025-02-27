@@ -7,10 +7,16 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
     IRFunctionContext ictx;
     
     if(context.getTypeInfo(node->m_signature.m_returnType).value().m_size != 0) {
-        if(node->m_signature.m_returnType.m_name == "float" || node->m_signature.m_returnType.m_name == "double")
-            f.m_optReturn = makeOrGetRegister("%returnF", ictx);
-        else
-            f.m_optReturn = makeOrGetRegister("%return", ictx);
+        if(context.getTypeInfo(node->m_signature.m_returnType).value().m_builtin) {
+            if(node->m_signature.m_returnType.m_name == "float" || node->m_signature.m_returnType.m_name == "double")
+                f.m_optReturn = makeOrGetRegister("%returnF", ictx);
+            else
+                f.m_optReturn = makeOrGetRegister("%return", ictx);
+        }
+        else {
+            f.m_optReturn = makeOrGetRegister("%returnPtr", ictx);
+            f.m_args.push_back(f.m_optReturn);
+        }
 
         ictx.m_returnRegister = f.m_optReturn;
     }

@@ -43,7 +43,7 @@ private:
     void mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);
     void push(std::shared_ptr<Operand> target, FunctionContext& ctx);
     void pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx);
-    void call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, FunctionContext& ctx);
+    void call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx);
     void ret(FunctionContext& ctx);
 
     void moveValueType(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);

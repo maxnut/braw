@@ -8,6 +8,7 @@
 #include "codegen/x86-64/olabel.hpp"
 #include "codegen/x86-64/register.hpp"
 #include "cursor.hpp"
+#include "ir/address.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
@@ -76,6 +77,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
     for(const Function& f : src.m_functions) {
         initializeRegisters();
         file.m_text.m_globals.push_back({f.m_name});
+
         ColorResult result = GraphColor::build(f, {Register::RDI,Register::RSI,Register::RDX,Register::RCX,Register::R8,Register::R9,Register::RBX,Register::R10,Register::R11,Register::R12,Register::R13,Register::R14,Register::R15}, {Register::XMM0,Register::XMM1,Register::XMM2,Register::XMM3,Register::XMM4,Register::XMM5,Register::XMM6,Register::XMM7,Register::XMM8,Register::XMM9,Register::XMM10,Register::XMM11,Register::XMM12,Register::XMM13,Register::XMM14,Register::XMM15}, 6, 6);
         FunctionContext ctx{file, braw};
         ctx.m_virtualRegisters["%return"] = m_registers.at(Operands::Register::RAX);
@@ -88,17 +90,17 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         push(m_registers.at(Operands::Register::RBP), ctx);
         move(m_registers.at(Operands::Register::RBP), m_registers.at(Operands::Register::RSP), ctx);
 
-        size_t spills = 0;
+        int64_t spills = 0;
         for(auto range : result.m_rangeVector) {
             if(result.m_registers.contains(range->m_id)) {
-                ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), 0)) : m_registers.at(result.m_registers.at(range->m_id));
+                ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size)) : m_registers.at(result.m_registers.at(range->m_id));
 
                 if(range->m_id == "rbx" || range->m_id == "r12" || range->m_id == "r13" || range->m_id == "r14" || range->m_id == "r15")
                     ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));
             }
             else {
-                ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills - range->m_typeInfo.m_size);
                 spills += range->m_typeInfo.m_size;
+                ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills);
             }
 
             setOperandInfo(ctx.m_virtualRegisters[range->m_id], range->m_typeInfo);
@@ -176,16 +178,27 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
         case ::Instruction::Call: {
             auto callIn = (const ::CallInstruction*)instr;
             auto optRet = callIn->m_optReturn ? cast<Operands::Register>(convertOperand(callIn->m_optReturn, ctx)) : nullptr;
-            setOperandInfo(optRet, callIn->m_returnType);
-            // if(optRet && callIn->m_optReturn->m_registerType == RegisterType::Single) optRet->setValueType(Operand::ValueType::SinglePrecision);
-            // else if(optRet && callIn->m_optReturn->m_registerType == RegisterType::Double) optRet->setValueType(Operand::ValueType::DoublePrecision);
-            // else if(optRet) optRet->setValueType(Operand::ValueType::Signed);
+            if(optRet)
+                setOperandInfo(optRet, callIn->m_returnType);
 
-            call(std::make_shared<Operands::Label>(callIn->m_id, Operand::ValueType::Pointer, Operand::Size::Qword), optRet, callIn->m_parameters, ctx);
+            if(!callIn->m_returnType.m_builtin) {
+                auto addr = cast<Operands::Address>(convertOperand(callIn->m_optReturn, ctx)->clone());
+                addr->m_offset += callIn->m_returnType.m_size;
+                memoryAddressToRegister(addr, m_registers.at(Operands::Register::RDI), ctx);
+            }
+
+            call(std::make_shared<Operands::Label>(callIn->m_id, Operand::ValueType::Pointer, Operand::Size::Qword), callIn->m_returnType.m_builtin ? optRet : nullptr, callIn->m_parameters, callIn->m_returnType.m_builtin ? 0 : 1, ctx);
             break;
         }
         case ::Instruction::Return:
             return ret(ctx);
+        case ::Instruction::Copy: {
+            auto bin = (const ::BasicInstruction*)instr;
+            auto addr1 = cast<Operands::Address>(convertOperand(bin->m_o1, ctx));
+            auto addr2 = cast<Operands::Address>(convertOperand(bin->m_o2, ctx));
+            copyAddressToAddress(addr1, addr2, std::get<1>(bin->m_o1)->m_type.m_size, ctx);
+            break;
+        }
         default: break;
     }
 }
@@ -234,7 +247,7 @@ void CodeGenerator::mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand
     addInstruction(std::move(in), ctx);
 }
 
-void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, FunctionContext& ctx) {
+void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx) {
     static const std::unordered_set<std::shared_ptr<Operands::Register>> callerSaved = {m_registers.at(Register::RAX),m_registers.at(Register::RCX),m_registers.at(Register::RDX),m_registers.at(Register::RSI),m_registers.at(Register::RDI),m_registers.at(Register::R8),m_registers.at(Register::R9),m_registers.at(Register::R10),m_registers.at(Register::R11),m_registers.at(Register::XMM0),m_registers.at(Register::XMM1),m_registers.at(Register::XMM2),m_registers.at(Register::XMM3),m_registers.at(Register::XMM4),m_registers.at(Register::XMM5),m_registers.at(Register::XMM6),m_registers.at(Register::XMM7)};
     std::vector<std::shared_ptr<Operands::Register>> saveStack;
 
@@ -258,6 +271,9 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     std::array<Operands::Register::RegisterGroup, 6> floatParameterRegisters = {Operands::Register::XMM0, Operands::Register::XMM1, Operands::Register::XMM2, Operands::Register::XMM3, Operands::Register::XMM4, Operands::Register::XMM5};
     Cursor<std::array<Operands::Register::RegisterGroup, 6>::iterator> floatCursor(floatParameterRegisters.begin(), floatParameterRegisters.end());
 
+    if(skipArgs > 0)
+        cursor.next(skipArgs);
+
     size_t spilled = 0;
     for(auto& arg : args) {
         auto op = convertOperand(arg, ctx);
@@ -279,8 +295,11 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
                 spilled += std::get<1>(arg)->m_type.m_size;
             }
 
-            if(op->m_type == Operand::Type::Address)
-                memoryAddressToRegister(cast<Operands::Address>(op), m_registers.at(reg), ctx);
+            if(op->m_type == Operand::Type::Address) {
+                auto addr = cast<Operands::Address>(op->clone());
+                addr->m_offset += std::get<1>(arg)->m_type.m_size;
+                memoryAddressToRegister(addr, m_registers.at(reg), ctx);
+            }
             else
                 move(m_registers.at(reg), op, ctx);
         }
@@ -513,9 +532,12 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
             break;
         }
         case 3: {
-            auto addr = cast<Operands::Address>(ctx.m_virtualRegisters.at(std::get<Address>(source).m_base->m_id));
-            addr->m_offset = std::get<Address>(source).m_offset;
-            setOperandInfo(addr, ctx.brawCtx.getTypeInfo(std::get<Address>(source).m_base->m_type.memberByOffset(-addr->m_offset)->m_type).value());
+            auto addr = cast<Operands::Address>(ctx.m_virtualRegisters.at(std::get<Address>(source).m_base->m_id)->clone());
+            auto addrOff = std::get<Address>(source).m_offset;
+            auto addrType = std::get<Address>(source).m_base->m_type;
+            addr->m_offset = addr->m_offset + addrType.m_size + std::get<Address>(source).m_offset;
+            auto off = addrOff < 0 ? addrType.m_size + addrOff : addrOff;
+            setOperandInfo(addr, ctx.brawCtx.getTypeInfo(addrType.memberByOffset(off)->m_type).value());
             return addr;
         }
         case 4:

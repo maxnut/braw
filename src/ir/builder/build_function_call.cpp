@@ -21,6 +21,7 @@ Operand IRBuilder::buildCall(const AST::FunctionCallNode* node, BrawContext& con
     if(fun->m_returnType.m_size != 0) {
         call.m_optReturn = makeOrGetRegister(name, ictx);
         call.m_optReturn->m_registerType = getRegisterType(fun->m_returnType);
+        call.m_optReturn->m_type = fun->m_returnType;
     }
 
     ictx.m_instructions.push_back(std::make_unique<CallInstruction>(call));

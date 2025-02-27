@@ -181,17 +181,10 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
                     tryRegister(p, i);
                 break;
             }
-            case Instruction::Allocate:
-            case Instruction::Add:
-            case Instruction::Move:
-            case Instruction::Subtract:
-            case Instruction::Multiply:
-            case Instruction::Point:
-            case Instruction::CompareEquals:
-            case Instruction::CompareGreaterEquals:
-            case Instruction::CompareLessEquals:
-            case Instruction::CompareNotEquals:
-            case Instruction::JumpFalse: {
+            case Instruction::Label:
+            case Instruction::Return:
+                break;
+            default: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
                 tryRegister(basic->m_o1, i);
                 tryRegister(basic->m_o2, i);
@@ -199,8 +192,6 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
                 tryRegister(basic->m_o4, i);
                 break;
             }
-            default:
-                break;
         }
     }
 }

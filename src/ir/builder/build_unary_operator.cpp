@@ -12,7 +12,8 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
     Operand op = buildExpression(node->m_operand.get(), context, ictx);
 
     if(node->m_operator == ".") {
-        int64_t offset = -getOperandType(op, context, ictx).m_members.at(node->m_data).m_offset;
+        auto t = getOperandType(op, context, ictx);
+        int64_t offset = t.m_members.at(node->m_data).m_offset - ((int64_t)t.m_size);
 
         switch(op.index()) {
             default:

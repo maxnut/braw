@@ -40,7 +40,8 @@ TypeInfo IRBuilder::getOperandType(Operand op, BrawContext& context, IRFunctionC
         }
         case 3: {
             auto addr = std::get<Address>(op);
-            return context.getTypeInfo(addr.m_base->m_type.memberByOffset(addr.m_offset).value().m_type).value();
+            auto off = addr.m_offset >= 0 ? addr.m_offset : addr.m_base->m_type.m_size + addr.m_offset;
+            return context.getTypeInfo(addr.m_base->m_type.memberByOffset(off).value().m_type).value();
             // return Utils::makePointer(context.getTypeInfo("void").value());
         }
         default:
@@ -72,7 +73,8 @@ void IRBuilder::moveToRegister(const std::string& name, Operand& op, BrawContext
 
     reg->m_type = getOperandType(op, context, ictx);
     reg->m_registerType = getRegisterType(reg->m_type);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Move, reg, op));
+    Instruction::Type instrType = reg->m_registerType == RegisterType::Struct ? Instruction::Copy : Instruction::Move;
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(instrType, reg, op));
 }
 
 std::shared_ptr<Register> IRBuilder::makeOrGetRegister(const std::string& name, IRFunctionContext& ictx) {

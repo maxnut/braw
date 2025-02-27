@@ -16,6 +16,7 @@ struct Instruction {
         JumpFalse,
         Label,
         Allocate,
+        Copy,
         Count
     };
 

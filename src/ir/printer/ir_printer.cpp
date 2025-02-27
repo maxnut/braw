@@ -52,6 +52,7 @@ void IRPrinter::print(std::ostream& out, const Instruction* instr) {
         case Instruction::CompareNotEquals:
         case Instruction::JumpFalse:
         case Instruction::Allocate:
+        case Instruction::Copy:
             print(out, static_cast<const BasicInstruction*>(instr));
             break;
         default:
@@ -135,6 +136,9 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
             break;
         case Instruction::Allocate:
             out << "alloc ";
+            break;
+        case Instruction::Copy:
+            out << "copy ";
             break;
         default:
             return;

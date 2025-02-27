@@ -14,11 +14,6 @@ add_executable(braw
 ${SOURCES}
 )
 
-find_package(LLVM REQUIRED CONFIG)
-
-include_directories(${LLVM_INCLUDE_DIRS})
-link_directories(${LLVM_LIBRARY_DIRS})
-
 target_include_directories(braw PRIVATE
 src
 include

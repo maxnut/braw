@@ -477,13 +477,16 @@ void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operands::Address> targ
     lea.addOperand(source);
     addInstruction(lea, ctx);
     m_registers.at(Register::RSI)->setSize(p);
-    move(m_registers.at(Register::RCX), std::make_shared<Operands::Immediate>((size - remainder) / 8, Operand::ValueType::Signed, Operand::Size::Qword), ctx);
 
     Instruction movs;
-    auto movsq = Movsq;
-    movsq.prefix = 0xF3;
-    movs.m_opcode = movsq;
-    addInstruction(movs, ctx);
+    if((size - remainder) / 8 > 0) {
+        move(m_registers.at(Register::RCX), std::make_shared<Operands::Immediate>((size - remainder) / 8, Operand::ValueType::Signed, Operand::Size::Qword), ctx);
+
+        auto movsq = Movsq;
+        movsq.prefix = 0xF3;
+        movs.m_opcode = movsq;
+        addInstruction(movs, ctx);
+    }
 
     if(remainder > 0) {
         move(m_registers.at(Register::RCX), std::make_shared<Operands::Immediate>(remainder, Operand::ValueType::Signed, Operand::Size::Qword), ctx);

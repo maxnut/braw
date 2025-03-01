@@ -20,6 +20,8 @@ void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionCon
         case AST::Node::Type::BinaryOperator:
             if(static_cast<const AST::BinaryOperatorNode*>(node)->m_operator == "=")
                 return buildAssignment(static_cast<const AST::BinaryOperatorNode*>(node), context, ictx);
+        case AST::Node::Scope:
+            return build((const AST::ScopeNode*)node, context, ictx);
         default:
             buildExpression(node, context, ictx);
             break;

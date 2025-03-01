@@ -23,6 +23,9 @@ Result<std::unique_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor)
     else
         instruction = parseExpression(cursor);
 
+    if(!instruction)
+        return instruction;
+
     switch(instructionType) {
         default: {
             if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))

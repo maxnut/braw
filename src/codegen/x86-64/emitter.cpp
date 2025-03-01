@@ -37,12 +37,14 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out) {
         out << "global " << global.m_id << "\n";
     }
 
+    size_t labels = 0;
     for(uint32_t i = 0; i < f.m_text.m_instructions.size(); i++) {
-        if(f.m_text.m_labels.contains(i))
-            out << f.m_text.m_labels.at(i).m_id << ":\n";
+        while(f.m_text.m_labels.contains(labels))
+            out << f.m_text.m_labels.at(labels++).m_id << ":\n";
 
         out << f.m_text.m_instructions[i] << "\t; ";
         IRPrinter::print(out, ir.m_functions[f.m_text.m_instructions[i].m_irFunctionIndex].m_instructions[f.m_text.m_instructions[i].m_irIndex].get());
+        labels++;
     }
 }
 

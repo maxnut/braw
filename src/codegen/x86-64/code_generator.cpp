@@ -128,7 +128,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
 void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
     switch(instr->m_type) {
         case ::Instruction::Label:
-            ctx.f.m_text.m_labels[ctx.f.m_text.m_instructions.size()] = Label{((const ::Label*)instr)->m_id};
+            ctx.f.m_text.m_labels[ctx.f.m_text.m_instructions.size() + ctx.f.m_text.m_labels.size()] = Label{((const ::Label*)instr)->m_id};
             break;
         case ::Instruction::Move: {
             auto bin = (const ::BasicInstruction*)instr;
@@ -175,6 +175,14 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0, Operand::ValueType::Signed, Operand::Size::Qword), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Je, ctx);
             break;
         }
+        case ::Instruction::Jump: {
+            auto bin = (const ::BasicInstruction*)instr;
+            Instruction in;
+            in.m_opcode = Jmp;
+            in.addOperand(cast<Operands::Label>(convertOperand(bin->m_o1, ctx)));
+            addInstruction(in, ctx);
+            break;
+        }
         case ::Instruction::Call: {
             auto callIn = (const ::CallInstruction*)instr;
             auto optRet = callIn->m_optReturn ? cast<Operands::Register>(convertOperand(callIn->m_optReturn, ctx)) : nullptr;
@@ -214,7 +222,8 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     else in.m_opcode = Mov;
     
     moveValueType(target, source, ctx);
-    target->setSize(source->getSize());
+    if(in.m_opcode != Movzx)
+        target->setSize(source->getSize());
     in.addOperand(target);
     in.addOperand(source);
     addInstruction(std::move(in), ctx);
@@ -557,16 +566,23 @@ bool CodeGenerator::bothAddress(std::shared_ptr<Operand> o1, std::shared_ptr<Ope
 }
 
 bool CodeGenerator::isFloat(std::shared_ptr<Operand> o) const {
+    if(o->m_type == Operand::Type::Address && cast<Operands::Address>(o)->m_base->m_type == Operand::Type::Label)
+        return isFloat(cast<Operands::Address>(o)->m_base);
+
     return o->getValueType() == Operand::ValueType::SinglePrecision;
 }
 
 bool CodeGenerator::isDouble(std::shared_ptr<Operand> o) const {
+    if(o->m_type == Operand::Type::Address && cast<Operands::Address>(o)->m_base->m_type == Operand::Type::Label)
+        return isDouble(cast<Operands::Address>(o)->m_base);
+
     return o->getValueType() == Operand::ValueType::DoublePrecision;
 }
 
 void CodeGenerator::moveValueType(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     assert(source->getValueType() != Operand::ValueType::Count);
-    target->setValueType(source->getValueType());
+    target->setValueType(source->m_type == Operand::Type::Address &&
+        cast<Operands::Address>(source)->m_base->m_type == Operand::Type::Label ? cast<Operands::Address>(source)->m_base->getValueType() : source->getValueType());
 }
 
 void CodeGenerator::initializeRegisters() {

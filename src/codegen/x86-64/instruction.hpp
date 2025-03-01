@@ -18,6 +18,10 @@ struct InstructionOpcode {
     bool operator<(const InstructionOpcode& other) const {
         return std::tie(opcode1, opcode2) < std::tie(other.opcode1, other.opcode2);
     }
+
+    bool operator!=(const InstructionOpcode& other) const {
+        return std::tie(prefix, opcode1, opcode2) != std::tie(other.prefix, other.opcode1, other.opcode2);
+    }
 };
 
 constexpr InstructionOpcode Nop      = {0x00, 0x90};          // NOP

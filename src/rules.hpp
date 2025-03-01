@@ -56,7 +56,7 @@ namespace Rules {
     }
 
     inline bool isAssignment(TokenCursor cursor) {
-        while(cursor.hasNext() && cursor.get().value().m_type != Token::SEMICOLON && cursor.get().value().m_type != Token::LEFT_BRACE) {
+        while(cursor.hasNext() && cursor.get().value().m_type != Token::SEMICOLON && cursor.get().value().m_type != Token::LEFT_BRACE && cursor.get().value().m_type != Token::COLON) {
             if(cursor.get().next().value().m_value == "=")
                 return true;
         }

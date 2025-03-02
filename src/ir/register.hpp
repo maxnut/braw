@@ -8,6 +8,7 @@ enum RegisterType {
     Single,
     Double,
     Struct,
+    Pointer,
     Count
 };
 

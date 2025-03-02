@@ -22,7 +22,7 @@ struct Register : Operand {
     };
 
     Register() : Operand(Type::Register, ValueType::Count, Size::Byte) {}
-    Register(const std::unordered_map<Size, std::string>& ids, Size size, ValueType vtype, RegisterType registerType) : Operand(Type::Register, vtype, size), m_ids(ids), m_registerType(registerType) {}
+    Register(const std::unordered_map<Size, std::string>& ids, Size size, ValueType vtype, RegisterType registerType, RegisterGroup group) : Operand(Type::Register, vtype, size), m_ids(ids), m_registerType(registerType), m_group(group) {}
 
     virtual void emit(std::ostream& os) const override {
         if(!m_ids.contains(m_size)) {
@@ -33,9 +33,10 @@ struct Register : Operand {
         os << m_ids.at(m_size);
     }
 
-    virtual std::shared_ptr<Operand> clone() const override {return std::make_shared<Register>(m_ids, m_size, m_valueType, m_registerType);}
+    virtual std::shared_ptr<Operand> clone() const override {return std::make_shared<Register>(m_ids, m_size, m_valueType, m_registerType, m_group);}
 
     RegisterType m_registerType = General;
+    RegisterGroup m_group = Count;
     std::unordered_map<Size, std::string> m_ids;
 };
 

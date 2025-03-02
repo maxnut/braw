@@ -64,7 +64,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
         if (paramAssignments.contains(node.m_id))
             node.m_tag = paramAssignments[node.m_id];
 
-        if(paramStack.contains(node.m_id) || (node.m_registerType == RegisterType::Struct && !paramAssignments.contains(node.m_id))) {
+        if(paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
             spills.push_back(node);
             res.m_ranges.erase(node.m_id);
             continue;

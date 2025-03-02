@@ -28,5 +28,21 @@ Result<std::unique_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor) {
     
     ifNode->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
 
+    if(cursor.hasNext() && cursor.get().value().m_value == "else") {
+        cursor.next();
+        if(cursor.get().value().m_value == "if") {
+            auto elseIfOpt = parseIf(cursor);
+            if(!elseIfOpt)
+                return std::unexpected{elseIfOpt.error()};
+            ifNode->m_else = std::move(elseIfOpt.value());
+        }
+        else {
+            auto elseScopeOpt = parseScope(cursor);
+            if(!elseScopeOpt)
+                return std::unexpected{elseScopeOpt.error()};
+            ifNode->m_else = std::move(elseScopeOpt.value());
+        }
+    }
+
     return ifNode;
 }

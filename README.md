@@ -4,7 +4,7 @@ The worst programming language ever made (probably)
 Bugs included for free
 
 ## Usage
-1. Compile a file using: ```braw file.braw```, this will spit out a `.asm` file into the `build` folder
+1. Compile a file using: ```brawc file.braw```, this will spit out a `.asm` file
 
 2. Assemble it (I only tested nasm 🔥)
 

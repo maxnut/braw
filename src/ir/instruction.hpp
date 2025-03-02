@@ -14,6 +14,7 @@ struct Instruction {
         CompareGreaterEquals,
         CompareLessEquals,
         JumpFalse,
+        Jump,
         Label,
         Allocate,
         Copy,

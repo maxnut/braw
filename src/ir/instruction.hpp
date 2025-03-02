@@ -18,6 +18,7 @@ struct Instruction {
         Label,
         Allocate,
         Copy,
+        Dereference,
         Count
     };
 

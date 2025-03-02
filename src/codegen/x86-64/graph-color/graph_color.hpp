@@ -19,6 +19,7 @@ struct Range {
     std::pair<uint32_t, uint32_t> m_range;
     RegisterType m_registerType;
     TypeInfo m_typeInfo;
+    bool m_isPointedOrDereferenced = false;
 };
 
 struct GraphNode {

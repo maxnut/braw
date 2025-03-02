@@ -94,18 +94,24 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
 
         int64_t spills = 0;
         for(auto range : result.m_rangeVector) {
-            if(result.m_registers.contains(range->m_id)) {
+            if(!range->m_isPointedOrDereferenced && result.m_registers.contains(range->m_id)) {
                 ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size)) : m_registers.at(result.m_registers.at(range->m_id));
-
+                setOperandInfo(ctx.m_virtualRegisters[range->m_id], range->m_typeInfo);
                 if(range->m_id == "rbx" || range->m_id == "r12" || range->m_id == "r13" || range->m_id == "r14" || range->m_id == "r15")
                     ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));
             }
             else {
                 spills += range->m_typeInfo.m_size;
                 ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills);
+                setOperandInfo(ctx.m_virtualRegisters[range->m_id], range->m_typeInfo);
+                for(auto& arg : f.m_args) {
+                    if(arg->m_id == range->m_id) {
+                        setOperandInfo(m_registers.at(result.m_registers.at(range->m_id)), range->m_typeInfo);
+                        move(ctx.m_virtualRegisters.at(range->m_id), m_registers.at(result.m_registers.at(range->m_id)), ctx);
+                        break;
+                    }
+                }
             }
-
-            setOperandInfo(ctx.m_virtualRegisters[range->m_id], range->m_typeInfo);
         }
         spills += spills % 16; // 16 byte alignment
         ctx.m_spills = spills;
@@ -215,6 +221,19 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             auto orig = convertOperand(bin->m_o2, ctx);
             auto spill = memoryAddressToRegister(orig->m_type == Operand::Type::Register ? std::make_shared<Operands::Address>(orig, 0) : cast<Operands::Address>(orig), ctx);
             move(addr,spill, ctx);
+            break;
+        }
+        case ::Instruction::Dereference: {
+            auto bin = (const ::BasicInstruction*)instr;
+            auto target = convertOperand(bin->m_o1, ctx);
+            auto addr = cast<Operands::Address>(convertOperand(bin->m_o2, ctx)->clone());
+            addr->setSize(Operand::Size::Qword);
+            if(bin->m_o1.index() == 1 && !std::get<std::shared_ptr<::Register>>(bin->m_o1)->m_type.m_builtin) {
+                copyAddressToAddressPointer(cast<Operands::Address>(target), addr, std::get<std::shared_ptr<::Register>>(bin->m_o1)->m_type.m_size, ctx);
+                break;
+            }
+            move(target, addr, ctx);
+            move(target, target->m_type == Operand::Type::Address ? target : std::make_shared<Operands::Address>(target), ctx);
             break;
         }
         default: break;
@@ -424,8 +443,8 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::
     Instruction i;
     i.m_opcode = Lea;
     auto clone = cast<Operands::Register>(reg->clone());
-    clone->setValueType(address->getValueType());
-    clone->setSize(address->getSize());
+    clone->setValueType(Operand::ValueType::Pointer);
+    clone->setSize(Operand::Size::Qword);
     i.addOperand(clone);
     i.addOperand(address);
     addInstruction(i, ctx);
@@ -463,6 +482,61 @@ std::shared_ptr<Operands::Address> CodeGenerator::copyAddressToNew(std::shared_p
     ctx.m_spills += size;
     copyAddressToAddress(target, address, size, ctx);
     return target;
+}
+
+void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx) {
+    std::vector<std::shared_ptr<Operands::Register>> save;
+
+    if(m_registers.at(Register::RDI)->getSize() != Operand::Size::Uninitialized)
+        save.push_back(m_registers.at(Register::RDI));
+    if(m_registers.at(Register::RSI)->getSize() != Operand::Size::Uninitialized)
+        save.push_back(m_registers.at(Register::RSI));
+    if(m_registers.at(Register::RCX)->getSize() != Operand::Size::Uninitialized)
+        save.push_back(m_registers.at(Register::RCX));
+
+    for(auto reg : save)
+        push(reg, ctx);
+
+    size_t remainder = size % 8;
+
+    Instruction lea, mov;
+    mov.m_opcode = Mov;
+    lea.m_opcode = Lea;
+    Operand::Size p = m_registers.at(Register::RDI)->getSize();
+    m_registers.at(Register::RDI)->setSize(Operand::Size::Qword);
+    lea.addOperand(m_registers.at(Register::RDI));
+    lea.addOperand(target);
+    addInstruction(lea, ctx);
+    m_registers.at(Register::RDI)->setSize(p);
+    p = m_registers.at(Register::RSI)->getSize();
+    m_registers.at(Register::RSI)->setSize(Operand::Size::Qword);
+    mov.addOperand(m_registers.at(Register::RSI));
+    mov.m_operands.at(0)->setSize(Operand::Size::Qword);
+    mov.addOperand(source);
+    addInstruction(mov, ctx);
+    m_registers.at(Register::RSI)->setSize(p);
+
+    Instruction movs;
+    if((size - remainder) / 8 > 0) {
+        move(m_registers.at(Register::RCX), std::make_shared<Operands::Immediate>((size - remainder) / 8, Operand::ValueType::Signed, Operand::Size::Qword), ctx);
+
+        auto movsq = Movsq;
+        movsq.prefix = 0xF3;
+        movs.m_opcode = movsq;
+        addInstruction(movs, ctx);
+    }
+
+    if(remainder > 0) {
+        move(m_registers.at(Register::RCX), std::make_shared<Operands::Immediate>(remainder, Operand::ValueType::Signed, Operand::Size::Qword), ctx);
+        auto movsb = Movsb;
+        movsb.prefix = 0xF3;
+        movs.m_opcode = movsb;
+        addInstruction(movs, ctx);
+    }
+
+    std::reverse(save.begin(), save.end());
+    for(auto reg : save)
+        pop(reg, ctx);
 }
 
 void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx) {

@@ -69,7 +69,7 @@ fn yap() -> int {
 
 ## Todo
 
-- [ ] Pointers
+- [x] Pointers
 - [ ] Arrays
 - [ ] Stick more to conventions to make it call other language's functions
 - [ ] Make it not explode every two seconds

@@ -12,6 +12,7 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_set>
+#include <variant>
 
 namespace CodeGen::x86_64 {
 
@@ -64,7 +65,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
         if (paramAssignments.contains(node.m_id))
             node.m_tag = paramAssignments[node.m_id];
 
-        if(paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
+        if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
             spills.push_back(node);
             res.m_ranges.erase(node.m_id);
             continue;
@@ -173,6 +174,26 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
         const std::unique_ptr<Instruction>& instr = function.m_instructions[i];
         
         switch(instr->m_type) {
+            case Instruction::Point: {
+                auto basic = static_cast<const BasicInstruction*>(instr.get());
+                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o2, i);
+                tryRegister(basic->m_o3, i);
+                tryRegister(basic->m_o4, i);
+                if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2))
+                    result.m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id]->m_isPointedOrDereferenced = true;
+                break;
+            }
+            case Instruction::Dereference: {
+                auto basic = static_cast<const BasicInstruction*>(instr.get());
+                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o2, i);
+                tryRegister(basic->m_o3, i);
+                tryRegister(basic->m_o4, i);
+                if(std::holds_alternative<Address>(basic->m_o2))
+                    result.m_ranges[std::get<Address>(basic->m_o2).m_base->m_id]->m_isPointedOrDereferenced = true;
+                break;
+            }
             case Instruction::Call: {
                 auto call = static_cast<const CallInstruction*>(instr.get());
                 if(call->m_optReturn)

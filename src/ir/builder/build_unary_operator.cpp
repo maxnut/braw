@@ -1,8 +1,10 @@
 #include "ir/address.hpp"
+#include "ir/instructions/basic.hpp"
 #include "ir/operand.hpp"
 #include "ir/register.hpp"
 #include "ir_builder.hpp"
 #include "parser/nodes/unary_operator.hpp"
+#include "utils.hpp"
 
 #include <memory>
 #include <string>
@@ -27,8 +29,14 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
     }
     else if(node->m_operator == "&") 
         ret = op;
-    else if(node->m_operator == "*")
-        ret = Address(std::get<std::shared_ptr<Register>>(op), 0);
+    else if(node->m_operator == "*") {
+        auto tmp = Address(std::get<std::shared_ptr<Register>>(op), 0);
+        ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Dereference, ret, tmp));
+        auto retReg = std::get<std::shared_ptr<Register>>(ret);
+        retReg->m_type = Utils::getRawType(getOperandType(op, context, ictx), context).value();
+        retReg->m_registerType = getRegisterType(retReg->m_type);
+    }
 
     return ret;
 }

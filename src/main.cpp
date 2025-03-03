@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
     args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
     args::Positional<std::string> inputFile(parser, "file", "The source file to compile");
     args::ValueFlag<std::string> buildFolder(parser, "build", "Build output directory", {'b', "build"}, "build");
+    args::ValueFlag<std::string> assembler(parser, "assembler", "Assembler to use (nasm or gas)", {'a', "assembler"}, "gas");
 
     try {
         parser.ParseCLI(argc, argv);
@@ -38,9 +39,14 @@ int main(int argc, char** argv) {
     }
 
     std::filesystem::path filepath(inputFile.Get());
-    std::filesystem::path buildPath = buildFolder ? buildFolder.Get() : "./";
+    std::filesystem::path buildPath = buildFolder ? buildFolder.Get() : "build";
     std::filesystem::create_directories(buildPath);
 
+    std::string assemblerChoice = assembler.Get();
+    if (assemblerChoice != "nasm" && assemblerChoice != "gas") {
+        spdlog::error("Invalid assembler choice. Use 'nasm' or 'gas'.");
+        return 1;
+    }
     auto tokens = Lexer::tokenize(filepath);
     if (!tokens) {
         spdlog::error("Failed to tokenize file");
@@ -61,6 +67,11 @@ int main(int argc, char** argv) {
 
     BrawContext ctx = ctxOr.value();
 
+    if(assemblerChoice == "nasm")
+        ctx.m_assembler = NASM;
+    else if(assemblerChoice == "gas")
+        ctx.m_assembler = GAS;
+    
     std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
 
     std::ofstream fs(buildPath / (filepath.stem().string() + ".ir"));
@@ -71,7 +82,7 @@ int main(int argc, char** argv) {
     CodeGen::x86_64::File file = codegen.generate(res.at(0), ctx);
 
     fs = std::ofstream(buildPath / (filepath.stem().string() + ".asm"));
-    CodeGen::x86_64::Emitter::emit(file, res.at(0), fs);
+    CodeGen::x86_64::Emitter::emit(file, res.at(0), fs, ctx);
     fs.close();
 
     return 0;

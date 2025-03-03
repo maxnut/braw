@@ -11,7 +11,7 @@ struct Immediate : Operand {
 
     int64_t m_value;
 
-    virtual void emit(std::ostream& os) const override {
+    virtual void emit(std::ostream& os, const BrawContext& ctx) const override {
         os << m_value;
     }
     virtual std::shared_ptr<Operand> clone() const override {return std::make_shared<Immediate>(m_value, m_valueType, m_size);}

@@ -4,6 +4,7 @@
 #include "ir/register.hpp"
 #include "parser/nodes/variable_declaration.hpp"
 #include "parser/nodes/binary_operator.hpp"
+#include "rules.hpp"
 #include "utils.hpp"
 
 #include <array>
@@ -42,6 +43,8 @@ TypeInfo IRBuilder::getOperandType(Operand op, BrawContext& context, IRFunctionC
         }
         case 3: {
             auto addr = std::get<Address>(op);
+            if(Rules::isPtr(addr.m_base->m_type.m_name))
+                return Utils::getRawType(addr.m_base->m_type, context).value();
             auto off = addr.m_offset >= 0 ? addr.m_offset : addr.m_base->m_type.m_size + addr.m_offset;
             return context.getTypeInfo(addr.m_base->m_type.memberByOffset(off).value().m_type).value();
             // return Utils::makePointer(context.getTypeInfo("void").value());
@@ -66,6 +69,8 @@ RegisterType IRBuilder::getRegisterType(const TypeInfo& type) {
         return RegisterType::Signed;
     else if(type.m_name == "bool")
         return RegisterType::Signed;
+    else if(Rules::isPtr(type.m_name)) 
+        return RegisterType::Pointer;
 
     return RegisterType::Struct;
 }
@@ -73,9 +78,10 @@ RegisterType IRBuilder::getRegisterType(const TypeInfo& type) {
 void IRBuilder::moveToRegister(const std::string& name, Operand& op, BrawContext& context, IRFunctionContext& ictx) {
     std::shared_ptr<Register> reg = makeOrGetRegister(name, ictx);
 
-    reg->m_type = getOperandType(op, context, ictx);
+    if(reg->m_type.m_name == "")
+        reg->m_type = getOperandType(op, context, ictx);
     reg->m_registerType = getRegisterType(reg->m_type);
-    Instruction::Type instrType = reg->m_registerType == RegisterType::Struct ? Instruction::Copy : Instruction::Move;
+    Instruction::Type instrType = reg->m_registerType == RegisterType::Struct ? Instruction::Copy : reg->m_registerType == RegisterType::Pointer ? Instruction::Point : Instruction::Move;
     ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(instrType, reg, op));
 }
 

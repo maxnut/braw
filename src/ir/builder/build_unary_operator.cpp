@@ -13,8 +13,7 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
 
     if(node->m_operator == ".") {
         auto t = getOperandType(op, context, ictx);
-        int64_t offset = t.m_members.at(node->m_data).m_offset - ((int64_t)t.m_size);
-
+        int64_t offset = t.m_members.at(node->m_data).m_offset; 
         switch(op.index()) {
             default:
                 ret = Address(std::get<std::shared_ptr<Register>>(op), offset);
@@ -26,6 +25,10 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
             }
         }
     }
+    else if(node->m_operator == "&") 
+        ret = op;
+    else if(node->m_operator == "*")
+        ret = Address(std::get<std::shared_ptr<Register>>(op), 0);
 
     return ret;
 }

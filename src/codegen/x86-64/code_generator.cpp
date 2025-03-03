@@ -15,6 +15,8 @@
 #include "ir/label.hpp"
 #include "ir/register.hpp"
 #include "ir/value.hpp"
+#include "rules.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -205,6 +207,14 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             auto addr1 = cast<Operands::Address>(convertOperand(bin->m_o1, ctx));
             auto addr2 = cast<Operands::Address>(convertOperand(bin->m_o2, ctx));
             copyAddressToAddress(addr1, addr2, std::get<1>(bin->m_o1)->m_type.m_size, ctx);
+            break;
+        }
+        case ::Instruction::Point: {
+            auto bin = (const ::BasicInstruction*)instr;
+            auto addr = cast<Operands::Address>(convertOperand(bin->m_o1, ctx));
+            auto orig = convertOperand(bin->m_o2, ctx);
+            auto spill = memoryAddressToRegister(orig->m_type == Operand::Type::Register ? std::make_shared<Operands::Address>(orig, 0) : cast<Operands::Address>(orig), ctx);
+            move(addr,spill, ctx);
             break;
         }
         default: break;
@@ -544,12 +554,14 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
             break;
         }
         case 3: {
-            auto addr = cast<Operands::Address>(ctx.m_virtualRegisters.at(std::get<Address>(source).m_base->m_id)->clone());
             auto addrOff = std::get<Address>(source).m_offset;
+            auto addr = cast<Operands::Address>(ctx.m_virtualRegisters.at(std::get<Address>(source).m_base->m_id)->clone());
+            if(addr->m_base->m_type == Operand::Type::Register && cast<Operands::Register>(addr->m_base)->m_group == Operands::Register::RBP) 
+                addrOff -= std::get<Address>(source).m_base->m_type.m_size;
             auto addrType = std::get<Address>(source).m_base->m_type;
-            addr->m_offset = addr->m_offset + addrType.m_size + std::get<Address>(source).m_offset;
+            addr->m_offset = addr->m_offset + addrType.m_size + addrOff;
             auto off = addrOff < 0 ? addrType.m_size + addrOff : addrOff;
-            setOperandInfo(addr, ctx.brawCtx.getTypeInfo(addrType.memberByOffset(off)->m_type).value());
+            setOperandInfo(addr, Rules::isPtr(addrType.m_name) ? Utils::getRawType(addrType, ctx.brawCtx).value() : ctx.brawCtx.getTypeInfo(addrType.memberByOffset(off)->m_type).value());
             return addr;
         }
         case 4:
@@ -592,7 +604,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rsp"}, {Operand::Size::Dword, "esp"}, {Operand::Size::Word, "sp"}, {Operand::Size::Byte, "spl"}},
             Operand::Size::Qword,
             Operand::ValueType::Pointer,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RSP)
         )
     });
     m_registers.insert({ Operands::Register::RBP,
@@ -600,7 +612,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rbp"}, {Operand::Size::Dword, "ebp"}, {Operand::Size::Word, "bp"}, {Operand::Size::Byte, "bpl"}},
             Operand::Size::Qword,
             Operand::ValueType::Pointer,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RBP)
         )
     });
     m_registers.insert({ Operands::Register::RAX,
@@ -608,7 +620,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rax"}, {Operand::Size::Dword, "eax"}, {Operand::Size::Word, "ax"}, {Operand::Size::Byte, "al"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RAX)
         )
     });
     m_registers.insert({ Operands::Register::RDI,
@@ -616,7 +628,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rdi"}, {Operand::Size::Dword, "edi"}, {Operand::Size::Word, "di"}, {Operand::Size::Byte, "dil"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RDI)
         )
     });
     m_registers.insert({ Operands::Register::RSI,
@@ -624,7 +636,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rsi"}, {Operand::Size::Dword, "esi"}, {Operand::Size::Word, "si"}, {Operand::Size::Byte, "sil"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RSI)
         )
     });
     m_registers.insert({ Operands::Register::RDX,
@@ -632,7 +644,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rdx"}, {Operand::Size::Dword, "edx"}, {Operand::Size::Word, "dx"}, {Operand::Size::Byte, "dl"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RSI)
         )
     });
     m_registers.insert({ Operands::Register::RCX,
@@ -640,7 +652,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rcx"}, {Operand::Size::Dword, "ecx"}, {Operand::Size::Word, "cx"}, {Operand::Size::Byte, "cl"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RCX)
         )
     });
     m_registers.insert({ Operands::Register::RBX,
@@ -648,7 +660,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "rbx"}, {Operand::Size::Dword, "ebx"}, {Operand::Size::Word, "bx"}, {Operand::Size::Byte, "bx"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::RBX)
         )
     });
     m_registers.insert({ Operands::Register::R8,
@@ -656,7 +668,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r8"}, {Operand::Size::Dword, "r8d"}, {Operand::Size::Word, "r8w"}, {Operand::Size::Byte, "r8b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R8)
         )
     });
     m_registers.insert({ Operands::Register::R9,
@@ -664,7 +676,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r9"}, {Operand::Size::Dword, "r9d"}, {Operand::Size::Word, "r9w"}, {Operand::Size::Byte, "r9b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R9)
         )
     });
     m_registers.insert({ Operands::Register::R10,
@@ -672,7 +684,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r10"}, {Operand::Size::Dword, "r10d"}, {Operand::Size::Word, "r10w"}, {Operand::Size::Byte, "r10b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R10)
         )
     });
     m_registers.insert({ Operands::Register::R11,
@@ -680,7 +692,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r11"}, {Operand::Size::Dword, "r11d"}, {Operand::Size::Word, "r11w"}, {Operand::Size::Byte, "r11b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R11)
         )
     });
     m_registers.insert({ Operands::Register::R12,
@@ -688,7 +700,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r12"}, {Operand::Size::Dword, "r12d"}, {Operand::Size::Word, "r12w"}, {Operand::Size::Byte, "r12b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R12)
         )
     });
     m_registers.insert({ Operands::Register::R13,
@@ -696,7 +708,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r13"}, {Operand::Size::Dword, "r13d"}, {Operand::Size::Word, "r13w"}, {Operand::Size::Byte, "r13b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R13)
         )
     });
     m_registers.insert({ Operands::Register::R14,
@@ -704,7 +716,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r14"}, {Operand::Size::Dword, "r14d"}, {Operand::Size::Word, "r14w"}, {Operand::Size::Byte, "r14b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R14)
         )
     });
     m_registers.insert({ Operands::Register::R15,
@@ -712,7 +724,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Qword, "r15"}, {Operand::Size::Dword, "r15d"}, {Operand::Size::Word, "r15w"}, {Operand::Size::Byte, "r15b"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::General)
+            Operands::Register::General, Operands::Register::R15)
         )
     });
     m_registers.insert({ Operands::Register::XMM0,
@@ -720,7 +732,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm0"},{Operand::Size::Qword, "xmm0"},{Operand::Size::Dword, "xmm0"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM0)
         )
     });
     m_registers.insert({ Operands::Register::XMM1,
@@ -728,7 +740,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm1"},{Operand::Size::Qword, "xmm1"},{Operand::Size::Dword, "xmm1"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM1)
         )
     });
     m_registers.insert({ Operands::Register::XMM2,
@@ -736,7 +748,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm2"},{Operand::Size::Qword, "xmm2"},{Operand::Size::Dword, "xmm2"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM2)
         )
     });
     m_registers.insert({ Operands::Register::XMM3,
@@ -744,7 +756,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm3"},{Operand::Size::Qword, "xmm3"},{Operand::Size::Dword, "xmm3"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM3)
         )
     });
     m_registers.insert({ Operands::Register::XMM4,
@@ -752,7 +764,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm4"},{Operand::Size::Qword, "xmm4"},{Operand::Size::Dword, "xmm4"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM4)
         )
     });
     m_registers.insert({ Operands::Register::XMM5,
@@ -760,7 +772,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm5"},{Operand::Size::Qword, "xmm5"},{Operand::Size::Dword, "xmm5"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM5)
         )
     });
     m_registers.insert({ Operands::Register::XMM6,
@@ -768,7 +780,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm6"},{Operand::Size::Qword, "xmm6"},{Operand::Size::Dword, "xmm6"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM6)
         )
     });
     m_registers.insert({ Operands::Register::XMM7,
@@ -776,7 +788,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm7"},{Operand::Size::Qword, "xmm7"},{Operand::Size::Dword, "xmm7"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM7)
         )
     });
     m_registers.insert({ Operands::Register::XMM8,
@@ -784,7 +796,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm8"},{Operand::Size::Qword, "xmm8"},{Operand::Size::Dword, "xmm8"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM8)
         )
     });
     m_registers.insert({ Operands::Register::XMM9,
@@ -792,7 +804,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm9"},{Operand::Size::Qword, "xmm9"},{Operand::Size::Dword, "xmm9"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM9)
         )
     });
     m_registers.insert({ Operands::Register::XMM10,
@@ -800,7 +812,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm10"},{Operand::Size::Qword, "xmm10"},{Operand::Size::Dword, "xmm10"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM10)
         )
     });
     m_registers.insert({ Operands::Register::XMM11,
@@ -808,7 +820,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm11"},{Operand::Size::Qword, "xmm11"},{Operand::Size::Dword, "xmm11"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM11)
         )
     });
     m_registers.insert({ Operands::Register::XMM12,
@@ -816,7 +828,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm12"},{Operand::Size::Qword, "xmm12"},{Operand::Size::Dword, "xmm12"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM12)
         )
     });
     m_registers.insert({ Operands::Register::XMM13,
@@ -824,7 +836,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm13"},{Operand::Size::Qword, "xmm13"},{Operand::Size::Dword, "xmm13"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM13)
         )
     });
     m_registers.insert({ Operands::Register::XMM14,
@@ -832,7 +844,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm14"},{Operand::Size::Qword, "xmm14"},{Operand::Size::Dword, "xmm14"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM14)
         )
     });
     m_registers.insert({ Operands::Register::XMM15,
@@ -840,7 +852,7 @@ void CodeGenerator::initializeRegisters() {
             {{Operand::Size::Oword, "xmm15"},{Operand::Size::Qword, "xmm15"},{Operand::Size::Dword, "xmm15"}},
             Operand::Size::Uninitialized,
             Operand::ValueType::Count,
-            Operands::Register::Simd)
+            Operands::Register::Simd, Operands::Register::XMM15)
         )
     });
 }

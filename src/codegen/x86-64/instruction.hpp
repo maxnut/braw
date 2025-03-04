@@ -98,19 +98,6 @@ struct Instruction : CodeGen::Instruction {
 
     InstructionOpcode m_opcode = {0x00, 0x00};
 
-    virtual void opcodeInstruction(std::ostream& os) const override {
-        auto it = s_prefixes.find(m_opcode.prefix);
-        if (it != s_prefixes.end()) {
-            os << it->second << " ";
-        }
-
-        auto it2 = opcodeMap.find(m_opcode);
-        if (it2 != opcodeMap.end()) {
-            os << it2->second;
-        } else {
-            os << "unknown_opcode";
-        }
-    }
 };
 
 }

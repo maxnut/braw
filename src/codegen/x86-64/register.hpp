@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../operand.hpp"
+#include "braw_context.hpp"
 #include <string>
 #include <unordered_map>
 
@@ -24,7 +25,7 @@ struct Register : Operand {
     Register() : Operand(Type::Register, ValueType::Count, Size::Byte) {}
     Register(const std::unordered_map<Size, std::string>& ids, Size size, ValueType vtype, RegisterType registerType, RegisterGroup group) : Operand(Type::Register, vtype, size), m_ids(ids), m_registerType(registerType), m_group(group) {}
 
-    virtual void emit(std::ostream& os) const override {
+    virtual void emit(std::ostream& os, const BrawContext& ctx) const override {
         if(!m_ids.contains(m_size)) {
             os << "!err";
             return;

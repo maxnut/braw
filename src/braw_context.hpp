@@ -22,6 +22,11 @@ struct FunctionSignature {
     std::string m_name;
 };
 
+enum Assembler {
+    NASM,
+    GAS
+};
+
 struct BrawContext {
     BrawContext();
 
@@ -34,6 +39,7 @@ struct BrawContext {
     std::vector<std::unordered_map<std::string, ScopeInfo>> m_scopes;
     std::unordered_map<std::string, TypeInfo> m_typeTable;
     std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionSignature>>> m_functionTable;
+    Assembler m_assembler = NASM;
     
     size_t m_stackSize = 0;
 };

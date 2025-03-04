@@ -6,7 +6,7 @@ Bugs included for free
 ## Usage
 1. Compile a file using: ```brawc file.braw```, this will spit out a `.asm` file
 
-2. Assemble it (I only tested nasm 🔥)
+2. Assemble it (default syntax is gas, use ```-a nasm``` to use nasm syntax)
 
 3. ?? idk you can't do much yet
 
@@ -73,3 +73,4 @@ fn yap() -> int {
 - [ ] Arrays
 - [ ] Stick more to conventions to make it call other language's functions
 - [ ] Make it not explode every two seconds
+- [ ] Debugging?

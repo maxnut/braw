@@ -19,17 +19,17 @@ struct Address : Operand {
     int64_t m_offset = 0;
 
     virtual void emit(std::ostream& os, const BrawContext& ctx) const override {
+        switch(m_base->getSize()) {
+            case Size::Byte: os << (ctx.m_assembler == GAS ? "BYTE PTR " : "byte "); break;
+            case Size::Word: os << (ctx.m_assembler == GAS ? "WORD PTR " : "word "); break;
+            case Size::Dword: os << (ctx.m_assembler == GAS ? "DWORD PTR " : "dword "); break;
+            case Size::Qword: os << (ctx.m_assembler == GAS ? "QWORD PTR " : "qword "); break;
+            case Size::Oword: os << (ctx.m_assembler == GAS ? "OWORD PTR " : "oword "); break;
+            case Size::Yword: os << (ctx.m_assembler == GAS ? "YWORD PTR " : "yword "); break;
+            default: break;
+        }
+
         if(m_base->m_type == Operand::Type::Register) {
-            switch(m_size) {
-                case Size::Byte: os << (ctx.m_assembler == GAS ? "BYTE PTR " : "byte "); break;
-                case Size::Word: os << (ctx.m_assembler == GAS ? "WORD PTR " : "word "); break;
-                case Size::Dword: os << (ctx.m_assembler == GAS ? "DWORD PTR " : "dword "); break;
-                case Size::Qword: os << (ctx.m_assembler == GAS ? "QWORD PTR " : "qword "); break;
-                case Size::Oword: os << (ctx.m_assembler == GAS ? "OWORD PTR " : "oword "); break;
-                case Size::Yword: os << (ctx.m_assembler == GAS ? "YWORD PTR " : "yword "); break;
-                default: break;
-            }
-            
             auto reg = std::dynamic_pointer_cast<Operands::Register>(m_base);
 
             os << '[' << reg->m_ids.at(Size::Qword);
@@ -39,14 +39,14 @@ struct Address : Operand {
         }
         else {
             auto label = std::dynamic_pointer_cast<Operands::Label>(m_base);
-            os << '[' << label->m_id << ']';
+            os << "[rip+" << label->m_id << ']';
         }
     }
 
     virtual ValueType getValueType() const override {return m_valueType;}
     virtual void setValueType(ValueType vt) override {m_valueType = vt; m_base->setValueType(ValueType::Pointer);}
     virtual Size getSize() const override {return m_size;}
-    virtual void setSize(Size size) override {m_size = size; m_base->setSize(Size::Qword);}
+    virtual void setSize(Size size) override {m_size = size;}
 
     virtual std::shared_ptr<Operand> clone() const override {
         auto base = m_base->clone();

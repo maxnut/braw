@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     args::ArgumentParser parser("Braw Compiler - A simple compiler for the Braw programming language.");
     args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
     args::Positional<std::string> inputFile(parser, "file", "The source file to compile");
-    args::ValueFlag<std::string> buildFolder(parser, "build", "Build output directory", {'b', "build"}, "build");
+    args::ValueFlag<std::string> outputFile(parser, "output", "The file to output to", {'o', "output"}, "out.asm");
     args::ValueFlag<std::string> assembler(parser, "assembler", "Assembler to use (nasm or gas)", {'a', "assembler"}, "gas");
 
     try {
@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
     }
 
     std::filesystem::path filepath(inputFile.Get());
-    std::filesystem::path buildPath = buildFolder ? buildFolder.Get() : "build";
-    std::filesystem::create_directories(buildPath);
+    std::filesystem::path outputPath = outputFile.Get();
+    std::filesystem::create_directories(outputPath.parent_path());
 
     std::string assemblerChoice = assembler.Get();
     if (assemblerChoice != "nasm" && assemblerChoice != "gas") {
@@ -74,14 +74,15 @@ int main(int argc, char** argv) {
     
     std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
 
-    std::ofstream fs(buildPath / (filepath.stem().string() + ".ir"));
+    auto irOutputPath = outputPath; irOutputPath.replace_extension(".ir");
+    std::ofstream fs(irOutputPath);
     IRPrinter::print(fs, res.at(0));
     fs.close();
 
     CodeGen::x86_64::CodeGenerator codegen;
     CodeGen::x86_64::File file = codegen.generate(res.at(0), ctx);
 
-    fs = std::ofstream(buildPath / (filepath.stem().string() + ".asm"));
+    fs = std::ofstream(outputPath);
     CodeGen::x86_64::Emitter::emit(file, res.at(0), fs, ctx);
     fs.close();
 

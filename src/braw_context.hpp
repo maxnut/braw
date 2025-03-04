@@ -1,5 +1,6 @@
 #pragma once
 
+#include "parser/nodes/function_definition.hpp"
 #include "type_info.hpp"
 
 #include <memory>
@@ -39,6 +40,7 @@ struct BrawContext {
     std::vector<std::unordered_map<std::string, ScopeInfo>> m_scopes;
     std::unordered_map<std::string, TypeInfo> m_typeTable;
     std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionSignature>>> m_functionTable;
+    std::shared_ptr<FunctionSignature> m_currentFunction = nullptr;
     Assembler m_assembler = NASM;
     
     size_t m_stackSize = 0;

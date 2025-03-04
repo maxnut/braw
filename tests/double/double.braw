@@ -1,0 +1,11 @@
+fn d_nothing() -> double {
+    return 0.0;
+}
+
+fn d_addition() -> double {
+    return 1.0 + 1.0;
+}
+
+fn d_precedence() -> double {
+    return 2.0 * 2.0 + 1.0;
+}

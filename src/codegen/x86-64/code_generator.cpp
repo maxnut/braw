@@ -97,7 +97,8 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
             if(!range->m_isPointedOrDereferenced && result.m_registers.contains(range->m_id)) {
                 ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size)) : m_registers.at(result.m_registers.at(range->m_id));
                 setOperandInfo(ctx.m_virtualRegisters[range->m_id], range->m_typeInfo);
-                if(range->m_id == "rbx" || range->m_id == "r12" || range->m_id == "r13" || range->m_id == "r14" || range->m_id == "r15")
+                Operands::Register::RegisterGroup group = result.m_registers.at(range->m_id);
+                if(group == Operands::Register::RBX || group == Operands::Register::R12 || group == Operands::Register::R13 || group == Operands::Register::R14 || group == Operands::Register::R15)
                     ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));
             }
             else {
@@ -252,7 +253,7 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     
     moveValueType(target, source, ctx);
     if(in.m_opcode != Movzx)
-        target->setSize(source->getSize());
+        target->setSize(source->m_type == Operand::Type::Address ? cast<Operands::Address>(source)->m_base->getSize() : source->getSize());
     in.addOperand(target);
     in.addOperand(source);
     addInstruction(std::move(in), ctx);
@@ -667,8 +668,8 @@ bool CodeGenerator::isDouble(std::shared_ptr<Operand> o) const {
 
 void CodeGenerator::moveValueType(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     assert(source->getValueType() != Operand::ValueType::Count);
-    target->setValueType(source->m_type == Operand::Type::Address &&
-        cast<Operands::Address>(source)->m_base->m_type == Operand::Type::Label ? cast<Operands::Address>(source)->m_base->getValueType() : source->getValueType());
+    target->setValueType(source->m_type == Operand::Type::Address /* &&
+        cast<Operands::Address>(source)->m_base->m_type == Operand::Type::Label */ ? cast<Operands::Address>(source)->m_base->getValueType() : source->getValueType());
 }
 
 void CodeGenerator::initializeRegisters() {

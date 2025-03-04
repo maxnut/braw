@@ -10,6 +10,9 @@ struct Label : Operand {
 
     std::string m_id;
 
+    virtual void setSize(Operand::Size size) override {
+        m_size = size;
+    }
     virtual void emit(std::ostream& os, const BrawContext& ctx) const override {
         os << m_id;
     }

@@ -1,0 +1,11 @@
+fn i_nothing() -> int {
+    return 0;
+}
+
+fn i_addition() -> int {
+    return 1 + 1;
+}
+
+fn i_precedence() -> int {
+    return 2 * 2 + 1;
+}

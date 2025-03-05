@@ -32,6 +32,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
         return duplicateFunction(node, node->m_signature);
 
     ctx.m_functionTable[func->m_name].push_back(func);
+    ctx.m_currentFunction = func;
 
     ctx.m_scopes.push_back(scopeTable);
     std::optional<SemanticError> errOpt = analyze(node->m_scope.get(), ctx);

@@ -67,9 +67,15 @@ fn yap() -> int {
 }
 ```
 
+## Tests
+
+The tests need gas to work.
+
+If you don't have it, or simply don't want them, disable them by setting ```RUN_TESTS``` inside ```CMakeLists.txt``` to **OFF**
+
 ## Todo
 
-- [x] Pointers
+- [ ] Pointers
 - [ ] Arrays
 - [ ] Stick more to conventions to make it call other language's functions
 - [ ] Make it not explode every two seconds

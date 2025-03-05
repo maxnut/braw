@@ -1,0 +1,11 @@
+fn f_nothing() -> float {
+    return 0.f;
+}
+
+fn f_addition() -> float {
+    return 1.f + 1.f;
+}
+
+fn f_precedence() -> float {
+    return 2.f * 2.f + 1.f;
+}

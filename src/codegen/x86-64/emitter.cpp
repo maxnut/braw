@@ -6,9 +6,11 @@
 namespace CodeGen::x86_64 {
 
 void opcodeInstruction(const Instruction& obj, std::ostream& os) {
-    auto it = s_prefixes.find(obj.m_opcode.prefix);
-    if (it != s_prefixes.end()) {
-        os << it->second << " ";
+    if(!obj.m_opcode.usesPrefix) {
+        auto it = s_prefixes.find(obj.m_opcode.prefix);
+        if (it != s_prefixes.end()) {
+            os << it->second << " ";
+        }
     }
 
     auto it2 = opcodeMap.find(obj.m_opcode);
@@ -23,6 +25,8 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
     const char* sectionPrefix = ctx.m_assembler == NASM ? "section" : ".section";
     const char* globalPrefix = ctx.m_assembler == NASM ? "global" : ".global";
     const char* commentPrefix = ctx.m_assembler == NASM ? ";" : "#";
+    const char* floatPrefix = ctx.m_assembler == NASM ? "dd" : ".float";
+    const char* doublePrefix = ctx.m_assembler == NASM ? "dd" : ".double";
 
     if(ctx.m_assembler == NASM)
         out << "bits 64\n\n";
@@ -37,11 +41,11 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
 
         switch(value.index()) {
             case 2:
-                out << "dd " << std::fixed << std::setprecision(std::numeric_limits<float>::max_digits10)
+                out << floatPrefix << " " << std::fixed << std::setprecision(std::numeric_limits<float>::max_digits10)
                     << std::get<float>(value) << "\n";
                 break;
             case 3: {
-                out << "dq " << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10)
+                out << doublePrefix << " " << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10)
                     << std::get<double>(value) << "\n";
                 break;
             }

@@ -7,5 +7,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::ReturnNode* no
         if(errOpt) return errOpt;
     }
 
+    if(node->m_value && getType(node->m_value.get(), ctx).value() != ctx.m_currentFunction->m_returnType)
+        return mismatchedTypes(node, getType(node->m_value.get(), ctx).value().m_name, ctx.m_currentFunction->m_returnType.m_name);
+
     return std::nullopt;
 }

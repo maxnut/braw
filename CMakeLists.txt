@@ -29,7 +29,6 @@ function(compile_braw_test braw_file)
     set(ASM_FILE "${CMAKE_BINARY_DIR}/testfiles/${test_name}.asm")
     set(OBJ_FILE "${CMAKE_BINARY_DIR}/testfiles/${test_name}.o")
 
-    # Step 1: Run brawc to generate assembly
     add_custom_command(
         OUTPUT ${ASM_FILE}
         COMMAND ${CMAKE_BINARY_DIR}/bin/brawc ${braw_file} -o ${ASM_FILE}
@@ -37,7 +36,6 @@ function(compile_braw_test braw_file)
         COMMENT "Compiling ${braw_file} -> ${ASM_FILE}"
     )
 
-    # Step 2: Assemble with GNU AS
     add_custom_command(
         OUTPUT ${OBJ_FILE}
         COMMAND as --64 -g ${ASM_FILE} -o ${OBJ_FILE} # as --64 -g -o ./build/main.o ./build/main.asm
@@ -45,7 +43,6 @@ function(compile_braw_test braw_file)
         COMMENT "Assembling ${ASM_FILE} -> ${OBJ_FILE}"
     )
 
-    # Add the object file to a list for linking later
     set(TEST_OBJECTS ${TEST_OBJECTS} ${OBJ_FILE} PARENT_SCOPE)
 endfunction()
 
@@ -63,6 +60,7 @@ include(FetchContent)
 FetchContent_Declare(
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(googletest)
 
@@ -73,12 +71,12 @@ target_link_libraries(tests PRIVATE GTest::gtest_main)
 
 install(TARGETS tests)
 
-# add_test(NAME AllTests COMMAND tests)
+add_test(NAME AllTests COMMAND tests)
 
-# add_custom_command(
-#     TARGET tests POST_BUILD
-#     COMMAND tests
-#     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-#     COMMENT "Running test..."
-# )
+add_custom_command(
+    TARGET tests POST_BUILD
+    COMMAND tests
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMENT "Running test..."
+)
 endif()

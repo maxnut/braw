@@ -17,12 +17,14 @@
 #include "ir/value.hpp"
 #include "rules.hpp"
 #include "spdlog/spdlog.h"
+#include "type_info.hpp"
 #include "utils.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace CodeGen::x86_64 {
 
@@ -65,16 +67,14 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         int64_t spills = 0;
         for(auto range : result.m_rangeVector) {
             if(!range->m_isPointedOrDereferenced && result.m_registers.contains(range->m_id)) {
-                ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size)) : m_registers.at(result.m_registers.at(range->m_id));
-                ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
+                ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size, range->m_typeInfo)) : m_registers.at(result.m_registers.at(range->m_id));
                 Operands::Register::RegisterGroup group = result.m_registers.at(range->m_id);
                 if(group == Operands::Register::RBX || group == Operands::Register::R12 || group == Operands::Register::R13 || group == Operands::Register::R14 || group == Operands::Register::R15)
                     ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));
             }
             else {
                 spills += range->m_typeInfo.m_size;
-                ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills);
-                ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
+                ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, range->m_typeInfo);
                 for(auto& arg : f.m_args) {
                     if(arg->m_id == range->m_id) {
                         m_registers.at(result.m_registers.at(range->m_id))->m_typeInfo = range->m_typeInfo;
@@ -190,9 +190,8 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             auto bin = (const ::BasicInstruction*)instr;
             auto addr = cast<Operands::Address>(convertOperand(bin->m_o1, ctx));
             auto orig = convertOperand(bin->m_o2, ctx);
-            auto spill = memoryAddressToRegister(orig->m_type == Operand::Type::Register ? std::make_shared<Operands::Address>(orig, 0) : cast<Operands::Address>(orig), ctx)->clone();
+            auto spill = memoryAddressToRegister(orig->m_type == Operand::Type::Register ? std::make_shared<Operands::Address>(orig, 0, orig->m_typeInfo) : cast<Operands::Address>(orig), ctx)->clone();
             move(addr,spill, ctx);
-            spdlog::debug("a");
             break;
         }
         case ::Instruction::Dereference: {
@@ -204,7 +203,8 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
                 break;
             }
             move(m_registers.at(SPILL1), addr, ctx);
-            move(target, m_registers.at(SPILL1), ctx);
+            auto deref = std::make_shared<Operands::Address>(m_registers.at(SPILL1), 0, Utils::getRawType(m_registers.at(SPILL1)->m_typeInfo, ctx.brawCtx).value());
+            move(target, deref, ctx);
             break;
         }
         default: break;
@@ -217,7 +217,7 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     
     if(isFloat(source)) in.m_opcode = Movss;
     else if(isDouble(source)) in.m_opcode = Movsd;
-    else if(bothRegisters(target, source) && target->m_typeInfo.m_size < source->m_typeInfo.m_size)
+    else if(bothRegisters(target, source) && target->m_typeInfo.m_name != "" && source->m_typeInfo.m_name != "" && target->m_typeInfo.m_size < source->m_typeInfo.m_size)
         in.m_opcode = Movzx;
     else in.m_opcode = Mov;
     
@@ -368,7 +368,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
         }
 
         sub(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>((int)reg->m_typeInfo.m_size, ctx.brawCtx.getTypeInfo("int").value()), ctx);
-        move(std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP)), reg, ctx);
+        move(std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP), TypeInfo{}), reg, ctx);
         return;
     }
 
@@ -381,7 +381,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
 
 void CodeGenerator::pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx) {
     if(isFloat(target) || isDouble(target)) {
-        move(target, std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP)), ctx);
+        move(target, std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP), target->m_typeInfo), ctx);
         add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>((int)target->m_typeInfo.m_size, ctx.brawCtx.getTypeInfo("int").value()), ctx);
         return;
     }
@@ -409,14 +409,12 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::
 std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::shared_ptr<Operands::Address> address, std::shared_ptr<Operands::Register> reg, FunctionContext& ctx) {
     Instruction i;
     i.m_opcode = Lea;
-    auto clone = cast<Operands::Register>(reg->clone());
-    clone->m_typeInfo = Utils::makePointer(clone->m_typeInfo);
-    auto clone2 = address->clone();
+    reg->m_typeInfo = Utils::makePointer(address->m_typeInfo);
     // TODO find a way to force qword
-    i.addOperand(clone);
-    i.addOperand(clone2);
+    i.addOperand(reg);
+    i.addOperand(address);
     addInstruction(i, ctx);
-    return clone;
+    return reg;
 }
 
 void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, InstructionOpcode setOpcode, FunctionContext& ctx) {
@@ -445,7 +443,7 @@ void CodeGenerator::compareAndJump(std::shared_ptr<Operands::Register> reg, std:
 
 std::shared_ptr<Operands::Address> CodeGenerator::copyAddressToNew(std::shared_ptr<Operands::Address> address, size_t size, FunctionContext& ctx) {
     sub(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>((int)size, ctx.brawCtx.getTypeInfo("int").value()), ctx);
-    auto target = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -ctx.m_spills);
+    auto target = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -ctx.m_spills, address->m_typeInfo);
     ctx.m_spills += size;
     copyAddressToAddress(target, address, size, ctx);
     return target;
@@ -472,9 +470,11 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Addres
     // TODO find a way to force qword
     lea.addOperand(m_registers.at(Register::RDI));
     lea.addOperand(target);
+    m_registers.at(Register::RDI)->m_typeInfo = Utils::makePointer(target->m_typeInfo);
     addInstruction(lea, ctx);
     mov.addOperand(m_registers.at(Register::RSI));
     mov.addOperand(source);
+    m_registers.at(Register::RSI)->m_typeInfo = source->m_typeInfo;
     addInstruction(mov, ctx);
 
     Instruction movs;
@@ -520,10 +520,12 @@ void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operands::Address> targ
     // TODO find a way to force qword
     lea.addOperand(m_registers.at(Register::RDI));
     lea.addOperand(target);
+    m_registers.at(Register::RDI)->m_typeInfo = Utils::makePointer(target->m_typeInfo);
     addInstruction(lea, ctx);
     lea.m_operands.clear();
     lea.addOperand(m_registers.at(Register::RSI));
     lea.addOperand(source);
+    m_registers.at(Register::RSI)->m_typeInfo = Utils::makePointer(source->m_typeInfo);
     addInstruction(lea, ctx);
 
     Instruction movs;
@@ -576,7 +578,7 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                 }
                 case 4:
                     return std::make_shared<Operands::Immediate>(std::get<bool>(v), ctx.brawCtx.getTypeInfo("bool").value());
-                default: break;
+                efault: break;
             }
             break;
         }

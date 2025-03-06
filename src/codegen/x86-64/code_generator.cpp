@@ -68,6 +68,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         for(auto range : result.m_rangeVector) {
             if(!range->m_isPointedOrDereferenced && result.m_registers.contains(range->m_id)) {
                 ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size, range->m_typeInfo)) : m_registers.at(result.m_registers.at(range->m_id));
+                ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
                 Operands::Register::RegisterGroup group = result.m_registers.at(range->m_id);
                 if(group == Operands::Register::RBX || group == Operands::Register::R12 || group == Operands::Register::R13 || group == Operands::Register::R14 || group == Operands::Register::R15)
                     ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));

@@ -46,7 +46,6 @@ private:
     void call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx);
     void ret(FunctionContext& ctx);
 
-    void moveValueType(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);
     std::shared_ptr<Operands::Register> memoryValueToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx);
     std::shared_ptr<Operands::Register> memoryAddressToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx);
     std::shared_ptr<Operands::Register> memoryAddressToRegister(std::shared_ptr<Operands::Address> address, std::shared_ptr<Operands::Register> store, FunctionContext& ctx);

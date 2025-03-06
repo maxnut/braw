@@ -14,7 +14,7 @@ struct Instruction {
     size_t m_irFunctionIndex = 0;
 
     virtual void addOperand(std::shared_ptr<Operand> op) {
-        assert(/* op->m_type != Operand::Type::Register ||  */op->getSize() != Operand::Size::Uninitialized);
+        assert(op->m_typeInfo.m_name != "");
         m_operands.push_back(op->clone());
     }
 };

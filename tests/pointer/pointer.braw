@@ -1,0 +1,13 @@
+fn i_ptr() -> int {
+    int a = 0;
+    int* ptr = &a;
+    a = 1;
+    return *ptr;
+}
+
+fn f_ptr() -> float {
+    float a = 0.f;
+    float* ptr = &a;
+    a = 1.f;
+    return *ptr;
+}

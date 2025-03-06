@@ -3,6 +3,7 @@
 #include "../operand.hpp"
 #include "codegen/x86-64/olabel.hpp"
 #include "codegen/x86-64/register.hpp"
+#include "type_info.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -11,15 +12,15 @@
 namespace CodeGen::x86_64::Operands {
 
 struct Address : Operand {
-    Address() : Operand(Type::Address, ValueType::Pointer, Size::Qword) {}
-    Address(std::shared_ptr<Operand> base, ValueType vt = ValueType::Pointer) : Operand(Type::Address, vt, Size::Qword), m_base(base) {}
-    Address(std::shared_ptr<Operand> base, size_t offset, ValueType vt = ValueType::Pointer) : Operand(Type::Address, vt, Size::Qword), m_base(base), m_offset(offset) {}
+    Address() : Operand(Type::Address, TypeInfo{}) {}
+    Address(std::shared_ptr<Operand> base, const TypeInfo& ti) : Operand(Type::Address, ti), m_base(base) {}
+    Address(std::shared_ptr<Operand> base, size_t offset, const TypeInfo& ti) : Operand(Type::Address, ti), m_base(base), m_offset(offset) {}
 
     std::shared_ptr<Operand> m_base;
     int64_t m_offset = 0;
 
     virtual void emit(std::ostream& os, const BrawContext& ctx) const override {
-        switch(m_base->getSize()) {
+        switch(getSize(m_typeInfo)) {
             case Size::Byte: os << (ctx.m_assembler == GAS ? "BYTE PTR " : "byte "); break;
             case Size::Word: os << (ctx.m_assembler == GAS ? "WORD PTR " : "word "); break;
             case Size::Dword: os << (ctx.m_assembler == GAS ? "DWORD PTR " : "dword "); break;
@@ -43,15 +44,9 @@ struct Address : Operand {
         }
     }
 
-    virtual ValueType getValueType() const override {return m_valueType;}
-    virtual void setValueType(ValueType vt) override {m_valueType = vt; m_base->setValueType(ValueType::Pointer);}
-    virtual Size getSize() const override {return m_size;}
-    virtual void setSize(Size size) override {m_size = size;}
-
     virtual std::shared_ptr<Operand> clone() const override {
         auto base = m_base->clone();
-        auto ptr = std::make_shared<Address>(base, m_offset, getValueType());
-        ptr->setSize(getSize());
+        auto ptr = std::make_shared<Address>(base, m_offset, m_typeInfo);
         return ptr;
     }
 };

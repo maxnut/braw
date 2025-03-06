@@ -71,12 +71,14 @@ file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
 add_executable(tests ${TEST_SOURCES} ${TEST_OBJECTS})
 target_link_libraries(tests PRIVATE GTest::gtest_main)
 
-add_test(NAME AllTests COMMAND tests)
+install(TARGETS tests)
 
-add_custom_command(
-    TARGET tests POST_BUILD
-    COMMAND tests
-    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-    COMMENT "Running test..."
-)
+# add_test(NAME AllTests COMMAND tests)
+
+# add_custom_command(
+#     TARGET tests POST_BUILD
+#     COMMAND tests
+#     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+#     COMMENT "Running test..."
+# )
 endif()

@@ -19,12 +19,17 @@ gcc -m64 -no-pie ./build/test.o ./build/main.o
 ```
 
 ## Syntax
-Pretty much C. Some key differences:
 
 ### Functions
 Functions use `fn` instead of `void`/`int`/whatever. Specify the return after
 ```braw
 fn function(int a, float b) -> void {}
+```
+
+### Variables
+Variables are declared like this:
+```braw
+let epic_variable: int;
 ```
 
 ### Single-line blocks
@@ -35,40 +40,10 @@ fn add(int a, int b) -> int: return a + b;
 if (a == 1): a = 2;
 ```
 
-## Example Code
-Here’s a totally necessary and useful example:
-```braw
-struct Quad {
-    int top;
-    int bottom;
-    int left;
-    int right;
-};
-
-fn quad_create() -> Quad {
-    Quad q;
-    q.top = 0;
-    q.bottom = 0;
-    q.left = 0;
-    q.right = 0;
-    return q;
-}
-
-fn quad_get_perimeter(Quad q) -> int:
-    return q.top + q.bottom + q.left + q.right;
-
-fn yap() -> int {
-    Quad quad = quad_create();
-    quad.top = 1;
-    quad.bottom = 2;
-    quad.left = 3;
-    quad.right = 4;
-    return quad_get_perimeter(quad);
-}
-```
+## Examples
+Check the tests.
 
 ## Tests
-
 The tests need gas to work.
 
 If you don't have it, or simply don't want them, disable them by setting ```RUN_TESTS``` inside ```CMakeLists.txt``` to **OFF**

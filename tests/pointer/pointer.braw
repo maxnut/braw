@@ -1,13 +1,13 @@
 fn i_ptr() -> int {
-    int a = 0;
-    int* ptr = &a;
+    let a: int = 0;
+    let ptr: int* = &a;
     a = 1;
     return *ptr;
 }
 
 fn f_ptr() -> float {
-    float a = 0.f;
-    float* ptr = &a;
+    let a: float = 0.f;
+    let ptr: float* = &a;
     a = 1.f;
     return *ptr;
 }

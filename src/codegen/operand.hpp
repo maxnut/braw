@@ -29,8 +29,6 @@ public:
     Operand(Type t, const TypeInfo& ti) : m_type(t), m_typeInfo(ti) {}
     virtual ~Operand() = default;
 
-    virtual void emit(std::ostream& os, const BrawContext& ctx) const = 0;
-
     virtual std::shared_ptr<Operand> clone() const = 0;
 
     static Size getSize(const TypeInfo& ti) {

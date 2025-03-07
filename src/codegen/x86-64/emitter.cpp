@@ -1,5 +1,6 @@
 #include "emitter.hpp"
 #include "braw_context.hpp"
+#include "ir/operand.hpp"
 #include "ir/printer/ir_printer.hpp"
 #include <iomanip>
 
@@ -70,6 +71,8 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
 
         emit(f.m_text.m_instructions[i], out, ctx);
         out << "\t" << commentPrefix << " ";
+        for(auto& op : f.m_text.m_instructions[i].m_operands) 
+            out << op->m_typeInfo.m_name << " ";
         IRPrinter::print(out, ir.m_functions[f.m_text.m_instructions[i].m_irFunctionIndex].m_instructions[f.m_text.m_instructions[i].m_irIndex].get());
         labels++;
     }
@@ -79,10 +82,60 @@ void Emitter::emit(const Instruction& instr, std::ostream& out, const BrawContex
     opcodeInstruction(instr, out);
     out << " ";
     for(int i = 0; i < instr.m_operands.size(); i++) {
-        instr.m_operands[i]->emit(out, ctx);
+        // instr.m_operands[i]->emit(out, ctx);
+        auto op = instr.m_operands[i];
+        switch(op->m_type) {
+            case Operand::Type::Register: emit((const Operands::Register*)op.get(), instr.m_opcode, out, ctx); break;
+            case Operand::Type::Label: emit((const Operands::Label*)op.get(), instr.m_opcode, out, ctx); break;
+            case Operand::Type::Immediate: emit((const Operands::Immediate*)op.get(), instr.m_opcode, out, ctx); break;
+            case Operand::Type::Address: emit((const Operands::Address*)op.get(), instr.m_opcode, out, ctx); break;
+            default: break;
+        }
         if(i < instr.m_operands.size() - 1)
             out << ", ";
     }
 }
 
+void Emitter::emit(const Operands::Register* reg, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
+    if(!reg->m_ids.contains(Operand::getSize(reg->m_typeInfo))) {
+        out << "!err";
+        return;
+    }
+
+    out << reg->m_ids.at(Operand::getSize(reg->m_typeInfo));
+}
+
+void Emitter::emit(const Operands::Label* label, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
+    out << label->m_id;
+}
+
+void Emitter::emit(const Operands::Immediate* imm, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
+    out << imm->m_value;
+}
+
+void Emitter::emit(const Operands::Address* addr, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
+    Operand::Size size = instr == Lea ? Operand::Size::Qword : Operand::getSize(addr->m_typeInfo);
+    switch(size) {
+        case Operand::Size::Byte: out << (ctx.m_assembler == GAS ? "BYTE PTR " : "byte "); break;
+        case Operand::Size::Word: out << (ctx.m_assembler == GAS ? "WORD PTR " : "word "); break;
+        case Operand::Size::Dword: out << (ctx.m_assembler == GAS ? "DWORD PTR " : "dword "); break;
+        case Operand::Size::Qword: out << (ctx.m_assembler == GAS ? "QWORD PTR " : "qword "); break;
+        case Operand::Size::Oword: out << (ctx.m_assembler == GAS ? "OWORD PTR " : "oword "); break;
+        case Operand::Size::Yword: out << (ctx.m_assembler == GAS ? "YWORD PTR " : "yword "); break;
+        default: break;
+    }
+
+    if(addr->m_base->m_type == Operand::Type::Register) {
+        auto reg = std::dynamic_pointer_cast<Operands::Register>(addr->m_base);
+
+        out << '[' << reg->m_ids.at(Operand::Size::Qword);
+        if(addr->m_offset != 0)
+            out << (addr->m_offset > 0 ? "+" : "") << addr->m_offset;
+        out << ']';
+    }
+    else {
+        auto label = std::dynamic_pointer_cast<Operands::Label>(addr->m_base);
+        out << "[rip+" << label->m_id << ']';
+    }
+}
 }

@@ -25,15 +25,6 @@ struct Register : Operand {
     Register() : Operand(Type::Register, TypeInfo{}) {}
     Register(const std::unordered_map<Size, std::string>& ids, const TypeInfo& ti, RegisterType type, RegisterGroup group) : Operand(Type::Register, ti), m_ids(ids), m_registerType(type), m_group(group) {}
 
-    virtual void emit(std::ostream& os, const BrawContext& ctx) const override {
-        if(!m_ids.contains(getSize(m_typeInfo))) {
-            os << "!err";
-            return;
-        }
-
-        os << m_ids.at(getSize(m_typeInfo));
-    }
-
     virtual std::shared_ptr<Operand> clone() const override {return std::make_shared<Register>(m_ids, m_typeInfo, m_registerType, m_group);}
 
     RegisterType m_registerType = General;

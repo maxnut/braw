@@ -30,7 +30,8 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
     else if(node->m_operator == "&") 
         ret = op;
     else if(node->m_operator == "*") {
-        auto tmp = Address(std::get<std::shared_ptr<Register>>(op), 0);
+        // auto tmp = Address(std::get<std::shared_ptr<Register>>(op), 0);
+        auto tmp = op;
         ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Dereference, ret, tmp));
         auto retReg = std::get<std::shared_ptr<Register>>(ret);

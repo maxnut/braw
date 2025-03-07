@@ -23,7 +23,7 @@ gcc -m64 -no-pie ./build/test.o ./build/main.o
 ### Functions
 Functions use `fn` instead of `void`/`int`/whatever. Specify the return after
 ```braw
-fn function(int a, float b) -> void {}
+fn function(let a: int, let b: float) -> void {}
 ```
 
 ### Variables
@@ -35,7 +35,7 @@ let epic_variable: int;
 ### Single-line blocks
 Who needs `{}` just slap a `:` instead.
 ```braw
-fn add(int a, int b) -> int: return a + b;
+fn add(let a: int, let b: float) -> int: return a + b;
 
 if (a == 1): a = 2;
 ```

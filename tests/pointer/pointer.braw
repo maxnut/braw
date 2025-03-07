@@ -21,6 +21,5 @@ fn s_ptr() -> int {
     v.a = 0;
     let ptr: V* = &v;
     v.a = 1;
-    v = *ptr;
-    return v.a;
+    return ptr->a;
 }

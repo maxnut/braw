@@ -50,9 +50,10 @@ If you don't have it, or simply don't want them, disable them by setting ```RUN_
 
 ## Todo
 
-- [ ] Pointers
+- [x] Pointers
 - [ ] Arrays
 - [ ] Strings
+- [ ] Variadics
 - [ ] Stick more to conventions to make it call other language's functions
 - [ ] Make it not explode every two seconds
 - [ ] Debugging?

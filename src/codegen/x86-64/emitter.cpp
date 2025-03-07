@@ -106,7 +106,7 @@ void Emitter::emit(const Operands::Register* reg, const InstructionOpcode& instr
         return;
     }
 
-    Operand::Size size = instr == Push || instr == Pop ? Operand::Size::Qword : Operand::getSize(reg->m_typeInfo);
+    Operand::Size size = instr == Lea || instr == Push || instr == Pop ? Operand::Size::Qword : Operand::getSize(reg->m_typeInfo);
     out << reg->m_ids.at(size);
 }
 

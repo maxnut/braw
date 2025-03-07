@@ -17,7 +17,7 @@ struct InstructionOpcode {
         : prefix(p), opcode1(o1), opcode2(o2), usesPrefix(pfx) {}
 
     bool operator<(const InstructionOpcode& other) const {
-        return std::tie(opcode1, opcode2, prefix) < std::tie(other.opcode1, other.opcode2, other.prefix);
+        return std::tie(prefix, opcode1, opcode2) < std::tie(other.prefix, other.opcode1, other.opcode2);
     }
 
     bool operator!=(const InstructionOpcode& other) const {

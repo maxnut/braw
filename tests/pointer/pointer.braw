@@ -11,3 +11,16 @@ fn f_ptr() -> float {
     a = 1.f;
     return *ptr;
 }
+
+struct V {
+    a: int;
+};
+
+fn s_ptr() -> int {
+    let v: V;
+    v.a = 0;
+    let ptr: V* = &v;
+    v.a = 1;
+    v = *ptr;
+    return v.a;
+}

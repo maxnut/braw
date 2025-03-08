@@ -1,5 +1,6 @@
 #include "emitter.hpp"
 #include "braw_context.hpp"
+#include "codegen/x86-64/instruction.hpp"
 #include "ir/operand.hpp"
 #include "ir/printer/ir_printer.hpp"
 #include <iomanip>
@@ -14,7 +15,10 @@ void opcodeInstruction(const Instruction& obj, std::ostream& os) {
         }
     }
 
-    auto it2 = opcodeMap.find(obj.m_opcode);
+    InstructionOpcode find = obj.m_opcode;
+    if(!obj.m_opcode.usesPrefix)
+        find.prefix = 0;
+    auto it2 = opcodeMap.find(find);
     if (it2 != opcodeMap.end()) {
         os << it2->second;
     } else {
@@ -102,7 +106,8 @@ void Emitter::emit(const Operands::Register* reg, const InstructionOpcode& instr
         return;
     }
 
-    out << reg->m_ids.at(Operand::getSize(reg->m_typeInfo));
+    Operand::Size size = instr == Push || instr == Pop ? Operand::Size::Qword : Operand::getSize(reg->m_typeInfo);
+    out << reg->m_ids.at(size);
 }
 
 void Emitter::emit(const Operands::Label* label, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {

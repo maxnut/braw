@@ -21,12 +21,16 @@ Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCurs
 
     while(cursor.get().value().m_type != Token::RIGHT_BRACE) {
         std::unique_ptr<AST::VariableDeclarationNode> varDecl = std::make_unique<AST::VariableDeclarationNode>();
-        varDecl->m_type = cursor.get().next().value().m_value;
 
         if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
             return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
 
         varDecl->m_name = cursor.get().next().value().m_value;
+
+        if(!expectTokenType(cursor.get().next().value(), Token::COLON))
+            return unexpectedTokenExpectedType(cursor.value(), Token::COLON);
+
+        varDecl->m_type = cursor.get().next().value().m_value;
 
         if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
             return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);

@@ -10,10 +10,10 @@ Bugs included for free
 
 3. ?? idk you can't do much yet
 
-You can call it from C but only on linux x86_64. Commands i use
+You can call it from C but only on linux x86-64. Commands i use
 
 ```
-nasm -f elf64 ./build/main.asm -o ./build/main.o
+as --64 -g -o ./build/main.o ./build/main.asm
 gcc -m64 -no-pie -c ./build/test.c -o ./build/test.o
 gcc -m64 -no-pie ./build/test.o ./build/main.o
 ```

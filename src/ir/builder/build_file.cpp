@@ -14,6 +14,7 @@ std::vector<File> IRBuilder::build(const AST::FileNode* root, BrawContext& conte
     File file;
     file.m_path = root->m_path;
 
+    file.m_functions.reserve(root->m_functions.size()); // avoid vector reallocation
     for(auto& func : root->m_functions) {
         file.m_functions.push_back(build(func.get(), context));
         if(file.m_functions.back().m_external)

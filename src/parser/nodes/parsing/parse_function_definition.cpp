@@ -14,6 +14,7 @@ Result<std::unique_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefini
     if(node->m_signature.m_external) {
         if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
             return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
+        cursor.tryNext();
     }
     else {
         auto scopeOpt = parseScope(cursor);

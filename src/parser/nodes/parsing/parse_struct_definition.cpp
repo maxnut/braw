@@ -30,7 +30,10 @@ Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCurs
         if(!expectTokenType(cursor.get().next().value(), Token::COLON))
             return unexpectedTokenExpectedType(cursor.value(), Token::COLON);
 
-        varDecl->m_type = cursor.get().next().value().m_value;
+        auto typeName = parseTypename(cursor);
+        if(!typeName)
+            return std::unexpected{typeName.error()};
+        varDecl->m_type = typeName.value();
 
         if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
             return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);

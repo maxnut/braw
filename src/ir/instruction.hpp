@@ -19,6 +19,7 @@ struct Instruction {
         Allocate,
         Copy,
         Dereference,
+        PartialDereference,
         Count
     };
 

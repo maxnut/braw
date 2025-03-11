@@ -184,7 +184,7 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             auto bin = (const ::BasicInstruction*)instr;
             auto addr1 = cast<Operands::Address>(convertOperand(bin->m_o1, ctx));
             auto addr2 = cast<Operands::Address>(convertOperand(bin->m_o2, ctx));
-            copyAddressToAddress(addr1, addr2, std::get<1>(bin->m_o1)->m_type.m_size, ctx);
+            copyAddressToAddress(addr1, addr2, addr1->m_typeInfo.m_size, ctx);
             break;
         }
         case ::Instruction::Point: {
@@ -207,6 +207,12 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             auto deref = std::make_shared<Operands::Address>(m_registers.at(SPILL1), 0, Utils::getRawType(m_registers.at(SPILL1)->m_typeInfo, ctx.brawCtx).value());
             move(target, deref, ctx);
             break;
+        }
+        case ::Instruction::PartialDereference: {
+            auto bin = (const ::BasicInstruction*)instr;
+            auto target = convertOperand(bin->m_o1, ctx);
+            auto addr = cast<Operands::Address>(convertOperand(bin->m_o2, ctx)->clone());
+            move(target, addr, ctx);
         }
         default: break;
     }
@@ -584,18 +590,24 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
             break;
         }
         case 3: {
-            auto addrOff = std::get<Address>(source).m_offset;
-            auto addr = cast<Operands::Address>(ctx.m_virtualRegisters.at(std::get<Address>(source).m_base->m_id)->clone());
-            if(addr->m_base->m_type == Operand::Type::Register && cast<Operands::Register>(addr->m_base)->m_group == Operands::Register::RBP) 
-                addrOff -= std::get<Address>(source).m_base->m_type.m_size;
-            auto addrType = std::get<Address>(source).m_base->m_type;
-            addr->m_offset = addr->m_offset + addrType.m_size + addrOff;
-            auto off = addrOff < 0 ? addrType.m_size + addrOff : addrOff;
-            addr->m_typeInfo = Rules::isPtr(addrType.m_name) ? Utils::getRawType(addrType, ctx.brawCtx).value() : ctx.brawCtx.getTypeInfo(addrType.memberByOffset(off)->m_type).value();
+            Address src = std::get<Address>(source);
+            auto addrOff = src.m_offset;
+            std::shared_ptr<Operands::Address> addr;
+            if(ctx.m_virtualRegisters.at(src.m_base->m_id)->m_type == Operand::Type::Address) {
+                addr = cast<Operands::Address>(ctx.m_virtualRegisters.at(src.m_base->m_id)->clone());
+                if(addr->m_base->m_type == Operand::Type::Register && cast<Operands::Register>(addr->m_base)->m_group == Operands::Register::RBP) 
+                    addrOff -= src.m_base->m_type.m_size;
+                auto addrType = src.m_base->m_type;
+                addr->m_offset = addr->m_offset + addrType.m_size + addrOff;
+                auto off = addrOff < 0 ? addrType.m_size + addrOff : addrOff;
+                addr->m_typeInfo = src.m_typeInfo;
+            }
+            else
+                addr = std::make_shared<Operands::Address>(ctx.m_virtualRegisters.at(src.m_base->m_id), addrOff, src.m_typeInfo);
             return addr;
         }
         case 4:
-            return std::make_shared<Operands::Label>(std::get<::Label>(source).m_id, Utils::makePointer(TypeInfo{"void"}));
+            return std::make_shared<Operands::Label>(std::get<::Label>(source).m_id, Utils::makePointer(TypeInfo{"void", 0, true}));
         default: break;
     }
 
@@ -626,14 +638,14 @@ void CodeGenerator::initializeRegisters() {
     m_registers.insert({ Operands::Register::RSP,
         std::shared_ptr<Operands::Register>(new Operands::Register(
             {{Operand::Size::Qword, "rsp"}, {Operand::Size::Dword, "esp"}, {Operand::Size::Word, "sp"}, {Operand::Size::Byte, "spl"}},
-            TypeInfo{"void*"},
+            TypeInfo{"void*", 8, true},
             Operands::Register::General, Operands::Register::RSP)
         )
     });
     m_registers.insert({ Operands::Register::RBP,
         std::shared_ptr<Operands::Register>(new Operands::Register(
             {{Operand::Size::Qword, "rbp"}, {Operand::Size::Dword, "ebp"}, {Operand::Size::Word, "bp"}, {Operand::Size::Byte, "bpl"}},
-            TypeInfo{"void*"},
+            TypeInfo{"void*", 8, true},
             Operands::Register::General, Operands::Register::RBP)
         )
     });

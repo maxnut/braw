@@ -1,0 +1,45 @@
+struct V {
+    a: int;
+    b: int;
+};
+
+struct VV {
+    v: V;
+};
+
+struct VPtr {
+    ptr: V*;
+};
+
+fn basic() -> int {
+    let v: V;
+    v.a = 0;
+    v.b = 1;
+    return v.a + v.b;
+}
+
+fn dot_chain() -> int {
+    let v: V;
+    v.a = 0;
+    v.b = 1;
+    let vv: VV;
+    vv.v = v;
+    return vv.v.a + vv.v.b;
+}
+
+fn arrow() -> int {
+    let v: V;
+    v.a = 0;
+    v.b = 1;
+    let ptr: V* = &v;
+    return ptr->a + ptr->b;
+}
+
+fn arrow_complex() -> int {
+    let v: V;
+    v.a = 0;
+    v.b = 1;
+    let vptr: VPtr;
+    vptr.ptr = &v;
+    return vptr.ptr->a + vptr.ptr->b;
+}

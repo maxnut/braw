@@ -23,3 +23,25 @@ fn s_ptr() -> int {
     v.a = 1;
     return ptr->a;
 }
+
+fn i_assign() -> int {
+    let a: int = 2;
+    let ptr: int* = &a;
+    *ptr = 1;
+    return a;
+}
+
+fn f_assign() -> float {
+    let a: float = 2.f;
+    let ptr: float* = &a;
+    *ptr = 1.f;
+    return a;
+}
+
+fn s_assign() -> int {
+    let v: V;
+    v.a = 2;
+    let ptr: V* = &v;
+    ptr->a = 1;
+    return v.a;
+}

@@ -60,6 +60,7 @@ private:
     static void buildAssignment(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx);
     static Operand dotOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx);
     static Operand dereferenceOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx);
+    static Operand addressOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx);
 
     static TypeInfo getOperandType(Operand op, BrawContext& context, IRFunctionContext& ictx);
 

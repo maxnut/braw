@@ -25,7 +25,7 @@ namespace Utils {
     }
 
     inline TypeInfo makePointer(const TypeInfo& base) {
-        return TypeInfo{base.m_name + "*", 8};
+        return TypeInfo{base.m_name + "*", 8, true};
     }
 
     inline std::optional<TypeInfo> getRawType(const TypeInfo& pointer, const BrawContext& ctx) {

@@ -140,7 +140,7 @@ std::shared_ptr<FunctionSignature> BrawContext::getFunction(const std::string& n
 
 std::optional<TypeInfo> BrawContext::getTypeInfo(const std::string& name) const {
     if(Rules::isPtr(name))
-        return TypeInfo(name, 8);
+        return TypeInfo(name, 8, true);
 
     if(m_typeTable.contains(name))
         return m_typeTable.at(name);

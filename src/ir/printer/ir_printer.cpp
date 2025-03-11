@@ -55,6 +55,7 @@ void IRPrinter::print(std::ostream& out, const Instruction* instr) {
         case Instruction::Allocate:
         case Instruction::Copy:
         case Instruction::Dereference:
+        case Instruction::PartialDereference:
             print(out, static_cast<const BasicInstruction*>(instr));
             break;
         default:
@@ -147,6 +148,9 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
             break;
         case Instruction::Dereference:
             out << "deref ";
+            break;
+        case Instruction::PartialDereference:
+            out << "pderef ";
             break;
         default:
             return;

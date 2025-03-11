@@ -184,6 +184,19 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
                     result.m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id]->m_isPointedOrDereferenced = true;
                 break;
             }
+            case Instruction::PartialDereference: {
+                auto basic = static_cast<const BasicInstruction*>(instr.get());
+                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o2, i);
+                tryRegister(basic->m_o3, i);
+                tryRegister(basic->m_o4, i);
+                if(std::holds_alternative<Address>(basic->m_o2))
+                    result.m_ranges[std::get<Address>(basic->m_o2).m_base->m_id]->m_isPointedOrDereferenced = true;
+                // TODO find a better way to make this register not spilled, maybe while also maintaining original properties
+                std::get<1>(basic->m_o1)->m_type = TypeInfo{"dummy", 8, true};
+                std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
+                break;
+            }
             case Instruction::Dereference: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
                 tryRegister(basic->m_o1, i);

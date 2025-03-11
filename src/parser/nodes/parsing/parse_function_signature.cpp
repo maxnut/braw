@@ -5,6 +5,11 @@
 Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& cursor) {
     AST::FunctionSignature sig;
 
+    if(cursor.get().value().m_value == "ext") {
+        sig.m_external = true;
+        cursor.tryNext();
+    }
+
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
         return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD);
     if(!expectTokenValue(cursor.get().value(), "fn"))

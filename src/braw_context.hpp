@@ -21,6 +21,7 @@ struct FunctionSignature {
     std::vector<TypeInfo> m_parameters;
     std::vector<std::string> m_parameterNames;
     std::string m_name;
+    bool m_external = false;
 };
 
 enum Assembler {

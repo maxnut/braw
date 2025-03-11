@@ -1,8 +1,9 @@
 #include "parser/parser.hpp"
 #include "../file.hpp"
 
-Result<std::unique_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor) {
+Result<std::unique_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, std::filesystem::path path) {
     std::unique_ptr<AST::FileNode> file = std::make_unique<AST::FileNode>();
+    file->m_path = path;
     file->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     
     while(cursor.hasNext()) {

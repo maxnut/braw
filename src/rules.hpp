@@ -43,7 +43,10 @@ namespace Rules {
     }
 
     inline bool isFunctionDefinition(TokenCursor cursor) {
-        if(!isValidTypeName(cursor))
+        if(cursor.get().value().m_value == "ext")
+            cursor.tryNext();
+
+        if(cursor.get().next().value().m_value != "fn")
             return false;
 
         if(cursor.get().value().m_type != Token::IDENTIFIER)

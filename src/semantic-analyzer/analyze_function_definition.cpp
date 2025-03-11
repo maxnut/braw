@@ -9,6 +9,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
     std::shared_ptr<FunctionSignature> func = std::make_shared<FunctionSignature>();
     func->m_name = node->m_signature.m_name;
     func->m_returnType = ctx.getTypeInfo(node->m_signature.m_returnType).value();
+    func->m_external = node->m_signature.m_external;
 
     size_t initialStackSize = ctx.m_stackSize;
 
@@ -34,10 +35,12 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
     ctx.m_functionTable[func->m_name].push_back(func);
     ctx.m_currentFunction = func;
 
-    ctx.m_scopes.push_back(scopeTable);
-    std::optional<SemanticError> errOpt = analyze(node->m_scope.get(), ctx);
-    ctx.m_scopes.pop_back();
-    if(errOpt) return errOpt;
+    if(!func->m_external && node->m_scope) {
+        ctx.m_scopes.push_back(scopeTable);
+        std::optional<SemanticError> errOpt = analyze(node->m_scope.get(), ctx);
+        ctx.m_scopes.pop_back();
+        if(errOpt) return errOpt;
+    }
 
     ctx.m_stackSize = initialStackSize;
 

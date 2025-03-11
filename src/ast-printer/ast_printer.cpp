@@ -87,7 +87,8 @@ void ASTPrinter::print(const AST::FileNode* node, int indent) {
 
 void ASTPrinter::print(const AST::FunctionDefinitionNode* node, int indent) {
     std::cout << indentString(fmt::format("FunctionDefinitionNode: {}\n", Utils::functionSignatureString(node->m_signature)), indent);
-    print(node->m_scope.get(), indent + 1);
+    if(node->m_scope)
+        print(node->m_scope.get(), indent + 1);
 }
 
 void ASTPrinter::print(const AST::ScopeNode* node, int indent) {

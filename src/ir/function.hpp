@@ -11,4 +11,5 @@ struct Function {
     std::vector<std::shared_ptr<Register>> m_args;
     std::shared_ptr<Register> m_optReturn = nullptr;
     std::vector<std::unique_ptr<Instruction>> m_instructions;
+    bool m_external = false;
 };

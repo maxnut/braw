@@ -3,10 +3,10 @@
 
 #include <spdlog/fmt/fmt.h>
 
-Result<std::unique_ptr<AST::FileNode>> Parser::parse(std::vector<Token> tokens) {
+Result<std::unique_ptr<AST::FileNode>> Parser::parse(std::vector<Token> tokens, std::filesystem::path path) {
     TokenCursor cursor(tokens.begin(), tokens.end() - 1);
 
-    return parseFile(cursor);
+    return parseFile(cursor, path);
 }
 
 std::unexpected<ParseError> Parser::unexpectedToken(Token& token) {

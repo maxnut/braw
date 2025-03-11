@@ -29,6 +29,7 @@ void opcodeInstruction(const Instruction& obj, std::ostream& os) {
 void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const BrawContext& ctx) {
     const char* sectionPrefix = ctx.m_assembler == NASM ? "section" : ".section";
     const char* globalPrefix = ctx.m_assembler == NASM ? "global" : ".global";
+    const char* externPrefix = ctx.m_assembler == NASM ? "extern" : ".extern";
     const char* commentPrefix = ctx.m_assembler == NASM ? ";" : "#";
     const char* floatPrefix = ctx.m_assembler == NASM ? "dd" : ".float";
     const char* doublePrefix = ctx.m_assembler == NASM ? "dd" : ".double";
@@ -64,9 +65,11 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
 
     out << "\n" << sectionPrefix << " .text\n";
 
-    for(auto& global : f.m_text.m_globals) {
+    for(auto& global : f.m_text.m_globals)
         out << globalPrefix << " " << global.m_id << "\n";
-    }
+
+    for(auto& external : f.m_text.m_externals)
+        out << externPrefix << " " << external.m_id << "\n";
 
     size_t labels = 0;
     for(uint32_t i = 0; i < f.m_text.m_instructions.size(); i++) {

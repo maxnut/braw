@@ -11,11 +11,17 @@ Result<std::unique_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefini
 
     node->m_signature = std::move(signatureOpt.value());
 
-    auto scopeOpt = parseScope(cursor);
-    if(!scopeOpt)
-        return std::unexpected{scopeOpt.error()};
+    if(node->m_signature.m_external) {
+        if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
+            return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON);
+    }
+    else {
+        auto scopeOpt = parseScope(cursor);
+        if(!scopeOpt)
+            return std::unexpected{scopeOpt.error()};
+        node->m_scope = std::move(scopeOpt.value());
+    }
 
-    node->m_scope = std::move(scopeOpt.value());
     node->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     return node;
 }

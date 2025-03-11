@@ -26,12 +26,13 @@ if (RUN_TESTS)
 function(compile_braw_test braw_file)
     get_filename_component(test_name ${braw_file} NAME_WE)
 
-    set(ASM_FILE "${CMAKE_BINARY_DIR}/testfiles/${test_name}.asm")
+    set(ASM_DIR "${CMAKE_BINARY_DIR}/testfiles")
+    set(ASM_FILE "${ASM_DIR}/${test_name}.asm")
     set(OBJ_FILE "${CMAKE_BINARY_DIR}/testfiles/${test_name}.o")
 
     add_custom_command(
         OUTPUT ${ASM_FILE}
-        COMMAND ${CMAKE_BINARY_DIR}/bin/brawc ${braw_file} -o ${ASM_FILE}
+        COMMAND ${CMAKE_BINARY_DIR}/bin/brawc ${braw_file} -o ${ASM_DIR}
         DEPENDS brawc ${braw_file}
         COMMENT "Compiling ${braw_file} -> ${ASM_FILE}"
     )

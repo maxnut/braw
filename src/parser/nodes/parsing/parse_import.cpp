@@ -30,5 +30,5 @@ Result<std::unique_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor) 
 
     cursor.tryNext();
 
-    return Parser::parse(tokensOpt.value());
+    return Parser::parse(tokensOpt.value(), path);
 }

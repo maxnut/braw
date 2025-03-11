@@ -12,6 +12,9 @@ void IRPrinter::print(std::ostream& out, const File& file) {
 }
 
 void IRPrinter::print(std::ostream& out, const Function& function) {
+    if(function.m_external)
+        out << "ext ";
+
     out << '(';
     for(int i = 0; i < function.m_args.size(); i++) {
         out << function.m_args[i]->m_id;

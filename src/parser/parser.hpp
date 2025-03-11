@@ -35,10 +35,10 @@ using Result = std::expected<T, ParseError>;
 
 class Parser {
 public:
-    static Result<std::unique_ptr<AST::FileNode>> parse(std::vector<Token> tokens);
+    static Result<std::unique_ptr<AST::FileNode>> parse(std::vector<Token> tokens, std::filesystem::path path);
 
 private:
-    static Result<std::unique_ptr<AST::FileNode>> parseFile(TokenCursor& cursor);
+    static Result<std::unique_ptr<AST::FileNode>> parseFile(TokenCursor& cursor, std::filesystem::path path);
     static Result<std::unique_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor);
     static Result<std::unique_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor, bool allowOneLine = true);
     static Result<std::unique_ptr<AST::Node>> parseInstruction(TokenCursor& cursor);

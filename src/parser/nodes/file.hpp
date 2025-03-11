@@ -3,6 +3,7 @@
 #include "function_definition.hpp"
 #include "struct.hpp"
 
+#include <filesystem>
 #include <vector>
 #include <memory>
 
@@ -14,6 +15,7 @@ struct FileNode : Node {
     std::vector<std::unique_ptr<FunctionDefinitionNode>> m_functions;
     std::vector<std::unique_ptr<StructNode>> m_structs;
     std::vector<std::unique_ptr<FileNode>> m_imports;
+    std::filesystem::path m_path;
 };
 
 }

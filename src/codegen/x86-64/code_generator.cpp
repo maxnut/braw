@@ -9,6 +9,7 @@
 #include "codegen/x86-64/register.hpp"
 #include "cursor.hpp"
 #include "ir/address.hpp"
+#include "ir/function.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
@@ -47,8 +48,15 @@ void addInstruction(Instruction instr, FunctionContext& ctx) {
 File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
     File file;
 
+    for(const Function* f : src.m_externals)
+        file.m_text.m_externals.emplace_back(f->m_name);
+
     size_t idx = 0;
     for(const Function& f : src.m_functions) {
+        if(f.m_external) {
+            idx++;
+            continue;
+        }
         initializeRegisters();
         file.m_text.m_globals.push_back({f.m_name});
 

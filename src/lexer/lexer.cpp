@@ -26,6 +26,7 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"nullptr", Token::KEYWORD},
     {"let", Token::KEYWORD},
     {"fn", Token::KEYWORD},
+    {"ext", Token::KEYWORD},
     {";", Token::SEMICOLON},
     {"(", Token::LEFT_PAREN},
     {")", Token::RIGHT_PAREN},

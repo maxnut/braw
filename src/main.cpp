@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     args::ArgumentParser parser("Braw Compiler - A simple compiler for the Braw programming language.");
     args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
     args::Positional<std::string> inputFile(parser, "file", "The source file to compile");
-    args::ValueFlag<std::string> outputFile(parser, "output", "The file to output to", {'o', "output"}, "out.asm");
+    args::ValueFlag<std::string> outputDirectory(parser, "output", "The directory to output to", {'o', "output"}, "out.asm");
     args::ValueFlag<std::string> assembler(parser, "assembler", "Assembler to use (nasm or gas)", {'a', "assembler"}, "gas");
 
     try {
@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
     }
 
     std::filesystem::path filepath(inputFile.Get());
-    std::filesystem::path outputPath = outputFile.Get();
-    std::filesystem::create_directories(outputPath.parent_path());
+    std::filesystem::path outputPath = outputDirectory.Get();
+    std::filesystem::create_directories(outputPath);
 
     std::string assemblerChoice = assembler.Get();
     if (assemblerChoice != "nasm" && assemblerChoice != "gas") {
@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    auto ast = Parser::parse(tokens.value());
+    auto ast = Parser::parse(tokens.value(), filepath);
     if (!ast) {
         spdlog::error("{}:{} {}", ast.error().m_line, ast.error().m_column, ast.error().m_message);
         return 1;
@@ -74,17 +74,20 @@ int main(int argc, char** argv) {
     
     std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
 
-    auto irOutputPath = outputPath; irOutputPath.replace_extension(".ir");
-    std::ofstream fs(irOutputPath);
-    IRPrinter::print(fs, res.at(0));
-    fs.close();
+    for(File& file : res) {
+        auto irOutputPath = outputPath / (file.m_path.stem().string() + ".ir");
+        std::ofstream fs(irOutputPath);
+        IRPrinter::print(fs, file);
+        fs.close();
 
-    CodeGen::x86_64::CodeGenerator codegen;
-    CodeGen::x86_64::File file = codegen.generate(res.at(0), ctx);
+        CodeGen::x86_64::CodeGenerator generator;
+        CodeGen::x86_64::File asmFile = generator.generate(file, ctx);
 
-    fs = std::ofstream(outputPath);
-    CodeGen::x86_64::Emitter::emit(file, res.at(0), fs, ctx);
-    fs.close();
+        auto codegenOutputPath = outputPath / (file.m_path.stem().string() + ".asm");
+        fs = std::ofstream(codegenOutputPath);
+        CodeGen::x86_64::Emitter::emit(asmFile, file, fs, ctx);
+        fs.close();
+    }
 
     return 0;
 }

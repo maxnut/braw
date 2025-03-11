@@ -16,6 +16,7 @@ struct FunctionSignature {
     Identifier m_returnType;
     Identifier m_name;
     std::vector<std::unique_ptr<AST::VariableDeclarationNode>> m_parameters; 
+    bool m_external = false;
 };
 
 struct FunctionDefinitionNode : Node {

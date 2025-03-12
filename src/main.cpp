@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
             spdlog::error("Environment variable BRAW_STDLIB is not set");
             return 1;
         }
-        std::string cmd = "gcc " + (outputPath / ("*.o")).string() + " " + (std::filesystem::path(stdPath) / "impl" / "*.o").string() + "-no-pie -m64";
+        std::string cmd = "gcc " + (outputPath / ("*.o")).string() + " " + (std::filesystem::path(stdPath) / "impl" / "*.o").string() + " -no-pie -m64";
         spdlog::info("Linking with command: {}", cmd);
         int result = std::system((cmd).c_str());
         if(result != 0) {

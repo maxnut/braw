@@ -7,6 +7,7 @@
 #include "semantic-analyzer/semantic_analyzer.hpp"
 #include "ir/builder/ir_builder.hpp"
 #include "ir/printer/ir_printer.hpp"
+#include "utils.hpp"
 
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
@@ -39,6 +40,10 @@ int main(int argc, char** argv) {
     if (!inputFile) {
         spdlog::error("No file specified. Use --help for usage.");
         return 1;
+    }
+
+    if(!std::filesystem::exists(Utils::getStdPath())) {
+        spdlog::warn("Standard library not found. Set the \"BRAW_STDLIB\" environment variable or place it in the current directory.");
     }
 
     std::filesystem::path filepath(inputFile.Get());
@@ -114,7 +119,7 @@ int main(int argc, char** argv) {
             std::filesystem::path assemblerOutputPath = outputPath / (file.m_path.stem().string() + ".o");
             std::string prefix = ctx.m_assembler == NASM ? "nasm -f elf64" : "as --64 -g";
             std::string cmd = prefix + " -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
-            spdlog::info("Assembling {} with command {}", file.m_path.string(), cmd);
+            spdlog::info("Assembling {} with command: {}", file.m_path.string(), cmd);
             int result = std::system((cmd).c_str());
             if(result != 0) {
                 spdlog::error("Assembler failed with exit code {}", result);

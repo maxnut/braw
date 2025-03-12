@@ -4,6 +4,7 @@
 #include "braw_context.hpp"
 #include "parser/nodes/function_definition.hpp"
 
+#include <filesystem>
 #include <string>
 #include <optional>
 
@@ -38,5 +39,12 @@ namespace Utils {
 
 
         return ctx.getTypeInfo(raw);
+    }
+
+    inline std::filesystem::path getStdPath() {
+        std::filesystem::path stdPath;
+        const char* path = std::getenv("BRAW_STDLIB");
+        stdPath = path ? path : std::filesystem::current_path() / "stdlib.braw";
+        return stdPath;
     }
 }

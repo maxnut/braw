@@ -1,6 +1,7 @@
 #include "parser/parser.hpp"
 #include "lexer/lexer.hpp"
 #include "../file.hpp"
+#include "utils.hpp"
 
 Result<std::unique_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor) {
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
@@ -16,6 +17,8 @@ Result<std::unique_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor) 
         return unexpectedTokenExpectedType(cursor.value(), Token::STRING);
 
     std::filesystem::path path = cursor.get().value().m_value;
+    if(std::filesystem::exists(Utils::getStdPath()) && std::filesystem::exists(Utils::getStdPath() / "include" / path))
+        path = Utils::getStdPath() / "include" / path;
 
     auto tokensOpt = Lexer::tokenize(path);
     if(!tokensOpt)

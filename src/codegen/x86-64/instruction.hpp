@@ -59,6 +59,7 @@ constexpr InstructionOpcode Movdqu   = {0x00, 0x0F, 0x6F};    // MOVDQU (SSE, un
 constexpr InstructionOpcode Lea      = {0x00, 0x8D};          // LEA (load effective address)
 constexpr InstructionOpcode Movsq    = {0x00, 0x0F, 0xD6};    // MOVSQ (SSE2, unaligned load)
 constexpr InstructionOpcode Movsb    = {0x00, 0xA4};          // MOVS (SSE2, unaligned load)
+constexpr InstructionOpcode Cdqe     = {0x00, 0x98};          // CDQE (convert doubleword to quadword)
 
 static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Nop, "nop"},
@@ -92,6 +93,7 @@ static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Lea, "lea"},
     {Movsq, "movsq"},
     {Movsb, "movsb"},
+    {Cdqe, "cdqe"}
 };
 
 static const std::unordered_map<uint8_t, std::string> s_prefixes = {

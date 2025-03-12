@@ -36,39 +36,34 @@ TypeInfo IRBuilder::getOperandType(Operand op, BrawContext& context, IRFunctionC
         }
         case 2: {
             std::array<TypeInfo, 7> types = {
-                context.getTypeInfo("int").value(), context.getTypeInfo("long").value(), context.getTypeInfo("float").value(), context.getTypeInfo("double").value(),
-                context.getTypeInfo("bool").value(), Utils::makePointer(context.getTypeInfo("char").value()), Utils::makePointer(context.getTypeInfo("void").value())
+                context.getTypeInfo(INT_T).value(), context.getTypeInfo(LONG_T).value(), context.getTypeInfo(FLOAT_T).value(), context.getTypeInfo(DOUBLE_T).value(),
+                context.getTypeInfo(BOOL_T).value(), Utils::makePointer(context.getTypeInfo(CHAR_T).value()), Utils::makePointer(context.getTypeInfo(VOID_T).value())
             };
             return types.at(std::get<Value>(op).index());
         }
         case 3: {
             auto addr = std::get<Address>(op);
             return addr.m_typeInfo;
-            // if(Rules::isPtr(addr.m_base->m_type.m_name))
-            //     return Utils::getRawType(addr.m_base->m_type, context).value();
-            // auto off = addr.m_offset >= 0 ? addr.m_offset : addr.m_base->m_type.m_size + addr.m_offset;
-            // return context.getTypeInfo(addr.m_base->m_type.memberByOffset(off).value().m_type).value();
-            // return Utils::makePointer(context.getTypeInfo("void").value());
         }
         default:
             break;
     }
     
-    return context.getTypeInfo("void").value();
+    return context.getTypeInfo(VOID_T).value();
 }
 
 RegisterType IRBuilder::getRegisterType(const TypeInfo& type) {
-    if(type.m_name == "int")
+    if(type.m_name == INT_T)
         return RegisterType::Signed;
-    else if(type.m_name == "long")
+    else if(type.m_name == LONG_T)
         return RegisterType::Signed;
-    else if(type.m_name == "float")
+    else if(type.m_name == FLOAT_T)
         return RegisterType::Single;
-    else if(type.m_name == "double")
+    else if(type.m_name == DOUBLE_T)
         return RegisterType::Double;
-    else if(type.m_name == "char")
+    else if(type.m_name == CHAR_T)
         return RegisterType::Signed;
-    else if(type.m_name == "bool")
+    else if(type.m_name == BOOL_T)
         return RegisterType::Signed;
     else if(Rules::isPtr(type.m_name)) 
         return RegisterType::Pointer;

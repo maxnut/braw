@@ -5,75 +5,75 @@
 
 BrawContext::BrawContext() {
     m_typeTable = {
-        {"void", TypeInfo{"void", 0, true}},
+        {VOID_T, TypeInfo{VOID_T, 0, true}},
 
-        {"int", TypeInfo{"int", 4, true,
+        {INT_T, TypeInfo{INT_T, 4, true,
             {
-                {"+", {"int"}},
-                {"-", {"int"}},
-                {"*", {"int"} },
-                {"/", {"int"}},
-                {"==", {"bool"}},
-                {"!=", {"bool"}},
-                {">", {"bool"}},
-                {">=", {"bool"}},
-                {"<", {"bool"}},
-                {"<=", {"bool"}}
+                {"+", {INT_T}},
+                {"-", {INT_T}},
+                {"*", {INT_T} },
+                {"/", {INT_T}},
+                {"==", {BOOL_T}},
+                {"!=", {BOOL_T}},
+                {">", {BOOL_T}},
+                {">=", {BOOL_T}},
+                {"<", {BOOL_T}},
+                {"<=", {BOOL_T}}
             },
-            {"float", "double", "long", "bool"}
+            {FLOAT_T,DOUBLE_T,LONG_T,BOOL_T}
         }},
 
-        {"long", TypeInfo{"long", 8, true,
+        {LONG_T, TypeInfo{LONG_T, 8, true,
             {
-                {"+", {"long"}},
-                {"-", {"long"}},
-                {"*", {"long"} },
-                {"/", {"long"}},
-                {"==", {"bool"}},
-                {"!=", {"bool"}},
-                {">", {"bool"}},
-                {">=", {"bool"}},
-                {"<", {"bool"}},
-                {"<=", {"bool"}}
+                {"+", {LONG_T}},
+                {"-", {LONG_T}},
+                {"*", {LONG_T} },
+                {"/", {LONG_T}},
+                {"==", {BOOL_T}},
+                {"!=", {BOOL_T}},
+                {">", {BOOL_T}},
+                {">=", {BOOL_T}},
+                {"<", {BOOL_T}},
+                {"<=", {BOOL_T}}
             },
-            {"int", "float", "double", "bool"}
+            {INT_T,FLOAT_T,DOUBLE_T,BOOL_T}
         }},
 
-        {"float", TypeInfo{"float", 4, true,
+        {FLOAT_T, TypeInfo{FLOAT_T, 4, true,
             {
-                {"+", {"float"}},
-                {"-", {"float"}},
-                {"*", {"float"}},
-                {"/", {"float"}},
-                {"==", {"bool"}},
-                {"!=", {"bool"}},
-                {">", {"bool"}},
-                {">=", {"bool"}},
-                {"<", {"bool"}},
-                {"<=", {"bool"}}
+                {"+", {FLOAT_T}},
+                {"-", {FLOAT_T}},
+                {"*", {FLOAT_T}},
+                {"/", {FLOAT_T}},
+                {"==", {BOOL_T}},
+                {"!=", {BOOL_T}},
+                {">", {BOOL_T}},
+                {">=", {BOOL_T}},
+                {"<", {BOOL_T}},
+                {"<=", {BOOL_T}}
             },
-            {"int", "long", "double", "bool"}
+            {INT_T,LONG_T,DOUBLE_T,BOOL_T}
         }},
 
-        {"double", TypeInfo{"double", 8, true,
+        {DOUBLE_T, TypeInfo{DOUBLE_T, 8, true,
             {
-                {"+", {"double"}},
-                {"-", {"double"}},
-                {"*", {"double"}},
-                {"/", {"double"}},
-                {"==", {"bool"}},
-                {"!=", {"bool"}},
-                {">", {"bool"}},
-                {">=", {"bool"}},
-                {"<", {"bool"}},
-                {"<=", {"bool"}}
+                {"+", {DOUBLE_T}},
+                {"-", {DOUBLE_T}},
+                {"*", {DOUBLE_T}},
+                {"/", {DOUBLE_T}},
+                {"==", {BOOL_T}},
+                {"!=", {BOOL_T}},
+                {">", {BOOL_T}},
+                {">=", {BOOL_T}},
+                {"<", {BOOL_T}},
+                {"<=", {BOOL_T}}
             },
-            {"int", "long", "float", "bool"}
+            {INT_T,LONG_T,FLOAT_T,BOOL_T}
         }},
 
-        {"bool", TypeInfo{"bool", 1, true}},
+        {BOOL_T, TypeInfo{BOOL_T, 1, true}},
 
-        {"char", TypeInfo{"char", 1, true}}
+        {CHAR_T, TypeInfo{CHAR_T, 1, true}}
     };
 }
 

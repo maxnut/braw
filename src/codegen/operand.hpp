@@ -32,22 +32,22 @@ public:
     virtual std::shared_ptr<Operand> clone() const = 0;
 
     static Size getSize(const TypeInfo& ti) {
-        if(ti.m_name == "int") {
+        if(ti.m_name == INT_T) {
             return Size::Dword;
         }
-        else if(ti.m_name == "long") {
+        else if(ti.m_name == LONG_T) {
             return Size::Qword;
         }
-        else if(ti.m_name == "bool") {
+        else if(ti.m_name == BOOL_T) {
             return Size::Byte;
         }
-        else if(ti.m_name == "char") {
+        else if(ti.m_name == CHAR_T) {
             return Size::Byte;
         }
-        else if(ti.m_name == "float") {
+        else if(ti.m_name == FLOAT_T) {
             return Size::Dword;
         }
-        else if(ti.m_name == "double") {
+        else if(ti.m_name == DOUBLE_T) {
             return Size::Qword;
         }
         return Size::Qword;

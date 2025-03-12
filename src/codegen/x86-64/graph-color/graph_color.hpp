@@ -20,7 +20,7 @@ struct Range {
     RegisterType m_registerType;
     TypeInfo m_typeInfo;
     bool m_isPointedOrDereferenced = false;
-    bool m_spillRegister = false;
+    Operands::Register::RegisterGroup m_forceTag = Operands::Register::Count;
 };
 
 struct GraphNode {

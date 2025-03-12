@@ -20,6 +20,8 @@ struct Instruction {
         Copy,
         Dereference,
         PartialDereference,
+        Upsize,
+        Downsize,
         Count
     };
 

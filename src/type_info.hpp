@@ -1,8 +1,17 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+
+constexpr const char* VOID_T = "void";
+constexpr const char* INT_T = "int";
+constexpr const char* LONG_T = "long";
+constexpr const char* FLOAT_T = "float";
+constexpr const char* DOUBLE_T = "double";
+constexpr const char* BOOL_T = "bool";
+constexpr const char* CHAR_T = "char";
 
 struct MemberInfo {
     std::string m_type;

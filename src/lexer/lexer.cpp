@@ -1,18 +1,19 @@
 #include "lexer.hpp"
+#include "type_info.hpp"
 
 #include <spdlog/spdlog.h>
 
 #include <fstream>
 
 static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
-    {"int", Token::KEYWORD},
-    {"char", Token::KEYWORD},
-    {"double", Token::KEYWORD},
-    {"float", Token::KEYWORD},
-    {"void", Token::KEYWORD},
+    {INT_T, Token::KEYWORD},
+    {CHAR_T, Token::KEYWORD},
+    {DOUBLE_T, Token::KEYWORD},
+    {FLOAT_T, Token::KEYWORD},
+    {VOID_T, Token::KEYWORD},
     {"false", Token::KEYWORD},
     {"true", Token::KEYWORD},
-    {"bool", Token::KEYWORD},
+    {BOOL_T, Token::KEYWORD},
     {"if", Token::KEYWORD},
     {"else", Token::KEYWORD},
     {"while", Token::KEYWORD},

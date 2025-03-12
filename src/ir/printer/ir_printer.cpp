@@ -44,24 +44,8 @@ void IRPrinter::print(std::ostream& out, const Instruction* instr) {
         case Instruction::Call: 
             print(out, static_cast<const CallInstruction*>(instr));
             break;
-        case Instruction::Add:
-        case Instruction::Move:
-        case Instruction::Subtract:
-        case Instruction::Multiply:
-        case Instruction::Point:
-        case Instruction::CompareEquals:
-        case Instruction::CompareGreaterEquals:
-        case Instruction::CompareLessEquals:
-        case Instruction::CompareNotEquals:
-        case Instruction::JumpFalse:
-        case Instruction::Jump:
-        case Instruction::Allocate:
-        case Instruction::Copy:
-        case Instruction::Dereference:
-        case Instruction::PartialDereference:
-            print(out, static_cast<const BasicInstruction*>(instr));
-            break;
         default:
+            print(out, static_cast<const BasicInstruction*>(instr));
             break;
     }
 }
@@ -154,6 +138,12 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
             break;
         case Instruction::PartialDereference:
             out << "pderef ";
+            break;
+        case Instruction::Upsize:
+            out << "upsize ";
+            break;
+        case Instruction::Downsize:
+            out << "downsize ";
             break;
         default:
             return;

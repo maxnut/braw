@@ -103,13 +103,13 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
         case AST::Node::Literal: {
             const AST::LiteralNode* literal = static_cast<const AST::LiteralNode*>(node);
             switch(literal->m_value.index()) {
-                case 0: return ctx.m_typeTable["int"];
-                case 1: return ctx.m_typeTable["long"];
-                case 2: return ctx.m_typeTable["float"];
-                case 3: return ctx.m_typeTable["double"];
-                case 4: return ctx.m_typeTable["bool"];
-                case 5: return Utils::makePointer(ctx.m_typeTable["char"]);
-                case 6: return Utils::makePointer(ctx.m_typeTable["void"]);
+                case 0: return ctx.m_typeTable[INT_T];
+                case 1: return ctx.m_typeTable[LONG_T];
+                case 2: return ctx.m_typeTable[FLOAT_T];
+                case 3: return ctx.m_typeTable[DOUBLE_T];
+                case 4: return ctx.m_typeTable[BOOL_T];
+                case 5: return Utils::makePointer(ctx.m_typeTable[CHAR_T]);
+                case 6: return Utils::makePointer(ctx.m_typeTable[VOID_T]);
             }
         }
         default:

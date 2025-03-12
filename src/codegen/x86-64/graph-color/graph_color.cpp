@@ -65,9 +65,9 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
         node.m_id = range->m_id;
         if (paramAssignments.contains(node.m_id))
             node.m_tag = paramAssignments[node.m_id];
-        if(range->m_spillRegister)
-            node.m_tag = Operands::Register::R15;
 
+        if(range->m_forceTag != Operands::Register::Count)
+            node.m_tag = range->m_forceTag;
         else if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
             spills.push_back(node);
             res.m_ranges.erase(node.m_id);
@@ -147,7 +147,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
 }
 
 void GraphColor::fillRanges(const Function& function, ColorResult& result) {
-    auto tryRegister = [&](::Operand o, uint32_t i, bool spillRegister = false) {
+    auto tryRegister = [&](::Operand o, uint32_t i, Operands::Register::RegisterGroup forceRegister = Operands::Register::Count) {
         if(o.index() != 1 && o.index() != 3)
             return;
 
@@ -168,7 +168,8 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
         result.m_ranges[r->m_id]->m_range.second = i;
         result.m_ranges[r->m_id]->m_id = r->m_id;
         result.m_ranges[r->m_id]->m_typeInfo = r->m_type;
-        result.m_ranges[r->m_id]->m_spillRegister = spillRegister;
+        if(forceRegister != Operands::Register::Count)
+            result.m_ranges[r->m_id]->m_forceTag = forceRegister;
     };
 
     for(auto& param : function.m_args)
@@ -191,9 +192,9 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
             case Instruction::PartialDereference: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
                 // force this operand to be a spill register lol
-                std::get<1>(basic->m_o1)->m_type = TypeInfo{"int", 4, true};
+                std::get<1>(basic->m_o1)->m_type = TypeInfo{LONG_T, 8, true};
                 std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
-                tryRegister(basic->m_o1, i, true);
+                tryRegister(basic->m_o1, i, Operands::Register::R15);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
@@ -218,6 +219,16 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
 
                 for(auto& p : call->m_parameters)
                     tryRegister(p, i);
+                break;
+            }
+            case Instruction::Upsize: {
+                auto basic = static_cast<const BasicInstruction*>(instr.get());
+                // std::get<1>(basic->m_o1)->m_type = TypeInfo{INT_T, 4, true};
+                std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
+                tryRegister(basic->m_o1, i, Operands::Register::RAX);
+                tryRegister(basic->m_o2, i);
+                tryRegister(basic->m_o3, i);
+                tryRegister(basic->m_o4, i);
                 break;
             }
             case Instruction::Label:

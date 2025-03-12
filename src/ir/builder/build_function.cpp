@@ -9,7 +9,7 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
     
     if(context.getTypeInfo(node->m_signature.m_returnType).value().m_size != 0) {
         if(context.getTypeInfo(node->m_signature.m_returnType).value().m_builtin) {
-            if(node->m_signature.m_returnType.m_name == "float" || node->m_signature.m_returnType.m_name == "double")
+            if(node->m_signature.m_returnType.m_name == FLOAT_T || node->m_signature.m_returnType.m_name == DOUBLE_T)
                 f.m_optReturn = makeOrGetRegister("%returnF", ictx);
             else
                 f.m_optReturn = makeOrGetRegister("%return", ictx);

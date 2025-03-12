@@ -2,12 +2,17 @@
 #include "ir/instructions/basic.hpp"
 #include "ir/operand.hpp"
 #include "ir/register.hpp"
+#include "ir/value.hpp"
 #include "ir_builder.hpp"
 #include "parser/nodes/unary_operator.hpp"
+#include "rules.hpp"
+#include "type_info.hpp"
 #include "utils.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <variant>
 
 Operand IRBuilder::dotOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx) {
     auto t = getOperandType(op, context, ictx);
@@ -58,6 +63,27 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
     else if(node->m_operator == "->") {
         ret = dereferenceOperator(node, op, context, ictx);
         ret = dotOperator(node, ret, context, ictx);
+    }
+    else if(node->m_operator == "cast") {
+        TypeInfo opType = getOperandType(op, context, ictx);
+        if(Rules::isPtr(node->m_data)) {
+            if(Rules::isPtr(opType.m_name))
+                ret = op;
+            else if(opType.m_name == INT_T) {
+                if(std::holds_alternative<Value>(op)) {
+                    ret = op;
+                    ret = (long)std::get<int>(std::get<Value>(ret));
+                }
+                else {
+                    ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                    std::get<1>(ret)->m_registerType = RegisterType::Pointer;
+                    std::get<1>(ret)->m_type = context.getTypeInfo(node->m_data).value();
+                    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, ret, op));
+                }
+            }
+            else if(opType.m_name == LONG_T)
+                ret = op;
+        }
     }
 
     return ret;

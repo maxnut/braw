@@ -1,4 +1,5 @@
 #include "graph_color.hpp"
+#include "codegen/x86-64/register.hpp"
 #include "ir/address.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
@@ -64,8 +65,10 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
         node.m_id = range->m_id;
         if (paramAssignments.contains(node.m_id))
             node.m_tag = paramAssignments[node.m_id];
+        if(range->m_spillRegister)
+            node.m_tag = Operands::Register::R15;
 
-        if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
+        else if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
             spills.push_back(node);
             res.m_ranges.erase(node.m_id);
             continue;
@@ -144,7 +147,7 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
 }
 
 void GraphColor::fillRanges(const Function& function, ColorResult& result) {
-    auto tryRegister = [&](::Operand o, uint32_t i) {
+    auto tryRegister = [&](::Operand o, uint32_t i, bool spillRegister = false) {
         if(o.index() != 1 && o.index() != 3)
             return;
 
@@ -165,6 +168,7 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
         result.m_ranges[r->m_id]->m_range.second = i;
         result.m_ranges[r->m_id]->m_id = r->m_id;
         result.m_ranges[r->m_id]->m_typeInfo = r->m_type;
+        result.m_ranges[r->m_id]->m_spillRegister = spillRegister;
     };
 
     for(auto& param : function.m_args)
@@ -186,15 +190,15 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
             }
             case Instruction::PartialDereference: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
-                tryRegister(basic->m_o1, i);
+                // force this operand to be a spill register lol
+                std::get<1>(basic->m_o1)->m_type = TypeInfo{"int", 4, true};
+                std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
+                tryRegister(basic->m_o1, i, true);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
                 if(std::holds_alternative<Address>(basic->m_o2))
                     result.m_ranges[std::get<Address>(basic->m_o2).m_base->m_id]->m_isPointedOrDereferenced = true;
-                // TODO find a better way to make this register not spilled, maybe while also maintaining original properties
-                std::get<1>(basic->m_o1)->m_type = TypeInfo{"dummy", 8, true};
-                std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
                 break;
             }
             case Instruction::Dereference: {

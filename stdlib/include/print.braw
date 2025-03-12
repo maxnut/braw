@@ -1,0 +1,1 @@
+ext fn print_int(val: int) -> void;

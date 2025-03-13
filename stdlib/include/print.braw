@@ -1,1 +1,2 @@
+ext fn print_string(val: char*) -> void;
 ext fn print_int(val: int) -> void;

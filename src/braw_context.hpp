@@ -43,6 +43,7 @@ struct BrawContext {
     std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionSignature>>> m_functionTable;
     std::shared_ptr<FunctionSignature> m_currentFunction = nullptr;
     Assembler m_assembler = NASM;
+    bool m_returned = false;
     
     size_t m_stackSize = 0;
 };

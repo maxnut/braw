@@ -44,7 +44,7 @@ namespace Utils {
     inline std::filesystem::path getStdPath() {
         std::filesystem::path stdPath;
         const char* path = std::getenv("BRAW_STDLIB");
-        stdPath = path ? path : std::filesystem::current_path() / "stdlib.braw";
+        stdPath = path ? path : std::filesystem::current_path() / "stdlib";
         return stdPath;
     }
 }

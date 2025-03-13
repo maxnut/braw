@@ -5,6 +5,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::ReturnNode* no
     if(node->m_value) {
         auto errOpt = analyze(node->m_value.get(), ctx);
         if(errOpt) return errOpt;
+        ctx.m_returned = true;
     }
 
     if(node->m_value && getType(node->m_value.get(), ctx).value() != ctx.m_currentFunction->m_returnType)

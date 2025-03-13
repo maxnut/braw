@@ -1,6 +1,7 @@
 #include "braw_context.hpp"
 #include "semantic_analyzer.hpp"
 #include "parser/nodes/function_definition.hpp"
+#include "type_info.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefinitionNode* node, BrawContext& ctx) {
     if(!ctx.getTypeInfo(node->m_signature.m_returnType))
@@ -39,6 +40,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
         ctx.m_scopes.push_back(scopeTable);
         std::optional<SemanticError> errOpt = analyze(node->m_scope.get(), ctx);
         ctx.m_scopes.pop_back();
+        if(func->m_returnType.m_name != VOID_T && !ctx.m_returned)
+            return missingReturn(node, node->m_signature);
+        ctx.m_returned = false;
         if(errOpt) return errOpt;
     }
 

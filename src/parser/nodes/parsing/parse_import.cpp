@@ -1,6 +1,7 @@
 #include "parser/parser.hpp"
 #include "lexer/lexer.hpp"
 #include "../file.hpp"
+#include "spdlog/fmt/bundled/format.h"
 #include "utils.hpp"
 
 Result<std::unique_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor) {
@@ -20,10 +21,17 @@ Result<std::unique_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor) 
     if(std::filesystem::exists(Utils::getStdPath()) && std::filesystem::exists(Utils::getStdPath() / "include" / path))
         path = Utils::getStdPath() / "include" / path;
 
+    if(!std::filesystem::exists(path))
+        return std::unexpected{ParseError{
+            fmt::format("File {} not found", path.string()),
+            cursor.get().value().m_line,
+            cursor.get().value().m_column
+        }};
+
     auto tokensOpt = Lexer::tokenize(path);
     if(!tokensOpt)
         return std::unexpected{ParseError{
-            "Failed to tokenize file",
+            fmt::format("Failed to tokenize file {}", path.string()),
             cursor.get().value().m_line,
             cursor.get().value().m_column
         }};

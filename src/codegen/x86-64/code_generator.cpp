@@ -311,7 +311,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     for(auto& arg : args) {
         auto op = convertOperand(arg, ctx);
         
-        if((!isFloat(op) && !cursor.hasNext()) || (isFloat(op) && !floatCursor.hasNext())) {
+        if((isFloat(op) && !floatCursor.hasNext()) || (isDouble(op) && !floatCursor.hasNext()) || ((op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == LONG_T) && !cursor.hasNext())) {
             push(op, ctx);
             spilled += op->m_typeInfo.m_size;
             ctx.m_spills += op->m_typeInfo.m_size;
@@ -328,7 +328,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
                 spilled += std::get<1>(arg)->m_type.m_size;
             }
 
-            if(op->m_type == Operand::Type::Address) {
+            if(!op->m_typeInfo.m_builtin && op->m_type == Operand::Type::Address) {
                 auto addr = cast<Operands::Address>(op->clone());
                 addr->m_offset += std::get<1>(arg)->m_type.m_size;
                 memoryAddressToRegister(addr, m_registers.at(reg), ctx);

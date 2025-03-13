@@ -139,6 +139,14 @@ SemanticError SemanticAnalyzer::duplicateFunction(const AST::Node* causer, const
     );
 }
 
+SemanticError SemanticAnalyzer::missingReturn(const AST::Node* causer, const AST::FunctionSignature& signature) {
+    return SemanticError(
+        fmt::format("Function {} doesn't return a value", Utils::functionSignatureString(signature)),
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}
+
 SemanticError SemanticAnalyzer::unknownVariable(const AST::VariableAccessNode* causer) {
     return SemanticError(
         fmt::format("Unknown variable: {}", causer->m_name.m_name),

@@ -1,6 +1,30 @@
 .intel_syntax noprefix
 .section .text
 .global print_int
+.global print_string
+
+print_string:
+    push rbp
+    mov rbp, rsp
+
+    mov rsi, rdi
+    xor rdx, rdx
+
+count_length:
+    mov al, byte [rsi + rdx]
+    test al, al
+    je write_string
+    inc rdx
+    jmp count_length       
+
+write_string:
+    inc rdx
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    pop rbp
+    ret
 
 print_int:
     push rbp

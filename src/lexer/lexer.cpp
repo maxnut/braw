@@ -105,15 +105,15 @@ Token parseString(Cursor<std::string::iterator>& cursor, int lineNumber) {
     size_t index = cursor.getIndex() + 1;
     while(cursor.hasNext() && cursor.get().value() != '"') {
 
-        if (cursor.get().value() == '\\') {
-            char nextChar = cursor.next().get().prev().value();
-            auto it = s_escapeMap.find(nextChar);
-            if (it != s_escapeMap.end()) {
-                ret += it->second;
-                cursor.next(2);
-                continue;
-            }
-        }
+        // if (cursor.get().value() == '\\') {
+        //     char nextChar = cursor.next().get().prev().value();
+        //     auto it = s_escapeMap.find(nextChar);
+        //     if (it != s_escapeMap.end()) {
+        //         ret += it->second;
+        //         cursor.next(2);
+        //         continue;
+        //     }
+        // }
 
         ret += cursor.get().next().value();
     }

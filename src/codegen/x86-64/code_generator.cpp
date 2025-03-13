@@ -76,7 +76,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         int64_t spills = 0;
         for(auto range : result.m_rangeVector) {
             if(!range->m_isPointedOrDereferenced && result.m_registers.contains(range->m_id)) {
-                ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size, range->m_typeInfo)) : m_registers.at(result.m_registers.at(range->m_id));
+                ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size, range->m_typeInfo)) : m_registers.at(result.m_registers.at(range->m_id))->clone();
                 ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
                 Operands::Register::RegisterGroup group = result.m_registers.at(range->m_id);
                 if(group == Operands::Register::RBX || group == Operands::Register::R12 || group == Operands::Register::R13 || group == Operands::Register::R14 || group == Operands::Register::R15)
@@ -282,7 +282,7 @@ void CodeGenerator::mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand
 }
 
 void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx) {
-    static const std::unordered_set<std::shared_ptr<Operands::Register>> callerSaved = {m_registers.at(Register::RAX),m_registers.at(Register::RCX),m_registers.at(Register::RDX),m_registers.at(Register::RSI),m_registers.at(Register::RDI),m_registers.at(Register::R8),m_registers.at(Register::R9),m_registers.at(Register::R10),m_registers.at(Register::R11),m_registers.at(Register::XMM0),m_registers.at(Register::XMM1),m_registers.at(Register::XMM2),m_registers.at(Register::XMM3),m_registers.at(Register::XMM4),m_registers.at(Register::XMM5),m_registers.at(Register::XMM6),m_registers.at(Register::XMM7)};
+    static const std::unordered_set<Register::RegisterGroup> callerSaved = {Register::RAX,Register::RCX,Register::RDX,Register::RSI,Register::RDI,Register::R8,Register::R9,Register::R10,Register::R11,Register::XMM0,Register::XMM1,Register::XMM2,Register::XMM3,Register::XMM4,Register::XMM5,Register::XMM6,Register::XMM7};
     std::vector<std::shared_ptr<Operands::Register>> saveStack;
 
     for(auto range : ctx.m_ranges) {
@@ -291,7 +291,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
 
         std::shared_ptr<Operand> arg = ctx.m_virtualRegisters.at(range->m_id);
 
-        if(arg->m_type != Operand::Type::Register || !callerSaved.contains(cast<Operands::Register>(arg)))
+        if(arg->m_type != Operand::Type::Register || !callerSaved.contains(cast<Operands::Register>(arg)->m_group))
             continue;
 
         auto reg = cast<Operands::Register>(arg);
@@ -345,7 +345,9 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     addInstruction(i, ctx);
 
     if(optReturn) {
-        auto retReg = isFloat(optReturn) || isDouble(optReturn) ? m_registers.at(Operands::Register::XMM0) : m_registers.at(Operands::Register::RAX);
+        auto retReg = isFloat(optReturn) || isDouble(optReturn) ? cast<Operands::Register>(m_registers.at(Operands::Register::XMM0)->clone()) : cast<Operands::Register>(m_registers.at(Operands::Register::RAX)->clone());
+        retReg->m_typeInfo = optReturn->m_typeInfo;
+        retReg->m_registerType = optReturn->m_registerType;
         move(optReturn, retReg, ctx);
     }
 
@@ -592,6 +594,8 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                     return std::make_shared<Operands::Immediate>(std::get<int>(v), ctx.brawCtx.getTypeInfo(INT_T).value());
                 case 1:
                     return std::make_shared<Operands::Immediate>(std::get<long>(v), ctx.brawCtx.getTypeInfo(LONG_T).value());
+                case 6:
+                    return std::make_shared<Operands::Immediate>(std::get<char>(v), ctx.brawCtx.getTypeInfo(CHAR_T).value());
                 case 2:
                 case 3:
                 case 5: {

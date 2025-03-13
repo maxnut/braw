@@ -71,9 +71,19 @@ BrawContext::BrawContext() {
             {INT_T,LONG_T,FLOAT_T,BOOL_T}
         }},
 
-        {BOOL_T, TypeInfo{BOOL_T, 1, true}},
+        {BOOL_T, TypeInfo{BOOL_T, 1, true,
+            {
+                {"==", {BOOL_T}},
+                {"!=", {BOOL_T}}
+            }
+        }},
 
-        {CHAR_T, TypeInfo{CHAR_T, 1, true}}
+        {CHAR_T, TypeInfo{CHAR_T, 1, true,
+            {
+                {"==", {CHAR_T}},
+                {"!=", {CHAR_T}}
+            }
+        }}
     };
 }
 

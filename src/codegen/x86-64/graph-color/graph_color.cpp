@@ -1,5 +1,6 @@
 #include "graph_color.hpp"
 #include "codegen/x86-64/register.hpp"
+#include "cursor.hpp"
 #include "ir/address.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
@@ -217,8 +218,9 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
                 if(call->m_optReturn)
                     tryRegister(call->m_optReturn, i);
 
-                for(auto& p : call->m_parameters)
+                for(auto& p : call->m_parameters) {
                     tryRegister(p, i);
+                }
                 break;
             }
             case Instruction::Upsize: {

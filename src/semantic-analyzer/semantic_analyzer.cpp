@@ -110,7 +110,8 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
                 case 3: return ctx.m_typeTable[DOUBLE_T];
                 case 4: return ctx.m_typeTable[BOOL_T];
                 case 5: return Utils::makePointer(ctx.m_typeTable[CHAR_T]);
-                case 6: return Utils::makePointer(ctx.m_typeTable[VOID_T]);
+                case 6: return ctx.m_typeTable[CHAR_T];
+                case 7: return Utils::makePointer(ctx.m_typeTable[VOID_T]);
             }
         }
         default:

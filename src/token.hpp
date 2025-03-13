@@ -23,7 +23,9 @@ public:
         OPERATOR,
         COMMA,
         QUOTE,
+        SEMIQUOTE,
         STRING,
+        CHAR,
         COLON,
         COUNT
     };
@@ -53,6 +55,8 @@ public:
             case QUOTE: return "QUOTE";
             case STRING: return "STRING";
             case COLON: return "COLON";
+            case CHAR: return "CHAR";
+            case SEMIQUOTE: return "SEMIQUOTE";
             case COUNT: return "UNKNOWN";
         }
         return "UNKNOWN";

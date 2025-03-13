@@ -138,9 +138,22 @@ namespace Rules {
         return true;
     }
 
+    inline bool isChar(TokenCursor cursor) {
+        if(cursor.get().value().m_type != Token::SEMIQUOTE)
+            return false;
+
+        if(cursor.next().get().value().m_type != Token::CHAR)
+            return false;
+
+        if(cursor.next().get().value().m_type != Token::SEMIQUOTE)
+            return false;
+
+        return true;
+    }
+
     inline bool isLiteral(TokenCursor cursor) {
         if(cursor.get().value().m_type != Token::INTEGER && cursor.get().value().m_type != Token::FLOAT
-            && cursor.get().value().m_type != Token::DOUBLE && !isString(cursor)
+            && cursor.get().value().m_type != Token::DOUBLE && !isString(cursor) && !isChar(cursor)
             && cursor.get().value().m_value != "true" && cursor.get().value().m_value != "false"
             && cursor.get().value().m_value != "nullptr")
             return false;

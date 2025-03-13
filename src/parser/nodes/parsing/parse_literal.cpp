@@ -37,6 +37,12 @@ Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
         if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
             return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE);
     }
+    else if(tkn.m_type == Token::SEMIQUOTE) {
+        literal->m_value = (char)(cursor.next().get().value().m_value.at(0));
+
+        if(!expectTokenType(cursor.next().get().value(), Token::SEMIQUOTE))
+            return unexpectedTokenExpectedType(cursor.value(), Token::SEMIQUOTE);
+    }
     else
         return std::unexpected{ParseError{
                 "Invalid literal: " + tkn.m_value,

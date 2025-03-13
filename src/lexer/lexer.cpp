@@ -58,6 +58,7 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"--", Token::OPERATOR},
     {",", Token::COMMA},
     {"\"", Token::QUOTE},
+    {"'", Token::SEMIQUOTE},
     {":", Token::COLON}
 };
 static std::unordered_map<char, char> s_escapeMap = {
@@ -120,6 +121,15 @@ Token parseString(Cursor<std::string::iterator>& cursor, int lineNumber) {
     return Token(Token::STRING, ret, lineNumber, index);
 }
 
+Token parseChar(Cursor<std::string::iterator>& cursor, int lineNumber) {
+    std::string ret = "";
+    size_t index = cursor.getIndex() + 1;
+    while(cursor.hasNext() && cursor.get().value() != '\'') {
+        ret += cursor.get().next().value();
+    }
+    return Token(Token::CHAR, ret, lineNumber, index);
+}
+
 
 Token tryParseSingleToken(Cursor<std::string::iterator> cursor, int lineNumber) {
     Token token(Token::COUNT, lineNumber, cursor.getIndex() + 1);
@@ -179,10 +189,11 @@ std::optional<std::vector<Token>> Lexer::tokenize(std::filesystem::path path) {
                 tokens.push_back(val);
                 cursor.next(val.m_value.size());
 
-                if(val.m_type != Token::QUOTE || check.m_type == Token::STRING)
-                    continue;
+                if(val.m_type == Token::QUOTE && check.m_type != Token::STRING)
+                    tokens.push_back(parseString(cursor, lineNumber));
 
-                tokens.push_back(parseString(cursor, lineNumber));
+                if(val.m_type == Token::SEMIQUOTE && check.m_type != Token::CHAR)
+                    tokens.push_back(parseChar(cursor, lineNumber));
 
                 continue;
             }

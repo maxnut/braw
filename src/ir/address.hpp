@@ -7,6 +7,8 @@
 
 struct Address {
     std::shared_ptr<Register> m_base;
-    int64_t m_offset;
+    int64_t m_offset = 0;
     TypeInfo m_typeInfo;
+    std::shared_ptr<Register> m_index = nullptr;
+    int64_t m_scale = 0;
 };

@@ -147,10 +147,17 @@ void Emitter::emit(const Operands::Address* addr, const InstructionOpcode& instr
     if(addr->m_base->m_type == Operand::Type::Register) {
         auto reg = std::dynamic_pointer_cast<Operands::Register>(addr->m_base);
 
-        out << '[' << reg->m_ids.at(Operand::Size::Qword);
-        if(addr->m_offset != 0)
-            out << (addr->m_offset > 0 ? "+" : "") << addr->m_offset;
-        out << ']';
+        if(addr->m_index) {
+            out << '[' << reg->m_ids.at(Operand::Size::Qword);
+            out << '+' << addr->m_scale << '*' << addr->m_index->m_ids.at(Operand::Size::Qword);
+            out << ']';
+        }
+        else {
+            out << '[' << reg->m_ids.at(Operand::Size::Qword);
+            if(addr->m_offset != 0)
+                out << (addr->m_offset > 0 ? "+" : "") << addr->m_offset;
+            out << ']';
+        }
     }
     else {
         auto label = std::dynamic_pointer_cast<Operands::Label>(addr->m_base);

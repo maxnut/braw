@@ -10,6 +10,11 @@ Result<std::unique_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor) {
         unary->m_operator = cursor.get().value().m_value;
         unary->m_rangeBegin = rangeBegin;
         cursor.next();
+        auto operandOpt = parseOperand(cursor);
+        if(!operandOpt)
+            return std::unexpected{operandOpt.error()};
+        unary->m_operand = std::move(operandOpt.value());
+        return unary;
     }
     
     auto primaryOpt = parsePrimary(cursor);
@@ -18,14 +23,24 @@ Result<std::unique_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor) {
 
     std::unique_ptr<AST::Node> ret = std::move(primaryOpt.value());
 
-    if(unary) {
-        ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
-        unary->m_operand = std::move(ret);
-        ret = std::move(unary);
-    }
-
     while(cursor.hasNext()) {
-        if(cursor.get().value().m_value == "." || cursor.get().value().m_value == "->") {
+        if (cursor.get().value().m_type == Token::LEFT_BRACKET) {
+            ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
+            cursor.next();
+            auto indexOpt = parseExpression(cursor);
+            if(!indexOpt)
+                return std::unexpected{indexOpt.error()};
+            if(!expectTokenType(cursor.get().value(), Token::RIGHT_BRACKET))
+                return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_BRACKET);
+            std::unique_ptr<AST::UnaryOperatorNode> subscript = std::make_unique<AST::UnaryOperatorNode>();
+            subscript->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+            subscript->m_operator = "[]";
+            subscript->m_expression = std::move(indexOpt.value());
+            subscript->m_operand = std::move(ret);
+            ret = std::move(subscript);
+            cursor.tryNext();
+        }
+        else if(cursor.get().value().m_value == "." || cursor.get().value().m_value == "->") {
             ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
             auto dotArrowOpt = parseDotArrow(cursor, std::move(ret));
             if(!dotArrowOpt)

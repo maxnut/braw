@@ -79,6 +79,8 @@ std::string operatorString(Operand op) {
         }
         case 3: {
             Address add = std::get<Address>(op);
+            if(add.m_index)
+                return "[" + add.m_base->m_id + "+" + std::to_string(add.m_scale) + "*" + add.m_index->m_id + "+" + std::to_string(add.m_offset) + "]";
             return "[" + add.m_base->m_id + "+" + std::to_string(add.m_offset) + "]";
         }
         case 4:

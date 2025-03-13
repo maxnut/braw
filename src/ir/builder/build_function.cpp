@@ -6,6 +6,7 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
     f.m_external = node->m_signature.m_external;   
 
     IRFunctionContext ictx;
+    ictx.m_function = &f;
     
     if(context.getTypeInfo(node->m_signature.m_returnType).value().m_size != 0) {
         if(context.getTypeInfo(node->m_signature.m_returnType).value().m_builtin) {
@@ -28,6 +29,8 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
         f.m_args.back()->m_registerType = getRegisterType(f.m_args.back()->m_type);
     }
 
+    f.m_name = node->m_signature.m_name;
+
     if(!node->m_signature.m_external) {
         Label label;
         label.m_id = node->m_signature.m_name;
@@ -38,6 +41,5 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
         f.m_instructions = std::move(ictx.m_instructions);
     }
 
-    f.m_name = node->m_signature.m_name;
     return f;
 }

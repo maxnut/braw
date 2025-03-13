@@ -40,10 +40,10 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
         ctx.m_scopes.push_back(scopeTable);
         std::optional<SemanticError> errOpt = analyze(node->m_scope.get(), ctx);
         ctx.m_scopes.pop_back();
+        if(errOpt) return errOpt;
         if(func->m_returnType.m_name != VOID_T && !ctx.m_returned)
             return missingReturn(node, node->m_signature);
         ctx.m_returned = false;
-        if(errOpt) return errOpt;
     }
 
     ctx.m_stackSize = initialStackSize;

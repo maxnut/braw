@@ -64,6 +64,35 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
         ret = dereferenceOperator(node, op, context, ictx);
         ret = dotOperator(node, ret, context, ictx);
     }
+    else if(node->m_operator == "[]") {
+        Operand index = buildExpression(node->m_expression.get(), context, ictx);
+        if(index.index() != 1) {
+            auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_0", ictx);
+            tmp->m_type = getOperandType(index, context, ictx);
+            tmp->m_registerType = getRegisterType(tmp->m_type);
+            moveToRegister(tmp->m_id, index, context, ictx);
+            index = tmp;
+        }
+        if(op.index() != 1) {
+            auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_1", ictx);
+            tmp->m_type = getOperandType(op, context, ictx);
+            tmp->m_registerType = getRegisterType(tmp->m_type);
+            moveToRegister(tmp->m_id, op, context, ictx);
+            op = tmp;
+        }
+
+        if(std::get<1>(index)->m_type.m_name == INT_T) {
+            auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_2", ictx);
+            tmp->m_type = context.getTypeInfo(LONG_T).value();
+            tmp->m_registerType = getRegisterType(tmp->m_type);
+            ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, tmp, index));
+            ret = tmp;
+            moveToRegister(std::get<1>(index)->m_id, ret, context, ictx);
+        }
+        
+        TypeInfo raw = Utils::getRawType(getOperandType(op, context, ictx), context).value();
+        ret = Address(std::get<1>(op), 0, raw, std::get<1>(index), raw.m_size);
+    }
     else if(node->m_operator == "cast") {
         TypeInfo opType = getOperandType(op, context, ictx);
         if(Rules::isPtr(node->m_data)) {
@@ -76,8 +105,8 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
                 }
                 else {
                     ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-                    std::get<1>(ret)->m_registerType = RegisterType::Pointer;
                     std::get<1>(ret)->m_type = context.getTypeInfo(node->m_data).value();
+                    std::get<1>(ret)->m_registerType = getRegisterType(std::get<1>(ret)->m_type);
                     ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, ret, op));
                 }
             }

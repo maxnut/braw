@@ -63,13 +63,13 @@ int main(int argc, char** argv) {
 
     auto ast = Parser::parse(tokens.value(), filepath);
     if (!ast) {
-        spdlog::error("{}:{} {}", ast.error().m_line, ast.error().m_column, ast.error().m_message);
+        spdlog::error("ParseError {}:{} {}", ast.error().m_line, ast.error().m_column, ast.error().m_message);
         return 1;
     }
 
     auto ctxOr = SemanticAnalyzer::analyze(ast.value().get());
     if (!ctxOr) {
-        spdlog::error("{}:{} {}", ctxOr.error().m_rangeBegin.first, ctxOr.error().m_rangeBegin.second, ctxOr.error().m_message);
+        spdlog::error("SemanticError {}:{} {}", ctxOr.error().m_rangeBegin.first, ctxOr.error().m_rangeBegin.second, ctxOr.error().m_message);
         return 1;
     }
 

@@ -32,6 +32,7 @@ namespace CodeGen::x86_64 {
 using Operands::Register;
 
 const Register::RegisterGroup SPILL1 = Register::R15;
+const Register::RegisterGroup SPILL2 = Register::R14;
 const Register::RegisterGroup PRCSPILL1 = Register::XMM15;
 
 template <typename T>
@@ -243,8 +244,8 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     
     if(isFloat(source)) in.m_opcode = Movss;
     else if(isDouble(source)) in.m_opcode = Movsd;
-    else if(bothRegisters(target, source) && target->m_typeInfo.m_name != "" && source->m_typeInfo.m_name != "" && target->m_typeInfo.m_size < source->m_typeInfo.m_size)
-        in.m_opcode = Movzx;
+    // else if(bothRegisters(target, source) && target->m_typeInfo.m_name != "" && source->m_typeInfo.m_name != "" && target->m_typeInfo.m_size < source->m_typeInfo.m_size)
+    //     in.m_opcode = Movzx;
     else in.m_opcode = Mov;
     
     target->m_typeInfo = source->m_typeInfo;
@@ -623,6 +624,32 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
             }
             else
                 addr = std::make_shared<Operands::Address>(ctx.m_virtualRegisters.at(src.m_base->m_id), addrOff, src.m_typeInfo);
+
+            if(src.m_index) {
+                std::shared_ptr<Operand> index = convertOperand(src.m_index, ctx);
+                std::shared_ptr<Operands::Register> indexReg = nullptr;
+                if(index->m_type == Operand::Type::Address)
+                    indexReg = memoryValueToRegister(cast<Operands::Address>(index), ctx);
+                else
+                    indexReg = cast<Operands::Register>(index);
+
+                if(addrOff != 0) {
+                    std::shared_ptr<Operands::Register> base = m_registers.at(SPILL2);
+                    std::shared_ptr<Operands::Address> addr2 = cast<Operands::Address>(addr->clone());
+                    addr2->m_typeInfo = Utils::makePointer(addr->m_typeInfo);
+                    move(base, addr2, ctx);
+                    // memoryAddressToRegister(addr, base, ctx);
+                    addr->m_scale = src.m_scale;
+                    addr->m_index = indexReg;
+                    addr = cast<Operands::Address>(addr->clone());
+                    addr->m_base = base;
+                    addr->m_offset = 0;
+                }
+                else {
+                    addr->m_scale = src.m_scale;
+                    addr->m_index = indexReg;
+                }
+            }
             return addr;
         }
         case 4:

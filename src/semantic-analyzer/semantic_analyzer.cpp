@@ -74,7 +74,7 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
 
             if(op->m_operator == "&")
                 return Utils::makePointer(typeOpt.value());
-            else if(op->m_operator == "*")
+            else if(op->m_operator == "*" || op->m_operator == "[]")
                 return Utils::getRawType(typeOpt.value(), ctx);
             else if(op->m_operator == "cast")
                 return ctx.getTypeInfo(op->m_data);
@@ -83,6 +83,7 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
                 if(!typeOpt2) return std::nullopt;
                 return typeOpt2.value();
             }
+            return std::nullopt;
         }
         case AST::Node::BinaryOperator: {
             const AST::BinaryOperatorNode* op = static_cast<const AST::BinaryOperatorNode*>(node);

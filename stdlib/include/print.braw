@@ -1,2 +1,7 @@
-ext fn print_string(val: char*) -> void;
-ext fn print_int(val: int) -> void;
+import "syscall.braw"
+
+ext fn print_int(num: int) -> void;
+
+fn print_string(str: char*, len: int) -> void {
+    syscall(1, (void*)1, (void*)str, (void*)len, (void*)0, (void*)0, (void*)0);
+}

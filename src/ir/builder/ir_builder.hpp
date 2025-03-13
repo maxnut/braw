@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ir/function.hpp"
 #include "ir/operand.hpp"
 #include "ir/register.hpp"
 #include "parser/nodes/file.hpp"
@@ -40,6 +41,7 @@ struct IRFunctionContext {
     Instructions m_instructions;
     uint32_t m_scopeDepth = 0;
     std::shared_ptr<Register> m_returnRegister;
+    Function* m_function;
 };
 
 class IRBuilder {

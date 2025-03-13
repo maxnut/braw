@@ -42,7 +42,8 @@ If you don't have it, or simply don't want them, disable them by setting ```RUN_
 
 - [x] Pointers
 - [ ] Arrays
-- [ ] Strings
+- [ ] Parallelize compilation
+- [x] Strings
 - [ ] Variadics
 - [ ] Expand the standard library (its basically nonexistant now 🔥🔥🔥)
 - [ ] Stick more to conventions to make it call other language's functions

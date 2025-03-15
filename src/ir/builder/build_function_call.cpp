@@ -14,19 +14,6 @@ Operand IRBuilder::buildCall(const AST::FunctionCallNode* node, BrawContext& con
         Operand op = buildExpression(param.get(), context, ictx);
 
         TypeInfo t = getOperandType(op, context, ictx);
-        if(op.index() == 1 && t.m_builtin) {
-            for(size_t i = 0; i < ictx.m_function->m_args.size(); i++) {
-                auto& arg = ictx.m_function->m_args[i];
-                if(arg->m_id == std::get<1>(op)->m_id) {
-                    auto newReg = makeOrGetRegister(arg->m_id + "_" + std::to_string(i), ictx);
-                    newReg->m_type = arg->m_type;
-                    newReg->m_registerType = arg->m_registerType;
-                    moveToRegister(newReg->m_id, op, context, ictx);
-                    op = newReg;
-                    break;
-                }
-            }
-        }
 
         if(param->m_type == AST::Node::UnaryOperator && static_cast<const AST::UnaryOperatorNode*>(param.get())->m_operator == "cast")
             t = context.getTypeInfo(static_cast<const AST::UnaryOperatorNode*>(param.get())->m_data).value();

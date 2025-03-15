@@ -2,6 +2,7 @@
 
 #include "../operand.hpp"
 #include "braw_context.hpp"
+#include "codegen/x86-64/move-resolver/move-resolver.hpp"
 #include "instruction.hpp"
 #include "ir/file.hpp"
 #include "graph-color/graph_color.hpp"
@@ -68,6 +69,8 @@ private:
 private:
     std::unordered_map<Operands::Register::RegisterGroup, std::shared_ptr<Operands::Register>> m_registers;
     std::unordered_map<std::string, std::shared_ptr<Operands::Address>> m_addresses;
+
+    friend class MoveResolver;
 };
     
 }

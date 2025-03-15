@@ -54,6 +54,7 @@ private:
     static void build(const AST::ScopeNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::VariableDeclarationNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::IfNode* node, BrawContext& context, IRFunctionContext& ictx);
+    static void build(const AST::WhileNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::ReturnNode* node, BrawContext& context, IRFunctionContext& ictx);
     static Operand buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx);
     static Operand buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx);

@@ -53,7 +53,10 @@ constexpr InstructionOpcode Sete     = {0x00, 0x0F, 0x94};    // SETE (set if eq
 constexpr InstructionOpcode Setne    = {0x00, 0x0F, 0x95};    // SETNE (set if not equal)
 constexpr InstructionOpcode Setge    = {0x00, 0x0F, 0x9D};    // SETGE (set if greater or equal)
 constexpr InstructionOpcode Setle    = {0x00, 0x0F, 0x9E};    // SETLE (set if less or equal)
+constexpr InstructionOpcode Setl     = {0x00, 0x0F, 0x9C};    // SETL (set if less)
+constexpr InstructionOpcode Setg     = {0x00, 0x0F, 0x9F};    // SETG (set if greater)
 constexpr InstructionOpcode Je       = {0x00, 0x0F, 0x84};    // JE (jump if equal)
+constexpr InstructionOpcode Jne      = {0x00, 0x0F, 0x85};    // JNE (jump if not equal)
 constexpr InstructionOpcode Call     = {0x00, 0xE8};          // CALL (near call)
 constexpr InstructionOpcode Movdqu   = {0x00, 0x0F, 0x6F};    // MOVDQU (SSE, unaligned load)
 constexpr InstructionOpcode Lea      = {0x00, 0x8D};          // LEA (load effective address)
@@ -87,7 +90,10 @@ static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Setne, "setne"},
     {Setge, "setge"},
     {Setle, "setle"},
+    {Setg, "setg"},
+    {Setl, "setl"},
     {Je, "je"},
+    {Jne, "jne"},
     {Call, "call"},
     {Movdqu, "movdqu"},
     {Lea, "lea"},

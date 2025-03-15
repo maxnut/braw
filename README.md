@@ -41,6 +41,7 @@ If you don't have it, or simply don't want them, disable them by setting ```RUN_
 ## Todo
 
 - [x] Pointers
+- [ ] Branch aware graph coloring
 - [ ] Arrays
 - [ ] Parallelize compilation
 - [x] Strings

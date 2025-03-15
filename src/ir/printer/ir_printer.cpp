@@ -123,10 +123,16 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
         case Instruction::CompareLessEquals:
             out << "cmple ";
             break;
-            case Instruction::JumpFalse:
+        case Instruction::CompareLess:
+            out << "cmpl ";
+            break;
+        case Instruction::CompareGreater:
+            out << "cmpg ";
+            break;
+        case Instruction::JumpFalse:
             out << "jmpf ";
             break;
-            case Instruction::Jump:
+        case Instruction::Jump:
             out << "jmp ";
             break;
         case Instruction::Allocate:
@@ -146,6 +152,9 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
             break;
         case Instruction::Downsize:
             out << "downsize ";
+            break;
+        case Instruction::JumpTrue:
+            out << "jmpt ";
             break;
         default:
             return;

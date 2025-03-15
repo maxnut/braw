@@ -5,6 +5,7 @@
 #include "codegen/x86-64/immediate.hpp"
 #include "codegen/x86-64/instruction.hpp"
 #include "codegen/x86-64/label.hpp"
+#include "codegen/x86-64/move-resolver/move-resolver.hpp"
 #include "codegen/x86-64/olabel.hpp"
 #include "codegen/x86-64/register.hpp"
 #include "cursor.hpp"
@@ -26,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace CodeGen::x86_64 {
 
@@ -59,6 +61,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
             continue;
         }
         initializeRegisters();
+
         file.m_text.m_globals.push_back({f.m_name});
 
         ColorResult result = GraphColor::build(f, {Register::RDI,Register::RSI,Register::RDX,Register::RCX,Register::R8,Register::R9,Register::RBX,Register::R10,Register::R11,Register::R12,Register::R13,Register::R14,Register::R15}, {Register::XMM0,Register::XMM1,Register::XMM2,Register::XMM3,Register::XMM4,Register::XMM5,Register::XMM6,Register::XMM7,Register::XMM8,Register::XMM9,Register::XMM10,Register::XMM11,Register::XMM12,Register::XMM13,Register::XMM14,Register::XMM15}, 6, 6);
@@ -149,6 +152,16 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setne, ctx); 
             break;
         }
+        case ::Instruction::CompareGreater: {
+            auto bin = (const ::BasicInstruction*)instr;
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setg, ctx); 
+            break;
+        }
+        case ::Instruction::CompareLess: {
+            auto bin = (const ::BasicInstruction*)instr;
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setl, ctx); 
+            break;
+        }
         case ::Instruction::CompareGreaterEquals: {
             auto bin = (const ::BasicInstruction*)instr;
             compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setge, ctx); 
@@ -162,6 +175,11 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
         case ::Instruction::JumpFalse: {
             auto bin = (const ::BasicInstruction*)instr;
             compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0, ctx.brawCtx.getTypeInfo(INT_T).value()), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Je, ctx);
+            break;
+        }
+        case ::Instruction::JumpTrue: {
+            auto bin = (const ::BasicInstruction*)instr;
+            compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0, ctx.brawCtx.getTypeInfo(INT_T).value()), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Jne, ctx);
             break;
         }
         case ::Instruction::Jump: {
@@ -309,6 +327,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
         cursor.next(skipArgs);
 
     size_t spilled = 0;
+    size_t beg = ctx.f.m_text.m_instructions.size();
     for(auto& arg : args) {
         auto op = convertOperand(arg, ctx);
         
@@ -338,6 +357,12 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
                 move(m_registers.at(reg), op, ctx);
         }
     }
+    size_t end = ctx.f.m_text.m_instructions.size() - 1;
+
+    std::vector<Instruction> from(ctx.f.m_text.m_instructions.begin() + beg, ctx.f.m_text.m_instructions.begin() + end + 1);
+    std::vector<Instruction> result = MoveResolver::resolve(from, *this, ctx);
+    ctx.f.m_text.m_instructions.erase(ctx.f.m_text.m_instructions.begin() + beg, ctx.f.m_text.m_instructions.begin() + end + 1);
+    ctx.f.m_text.m_instructions.insert(ctx.f.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
     Instruction i;
     i.m_opcode = Call;
@@ -724,7 +749,7 @@ void CodeGenerator::initializeRegisters() {
         std::shared_ptr<Operands::Register>(new Operands::Register(
             {{Operand::Size::Qword, "rdx"}, {Operand::Size::Dword, "edx"}, {Operand::Size::Word, "dx"}, {Operand::Size::Byte, "dl"}},
             TypeInfo{},
-            Operands::Register::General, Operands::Register::RSI)
+            Operands::Register::General, Operands::Register::RDX)
         )
     });
     m_registers.insert({ Operands::Register::RCX,

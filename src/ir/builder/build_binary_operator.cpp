@@ -38,15 +38,15 @@ Operand IRBuilder::buildBinaryOperator(const AST::BinaryOperatorNode* node, Braw
         target = newTarget;
     }
     else if(node->m_operator == ">") {
-        moveToRegister(name, right, context, ictx);
+        moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
-        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareLessEquals, target, left, newTarget));
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareGreater, target, right, newTarget));
         target = newTarget;
     }
     else if(node->m_operator == "<") {
-        moveToRegister(name, right, context, ictx);
+        moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
-        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareGreaterEquals, target, left, newTarget));
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareLess, target, right, newTarget));
         target = newTarget;
     }
     else if(node->m_operator == "<=") {

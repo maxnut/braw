@@ -36,6 +36,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
             return invalidCast(node, type.m_name);
     }
     else if(node->m_operator == "[]") {
+        errorOpt = analyze(node->m_expression.get(), ctx); 
+        if(errorOpt) return errorOpt;
         if(!Rules::isPtr(getType(node->m_operand.get(), ctx).value().m_name))
             return mismatchedTypes(node, getType(node->m_operand.get(), ctx).value().m_name, "pointer");
         TypeInfo type = getType(node->m_expression.get(), ctx).value();

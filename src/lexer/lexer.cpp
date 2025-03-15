@@ -64,6 +64,7 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
 static std::unordered_map<char, char> s_escapeMap = {
     {'n', '\n'},
     {'t', '\t'},
+    {'0', '\0'},
 };
 
 Token parseNumber(Cursor<std::string::iterator>& cursor, int lineNumber) {
@@ -82,12 +83,12 @@ Token parseNumber(Cursor<std::string::iterator>& cursor, int lineNumber) {
             return Token(Token::FLOAT, n, lineNumber, index);
         }
 
-        if(cursor.get().value() == 'l' || cursor.get().value() == 'L') {
-            cursor.next();
-            return Token(Token::LONG, n, lineNumber, index);
-        }
-
         return Token(Token::DOUBLE, n, lineNumber, index);
+    }
+
+    if(cursor.get().value() == 'l' || cursor.get().value() == 'L') {
+        cursor.next();
+        return Token(Token::LONG, n, lineNumber, index);
     }
 
     return Token(Token::INTEGER, n, lineNumber, index);
@@ -104,20 +105,8 @@ Token parseAlphanumeric(Cursor<std::string::iterator>& cursor, int lineNumber) {
 Token parseString(Cursor<std::string::iterator>& cursor, int lineNumber) {
     std::string ret = "";
     size_t index = cursor.getIndex() + 1;
-    while(cursor.hasNext() && cursor.get().value() != '"') {
-
-        // if (cursor.get().value() == '\\') {
-        //     char nextChar = cursor.next().get().prev().value();
-        //     auto it = s_escapeMap.find(nextChar);
-        //     if (it != s_escapeMap.end()) {
-        //         ret += it->second;
-        //         cursor.next(2);
-        //         continue;
-        //     }
-        // }
-
+    while(cursor.hasNext() && cursor.get().value() != '"')
         ret += cursor.get().next().value();
-    }
     return Token(Token::STRING, ret, lineNumber, index);
 }
 
@@ -125,6 +114,15 @@ Token parseChar(Cursor<std::string::iterator>& cursor, int lineNumber) {
     std::string ret = "";
     size_t index = cursor.getIndex() + 1;
     while(cursor.hasNext() && cursor.get().value() != '\'') {
+        if (cursor.get().value() == '\\') {
+            char nextChar = cursor.next().get().prev().value();
+            auto it = s_escapeMap.find(nextChar);
+            if (it != s_escapeMap.end()) {
+                ret += it->second;
+                cursor.next(2);
+                continue;
+            }
+        }
         ret += cursor.get().next().value();
     }
     return Token(Token::CHAR, ret, lineNumber, index);

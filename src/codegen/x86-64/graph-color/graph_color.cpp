@@ -147,6 +147,19 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
     return res;
 }
 
+int findLabel(const std::string& labelStr, const std::vector<std::unique_ptr<Instruction>>& instructions) {
+    for(size_t i = 0; i < instructions.size(); i++) {
+        auto& instr = instructions[i];
+        if(instr->m_type != Instruction::Label)
+            continue;
+
+        Label* label = (Label*)instr.get();
+        if(label->m_id == labelStr)
+            return i;
+    }
+    return -1;
+}
+
 void GraphColor::fillRanges(const Function& function, ColorResult& result) {
     auto tryRegister = [&](::Operand o, uint32_t i, Operands::Register::RegisterGroup forceRegister = Operands::Register::Count) {
         if(o.index() != 1 && o.index() != 3)
@@ -244,6 +257,19 @@ void GraphColor::fillRanges(const Function& function, ColorResult& result) {
                 tryRegister(basic->m_o4, i);
                 break;
             }
+        }
+    }
+
+    // TODO: find a better way to do this, THIS SUCKS (probably block dividing stuff)
+    for(auto& range : result.m_rangeVector) {
+        for(size_t i = 0; i < function.m_instructions.size(); i++) {
+            auto& instr = function.m_instructions[i];
+            if(instr->m_type != Instruction::Jump && instr->m_type != Instruction::JumpFalse && instr->m_type != Instruction::JumpTrue)
+                continue;
+
+            if(i <= range->m_range.second)
+                continue;
+            range->m_range.second = i;
         }
     }
 }

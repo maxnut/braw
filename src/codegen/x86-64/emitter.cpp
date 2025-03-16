@@ -127,12 +127,6 @@ void Emitter::emit(const Operands::Immediate* imm, const InstructionOpcode& inst
 }
 
 void Emitter::emit(const Operands::Address* addr, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
-    if(addr->m_base->m_type == Operand::Type::Label && addr->m_base->m_typeInfo.m_name == "char*" && ctx.m_assembler == GAS) {
-        auto label = std::dynamic_pointer_cast<Operands::Label>(addr->m_base);
-        out << "offset " << label->m_id;
-        return;
-    }
-
     Operand::Size size = instr == Lea ? Operand::Size::Qword : Operand::getSize(addr->m_typeInfo);
     switch(size) {
         case Operand::Size::Byte: out << (ctx.m_assembler == GAS ? "BYTE PTR " : "byte "); break;

@@ -12,6 +12,10 @@ void IRBuilder::build(const AST::VariableDeclarationNode* node, BrawContext& con
 
     if(node->m_value) {
         Operand op = buildExpression(node->m_value.get(), context, ictx);
+        if(std::holds_alternative<Value>(op) && std::holds_alternative<std::string>(std::get<Value>(op))) {
+            ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, reg, op));
+            return;
+        }
         moveToRegister("%" + node->m_name.m_name + "_" + std::to_string(ictx.m_scopeDepth), op, context, ictx);
     }
 }

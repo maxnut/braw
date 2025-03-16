@@ -16,6 +16,7 @@
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
 #include "ir/label.hpp"
+#include "ir/operand.hpp"
 #include "ir/register.hpp"
 #include "ir/value.hpp"
 #include "type_info.hpp"
@@ -356,8 +357,14 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
                 addr->m_offset += std::get<1>(arg)->m_type.m_size;
                 memoryAddressToRegister(addr, m_registers.at(reg), ctx);
             }
-            else
-                move(m_registers.at(reg), op, ctx);
+            else {
+                if(op->m_type == Operand::Type::Address && cast<Operands::Address>(op)->m_base->m_type == Operand::Type::Label) {
+                    auto spill = memoryAddressToRegister(op->m_type == Operand::Type::Register ? std::make_shared<Operands::Address>(op, 0, op->m_typeInfo) : cast<Operands::Address>(op), ctx)->clone();
+                    move(m_registers.at(reg),spill, ctx);
+                }
+                else
+                    move(m_registers.at(reg), op, ctx);
+            }
         }
     }
     size_t end = ctx.m_file.m_text.m_instructions.size() - 1;

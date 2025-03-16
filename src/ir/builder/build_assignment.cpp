@@ -1,9 +1,9 @@
 #include "ir/address.hpp"
+#include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
 #include "ir/register.hpp"
 #include "ir_builder.hpp"
 #include "parser/nodes/binary_operator.hpp"
-#include "rules.hpp"
 #include "type_info.hpp"
 #include <memory>
 #include <variant>
@@ -18,10 +18,15 @@ void IRBuilder::buildAssignment(const AST::BinaryOperatorNode* node, BrawContext
     }
     Operand right = buildExpression(node->m_right.get(), context, ictx);
 
-    if(left.index() == 1)
-        moveToRegister(std::get<std::shared_ptr<Register>>(left)->m_id, right, context, ictx);
-    else {
-        Address ad = std::get<Address>(left);
-        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(ad.m_typeInfo.m_builtin ? Instruction::Move : Instruction::Copy, left, right));
+    if(std::holds_alternative<Value>(right) && std::holds_alternative<std::string>(std::get<Value>(right))) {
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, left, right));
+        return;
     }
+    if(left.index() == 1) {
+        moveToRegister(std::get<std::shared_ptr<Register>>(left)->m_id, right, context, ictx);
+        return;
+    }
+
+    Address ad = std::get<Address>(left);
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(ad.m_typeInfo.m_builtin ? Instruction::Move : Instruction::Copy, left, right));
 }

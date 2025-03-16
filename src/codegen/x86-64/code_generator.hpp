@@ -2,10 +2,10 @@
 
 #include "../operand.hpp"
 #include "braw_context.hpp"
+#include "codegen/x86-64/graph-color/register_allocator.hpp"
 #include "codegen/x86-64/move-resolver/move-resolver.hpp"
 #include "instruction.hpp"
 #include "ir/file.hpp"
-#include "graph-color/graph_color.hpp"
 #include "ir/operand.hpp"
 #include "olabel.hpp"
 #include "register.hpp"
@@ -19,11 +19,11 @@
 namespace CodeGen::x86_64 {
 
 struct FunctionContext {
-    File& f;
-    BrawContext& brawCtx;
+    File& m_file;
+    BrawContext& m_brawCtx;
+    RegisterAllocatorResult& m_allocatorResult;
     std::unordered_map<std::string, std::shared_ptr<Operand>> m_virtualRegisters;
     int64_t m_spills = 0;
-    std::vector<std::shared_ptr<Range>> m_ranges;
     std::vector<std::shared_ptr<Operands::Register>> m_savedRegisters;
     uint64_t m_instructionIndex = 0;
     uint64_t m_functionIndex = 0;

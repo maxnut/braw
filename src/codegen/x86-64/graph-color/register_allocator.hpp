@@ -17,19 +17,17 @@ struct GraphNode {
     RegisterType m_registerType;
 };
 
-struct ColorResult {
+struct RegisterAllocatorResult {
     std::unordered_map<std::string, Operands::Register::RegisterGroup> m_registers;
     std::unordered_set<std::string> m_spills;
-    std::unordered_map<std::string, std::shared_ptr<Range>> m_ranges;
-    std::vector<std::shared_ptr<Range>> m_rangeVector;
+    PropagatorResult m_propagated;
 };
 
-class GraphColor {
+class RegisterAllocator {
 public:
-    static ColorResult build(const Function& function, std::vector<Operands::Register::RegisterGroup> registers, std::vector<Operands::Register::RegisterGroup> precisionRegisters, int maxParamReg, int maxParamPReg);
+    static RegisterAllocatorResult build(const Function& function, std::vector<Operands::Register::RegisterGroup> registers, std::vector<Operands::Register::RegisterGroup> precisionRegisters, int maxParamReg, int maxParamPReg);
 
 private:
-    static void fillRanges(const Function& function, ColorResult& result);
     static std::vector<std::string> getOverlaps(const std::string& id, const std::unordered_map<std::string, std::shared_ptr<Range>>& ranges);
     static void removeFromGraph(const std::string& id, std::vector<GraphNode>& graph);
     static GraphNode getMostRelevantNode(std::vector<GraphNode>& graph);

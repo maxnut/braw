@@ -42,7 +42,7 @@ If you don't have it, or simply don't want them, disable them by setting ```RUN_
 
 - [x] Pointers
 - [x] Branch aware graph coloring
-- [ ] Arrays
+- [x] Arrays
 - [ ] Parallelize compilation
 - [x] Strings
 - [ ] Variadics

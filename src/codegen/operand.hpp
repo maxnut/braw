@@ -56,6 +56,7 @@ public:
 public:
     Type m_type;
     TypeInfo m_typeInfo{};
+    size_t m_scale = 1;
 };
 
 }

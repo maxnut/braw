@@ -21,6 +21,7 @@ struct Range {
     TypeInfo m_typeInfo;
     bool m_isPointedOrDereferenced = false;
     Operands::Register::RegisterGroup m_forceTag = Operands::Register::Count;
+    size_t m_scale = 1;
 };
 
 struct Block {

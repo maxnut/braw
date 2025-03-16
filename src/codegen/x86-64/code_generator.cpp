@@ -83,13 +83,24 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
                 if(!range->m_isPointedOrDereferenced && result.m_registers.contains(range->m_id)) {
                     ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size, range->m_typeInfo)) : m_registers.at(result.m_registers.at(range->m_id))->clone();
                     ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
+                    ctx.m_virtualRegisters[range->m_id]->m_scale = range->m_scale;
                     Operands::Register::RegisterGroup group = result.m_registers.at(range->m_id);
                     if(group == Operands::Register::RBX || group == Operands::Register::R12 || group == Operands::Register::R13 || group == Operands::Register::R14 || group == Operands::Register::R15)
                         ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));
                 }
                 else {
-                    spills += range->m_typeInfo.m_size;
-                    ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, range->m_typeInfo);
+                    TypeInfo type = range->m_scale > 1 ? Utils::getRawType(range->m_typeInfo, ctx.m_brawCtx).value() : range->m_typeInfo;
+                    spills += range->m_scale > 1 ? type.m_size * range->m_scale : range->m_typeInfo.m_size;
+                    ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, type);
+                    ctx.m_virtualRegisters[range->m_id]->m_scale = range->m_scale;
+                    if(range->m_scale > 1) {
+                        spills += range->m_typeInfo.m_size;
+                        auto newAddr = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, range->m_typeInfo);
+                        auto spillReg = memoryAddressToRegister(cast<Operands::Address>(ctx.m_virtualRegisters[range->m_id]), ctx);
+                        move(newAddr, spillReg, ctx);
+                        ctx.m_virtualRegisters[range->m_id] = newAddr;
+                        ctx.m_virtualRegisters[range->m_id]->m_scale = 1;
+                    }
                     for(auto& arg : f.m_args) {
                         if(arg->m_id == range->m_id) {
                             m_registers.at(result.m_registers.at(range->m_id))->m_typeInfo = range->m_typeInfo;

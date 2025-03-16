@@ -6,6 +6,8 @@ void IRBuilder::build(const AST::VariableDeclarationNode* node, BrawContext& con
     auto reg = makeOrGetRegister("%" + node->m_name.m_name + "_" + std::to_string(ictx.m_scopeDepth), ictx);
     reg->m_type = context.getTypeInfo(node->m_type).value();
     reg->m_registerType = getRegisterType(reg->m_type);
+    reg->m_scale = node->m_scale;
+    reg->m_type.m_builtin = reg->m_scale <= 1 && reg->m_type.m_builtin;
 
     if(!reg->m_type.m_builtin)
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Allocate, reg, Value((long)reg->m_type.m_size)));

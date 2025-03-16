@@ -1,16 +1,23 @@
+#include "rules.hpp"
 #include "semantic_analyzer.hpp"
 #include "parser/nodes/variable_declaration.hpp"
+#include "utils.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableDeclarationNode* node, BrawContext& ctx) {
     auto typeOpt = ctx.getTypeInfo(node->m_type);
     if(!typeOpt)
         return unknownType(node, node->m_type);
 
+    if(node->m_scale > 1 && !Rules::isPtr(typeOpt.value().m_name))
+        return mismatchedTypes(node, typeOpt.value().m_name, Utils::makePointer(typeOpt.value()).m_name);
+
     if(node->m_value) {
         auto errorOpt = analyze(node->m_value.get(), ctx);
         if(errorOpt) return errorOpt;
         TypeInfo type = getType(node->m_value.get(), ctx).value();
 
+        if(node->m_scale > 1)
+            return mismatchedTypes(node, type.m_name, "array");
         if(type != typeOpt.value())
             return mismatchedTypes(node, type.m_name, typeOpt.value().m_name);
     }
@@ -20,7 +27,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableDeclar
         ctx.m_stackSize,
         0
     };
-    ctx.m_stackSize += ctx.getTypeInfo(node->m_type)->m_size;
+    ctx.m_stackSize += node->m_scale <= 1 ? typeOpt->m_size : Utils::getRawType(typeOpt.value(), ctx)->m_size * typeOpt->m_size;
     
     return std::nullopt;
 }

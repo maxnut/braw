@@ -1,4 +1,4 @@
-import "print.braw"
+import "stdinout.braw"
 
 fn hello() -> char* {
     return "hello\n";

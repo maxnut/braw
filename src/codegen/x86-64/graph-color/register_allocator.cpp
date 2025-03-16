@@ -68,7 +68,7 @@ RegisterAllocatorResult RegisterAllocator::build(const Function& function, std::
                 node.m_tag = range->m_forceTag;
             else if(res.m_registers.contains(node.m_id))
                 node.m_tag = res.m_registers.at(node.m_id);
-            else if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
+            else if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer || range->m_scale > 1) && !paramAssignments.contains(node.m_id))) {
                 spills.push_back(node);
                 block->m_ranges.erase(node.m_id);
                 continue;

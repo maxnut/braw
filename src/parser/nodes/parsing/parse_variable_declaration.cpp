@@ -14,6 +14,14 @@ Result<std::unique_ptr<AST::Node>> Parser::parseVariableDeclaration(TokenCursor&
 
     variableDeclaration->m_name = cursor.next().get().next().value().m_value;
 
+    if(cursor.get().value().m_type == Token::LEFT_BRACKET) {
+        if(!expectTokenTypes(cursor.next().get().value(), {Token::INTEGER, Token::LONG}))
+            return unexpectedTokenExpectedTypes(cursor.value(), {Token::INTEGER, Token::LONG});
+        variableDeclaration->m_scale = std::stoul(cursor.value().m_value);
+        if(!expectTokenType(cursor.next().get().next().value(), Token::RIGHT_BRACKET))
+            return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_BRACE);
+    }
+
     if(!expectTokenType(cursor.get().next().value(), Token::COLON))
         return unexpectedTokenExpectedType(cursor.value(), Token::COLON);
 

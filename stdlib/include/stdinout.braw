@@ -7,3 +7,8 @@ fn print_string(str: char*) -> void {
     let len: int = str_len(str);
     syscall(1, (void*)1, (void*)str, (void*)len, (void*)0, (void*)0, (void*)0);
 }
+
+fn read_string(str: char*, len: int) -> void {
+    syscall(0, (void*)0, (void*)str, (void*)len, (void*)0, (void*)0, (void*)0);
+    str[len - 1] = '\0';
+}

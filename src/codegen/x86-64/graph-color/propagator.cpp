@@ -123,6 +123,7 @@ void Propagator::fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> c
                 copy->m_isPointedOrDereferenced = range->m_isPointedOrDereferenced;
                 copy->m_registerType = range->m_registerType;
                 copy->m_typeInfo = range->m_typeInfo;
+                copy->m_scale = range->m_scale;
                 copy->m_range = block->m_instructionRange;
                 block->m_ranges[range->m_id] = copy;
                 block->m_rangeVector.push_back(copy);
@@ -162,6 +163,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
         result->m_ranges[r->m_id]->m_range.second = i;
         result->m_ranges[r->m_id]->m_id = r->m_id;
         result->m_ranges[r->m_id]->m_typeInfo = r->m_type;
+        result->m_ranges[r->m_id]->m_scale = r->m_scale;
         if(forceRegister != Operands::Register::Count)
             result->m_ranges[r->m_id]->m_forceTag = forceRegister;
     };

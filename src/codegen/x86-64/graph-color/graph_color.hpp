@@ -1,27 +1,14 @@
 #pragma once
 
-#include "ir/function.hpp"
-#include "ir/register.hpp"
-#include "../register.hpp"
+#include "propagator.hpp"
 
-#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_set>
-#include <utility>
 #include <unordered_map>
 #include <vector>
 
 namespace CodeGen::x86_64 {
-
-struct Range {
-    std::string m_id;
-    std::pair<uint32_t, uint32_t> m_range;
-    RegisterType m_registerType;
-    TypeInfo m_typeInfo;
-    bool m_isPointedOrDereferenced = false;
-    Operands::Register::RegisterGroup m_forceTag = Operands::Register::Count;
-};
 
 struct GraphNode {
     std::string m_id;

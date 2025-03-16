@@ -1,4 +1,5 @@
 #include "graph_color.hpp"
+#include "codegen/x86-64/graph-color/propagator.hpp"
 #include "codegen/x86-64/register.hpp"
 #include "cursor.hpp"
 #include "ir/address.hpp"
@@ -27,122 +28,130 @@ ColorResult GraphColor::build(const Function& function, std::vector<Operands::Re
     precisionRegisters.erase(precisionRegisters.end() - 1, precisionRegisters.end());
 
     ColorResult res;
+    PropagatorResult propagated = Propagator::buildGraph(function);
     fillRanges(function, res);
-    std::vector<GraphNode> stack;
+    for(auto& block : propagated.blocks) {
+        std::vector<GraphNode> stack;
 
-    std::vector<GraphNode> graph;
-    std::vector<GraphNode> spills;
+        std::vector<GraphNode> graph;
+        std::vector<GraphNode> spills;
 
-    std::unordered_map<std::string, Operands::Register::RegisterGroup> paramAssignments;
-    std::unordered_set<std::string> paramStack;
+        std::unordered_map<std::string, Operands::Register::RegisterGroup> paramAssignments;
+        std::unordered_set<std::string> paramStack;
 
-    int registerIndex = 0;
-    int registerPrecisionIndex = 0;
-    for (auto& param : function.m_args) {
-        switch(res.m_ranges[param->m_id]->m_registerType) {
-            case RegisterType::Single:
-            case RegisterType::Double:
-                if(registerPrecisionIndex >= precisionRegisters.size() || registerPrecisionIndex >= maxParamPReg) {
-                    paramStack.insert(param->m_id);
+        int registerIndex = 0;
+        int registerPrecisionIndex = 0;
+        for (auto& param : function.m_args) {
+            if(!block->m_ranges.contains(param->m_id))
+                continue;
+            switch(block->m_ranges[param->m_id]->m_registerType) {
+                case RegisterType::Single:
+                case RegisterType::Double:
+                    if(registerPrecisionIndex >= precisionRegisters.size() || registerPrecisionIndex >= maxParamPReg) {
+                        paramStack.insert(param->m_id);
+                        break;
+                    }
+                    paramAssignments[param->m_id] = precisionRegisters[registerPrecisionIndex];
+                    registerPrecisionIndex++;
                     break;
-                }
-                paramAssignments[param->m_id] = precisionRegisters[registerPrecisionIndex];
-                registerPrecisionIndex++;
-                break;
-            default:
-                if(registerIndex >= registers.size() || registerIndex >= maxParamReg) {
-                    paramStack.insert(param->m_id);
+                default:
+                    if(registerIndex >= registers.size() || registerIndex >= maxParamReg) {
+                        paramStack.insert(param->m_id);
+                        break;
+                    }
+                    paramAssignments[param->m_id] = registers[registerIndex];
+                    registerIndex++;
                     break;
-                }
-                paramAssignments[param->m_id] = registers[registerIndex];
-                registerIndex++;
-                break;
-        }
-    }
-
-    for(auto& range : res.m_rangeVector) {
-        GraphNode node;
-        node.m_registerType = range->m_registerType;
-        node.m_id = range->m_id;
-        if (paramAssignments.contains(node.m_id))
-            node.m_tag = paramAssignments[node.m_id];
-
-        if(range->m_forceTag != Operands::Register::Count)
-            node.m_tag = range->m_forceTag;
-        else if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
-            spills.push_back(node);
-            res.m_ranges.erase(node.m_id);
-            continue;
-        }
-        node.m_connections = getOverlaps(node.m_id, res.m_ranges);
-        graph.push_back(node);
-    }
-
-    std::reverse(graph.begin(), graph.end());
-
-    while(!graph.empty()) {
-        bool removed = false;
-        for(GraphNode& node : graph) {
-            if(node.m_connections.size() < (node.m_registerType == RegisterType::Single || node.m_registerType == RegisterType::Double ? precisionRegisters.size() : registers.size())) {
-                stack.push_back(node);
-                removeFromGraph(node.m_id, graph);
-                removed = true;
-                break;
             }
         }
 
-        if(!removed) {
-            GraphNode relevant = getMostRelevantNode(graph);
-            removeFromGraph(relevant.m_id, graph);
-            spills.push_back(relevant);
+        for(auto& range : block->m_rangeVector) {
+            GraphNode node;
+            node.m_registerType = range->m_registerType;
+            node.m_id = range->m_id;
+            if (paramAssignments.contains(node.m_id))
+                node.m_tag = paramAssignments[node.m_id];
+
+            if(range->m_forceTag != Operands::Register::Count)
+                node.m_tag = range->m_forceTag;
+            else if(res.m_registers.contains(node.m_id))
+                node.m_tag = res.m_registers.at(node.m_id);
+            else if((!paramAssignments.contains(node.m_id) && range->m_isPointedOrDereferenced) || paramStack.contains(node.m_id) || ((node.m_registerType == RegisterType::Struct || node.m_registerType == RegisterType::Pointer) && !paramAssignments.contains(node.m_id))) {
+                spills.push_back(node);
+                res.m_ranges.erase(node.m_id);
+                continue;
+            }
+            node.m_connections = getOverlaps(node.m_id, block->m_ranges);
+            graph.push_back(node);
         }
-    }
 
-    while(!stack.empty()) {
-        GraphNode popped = stack.back();
-        stack.pop_back();
+        std::reverse(graph.begin(), graph.end());
+        //order of graph seems to be wrong
 
-        if(popped.m_tag != Operands::Register::Count) {
-            graph.push_back(popped);
-            continue;
+        while(!graph.empty()) {
+            bool removed = false;
+            for(GraphNode& node : graph) {
+                if(node.m_connections.size() < (node.m_registerType == RegisterType::Single || node.m_registerType == RegisterType::Double ? precisionRegisters.size() : registers.size())) {
+                    stack.push_back(node);
+                    removeFromGraph(node.m_id, graph);
+                    removed = true;
+                    break;
+                }
+            }
+
+            if(!removed) {
+                GraphNode relevant = getMostRelevantNode(graph);
+                removeFromGraph(relevant.m_id, graph);
+                spills.push_back(relevant);
+            }
         }
 
-        auto tryTag([&](const std::vector<Operands::Register::RegisterGroup>& tags) {
-            for(const auto& tag : tags) {
-                bool found = false;
-                for(auto& s : popped.m_connections) {
-                    GraphNode node = findInGraph(s, graph);
-                    if(node.m_tag == tag) {
-                        found = true;
+        while(!stack.empty()) {
+            GraphNode popped = stack.back();
+            stack.pop_back();
+
+            if(popped.m_tag != Operands::Register::Count) {
+                graph.push_back(popped);
+                continue;
+            }
+
+            auto tryTag([&](const std::vector<Operands::Register::RegisterGroup>& tags) {
+                for(const auto& tag : tags) {
+                    bool found = false;
+                    for(auto& s : popped.m_connections) {
+                        GraphNode node = findInGraph(s, graph);
+                        if(node.m_tag == tag) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if(!found) {
+                        popped.m_tag = tag;
                         break;
                     }
                 }
+            });
 
-                if(!found) {
-                    popped.m_tag = tag;
+            switch(block->m_ranges[popped.m_id]->m_registerType) {
+                case RegisterType::Single:
+                case RegisterType::Double:
+                    tryTag(precisionRegisters);
                     break;
-                }
+                default:
+                    tryTag(registers);
+                    break;
             }
-        });
 
-        switch(res.m_ranges[popped.m_id]->m_registerType) {
-            case RegisterType::Single:
-            case RegisterType::Double:
-                tryTag(precisionRegisters);
-                break;
-            default:
-                tryTag(registers);
-                break;
+            graph.push_back(popped);
         }
+        
+        for(GraphNode& g : graph)
+            res.m_registers.insert({g.m_id, g.m_tag});
 
-        graph.push_back(popped);
+        for(GraphNode& g : spills)
+            res.m_spills.insert(g.m_id);
     }
-    
-    for(GraphNode& g : graph)
-        res.m_registers.insert({g.m_id, g.m_tag});
-
-    for(GraphNode& g : spills)
-        res.m_spills.insert(g.m_id);
 
     return res;
 }

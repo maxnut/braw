@@ -1,11 +1,15 @@
 #include "gtest/gtest.h"
 #include <gtest/gtest.h>
 
+extern "C" const char* hello();
 extern "C" char h();
 extern "C" int len(const char* s);
 extern "C" char subscript();
 extern "C" void print_hello();
 
+TEST(StringTest, Hello) {
+    EXPECT_STREQ(hello(), "hello\n");
+}
 TEST(StringTest, H) {
     EXPECT_EQ(h(), 'h');
 }

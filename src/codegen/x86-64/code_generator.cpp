@@ -265,8 +265,6 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     
     if(isFloat(source)) in.m_opcode = Movss;
     else if(isDouble(source)) in.m_opcode = Movsd;
-    // else if(bothRegisters(target, source) && target->m_typeInfo.m_name != "" && source->m_typeInfo.m_name != "" && target->m_typeInfo.m_size < source->m_typeInfo.m_size)
-    //     in.m_opcode = Movzx;
     else in.m_opcode = Mov;
     
     target->m_typeInfo = source->m_typeInfo;

@@ -1,5 +1,8 @@
 import "print.braw"
 
+fn hello() -> char* {
+    return "hello\n";
+}
 fn h() -> char {
     return 'h';
 }

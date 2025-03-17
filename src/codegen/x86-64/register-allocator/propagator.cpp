@@ -148,24 +148,30 @@ void Propagator::fillRanges(const Function& function, Block* result) {
 
         auto r = o.index() == 3 ? std::get<Address>(o).m_base : std::get<std::shared_ptr<Register>>(o);
 
-        if(r->m_id == "%return" || r->m_id == "%returnF") // the return register will always be rax/xmm0
-            return;
+        while(r) {
+            if(r->m_id == "%return" || r->m_id == "%returnF") // the return register will always be rax/xmm0
+                return;
 
-        if(!result->m_ranges.contains(r->m_id)) {
-            result->m_ranges[r->m_id] = std::make_shared<Range>();
-            result->m_ranges[r->m_id]->m_range.first = i;
-            result->m_rangeVector.push_back(result->m_ranges[r->m_id]);
+            if(!result->m_ranges.contains(r->m_id)) {
+                result->m_ranges[r->m_id] = std::make_shared<Range>();
+                result->m_ranges[r->m_id]->m_range.first = i;
+                result->m_rangeVector.push_back(result->m_ranges[r->m_id]);
+            }
+
+            if(r->m_registerType != RegisterType::Count)
+                result->m_ranges[r->m_id]->m_registerType = r->m_registerType;
+
+            result->m_ranges[r->m_id]->m_range.second = i;
+            result->m_ranges[r->m_id]->m_id = r->m_id;
+            result->m_ranges[r->m_id]->m_typeInfo = r->m_type;
+            result->m_ranges[r->m_id]->m_scale = r->m_scale;
+            if(forceRegister != Operands::Register::Count)
+                result->m_ranges[r->m_id]->m_forceTag = forceRegister;
+            if(o.index() == 3 && std::get<Address>(o).m_index && r != std::get<Address>(o).m_index)
+                r = std::get<Address>(o).m_index;
+            else
+                r = nullptr;
         }
-
-        if(r->m_registerType != RegisterType::Count)
-            result->m_ranges[r->m_id]->m_registerType = r->m_registerType;
-
-        result->m_ranges[r->m_id]->m_range.second = i;
-        result->m_ranges[r->m_id]->m_id = r->m_id;
-        result->m_ranges[r->m_id]->m_typeInfo = r->m_type;
-        result->m_ranges[r->m_id]->m_scale = r->m_scale;
-        if(forceRegister != Operands::Register::Count)
-            result->m_ranges[r->m_id]->m_forceTag = forceRegister;
     };
 
 
@@ -223,8 +229,8 @@ void Propagator::fillRanges(const Function& function, Block* result) {
             case Instruction::Upsize: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
                 // std::get<1>(basic->m_o1)->m_type = TypeInfo{INT_T, 4, true};
-                std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
-                tryRegister(basic->m_o1, i, Operands::Register::RAX);
+                // std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
+                tryRegister(basic->m_o1, i);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);

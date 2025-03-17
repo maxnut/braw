@@ -81,23 +81,6 @@ namespace Rules {
     inline bool isVariableDeclaration(TokenCursor cursor) {
         if(cursor.get().value().m_type != Token::KEYWORD || cursor.get().value().m_value != "let")
             return false;
-        cursor.tryNext();
-
-        if(cursor.get().value().m_type != Token::IDENTIFIER)
-            return false;
-        
-        if(cursor.next().get().value().m_type == Token::LEFT_BRACKET) {
-            if(cursor.next().get().value().m_type != Token::INTEGER && cursor.get().value().m_type != Token::LONG)
-                return false;
-            if(cursor.next().get().next().value().m_type != Token::RIGHT_BRACKET)
-                return false;
-        }
-
-        if(cursor.get().next().value().m_type != Token::COLON)
-            return false;
-
-        if(!isValidTypeName(cursor))
-            return false;
         return true;
     }
 

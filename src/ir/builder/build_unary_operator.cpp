@@ -81,31 +81,45 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
             op = tmp;
         }
 
-        if(std::get<1>(index)->m_type.m_name == INT_T)
-            upsize(std::get<1>(index), std::get<1>(index), context, ictx);
+        if(std::get<1>(index)->m_type.m_name == INT_T) {
+            auto tmp = makeOrGetRegister(std::get<1>(index)->m_id + "_0", ictx);
+            upsize(index, tmp, context.getTypeInfo(LONG_T).value(), context, ictx);
+            index = tmp;
+        }
         
         TypeInfo raw = Utils::getRawType(getOperandType(op, context, ictx), context).value();
         ret = Address(std::get<1>(op), 0, raw, std::get<1>(index), raw.m_size);
     }
     else if(node->m_operator == "cast") {
         TypeInfo opType = getOperandType(op, context, ictx);
-        if(Rules::isPtr(node->m_data)) {
-            if(Rules::isPtr(opType.m_name))
+        if(Rules::isPtr(node->m_data) || node->m_data.m_name == LONG_T) {
+            if(Rules::isPtr(opType.m_name) || opType.m_name == LONG_T)
                 ret = op;
-            else if(opType.m_name == INT_T) {
+            else if(opType.m_name == INT_T || opType.m_name == CHAR_T) {
                 if(std::holds_alternative<Value>(op)) {
                     ret = op;
-                    ret = (long)std::get<int>(std::get<Value>(ret));
+                    if(opType.m_name == INT_T)
+                        ret = (long)std::get<int>(std::get<Value>(ret));
+                    else
+                        ret = (long)std::get<char>(std::get<Value>(ret));
                 }
                 else {
                     ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-                    std::get<1>(ret)->m_type = context.getTypeInfo(node->m_data).value();
-                    std::get<1>(ret)->m_registerType = getRegisterType(std::get<1>(ret)->m_type);
-                    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, ret, op));
+                    upsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
                 }
             }
-            else if(opType.m_name == LONG_T)
-                ret = op;
+        }
+        else if(node->m_data.m_name == INT_T) {
+            if(opType.m_name == CHAR_T) {
+                if(std::holds_alternative<Value>(op)) {
+                    ret = op;
+                    ret = (int)std::get<char>(std::get<Value>(ret));
+                }
+                else {
+                    ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                    upsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                }
+            }
         }
     }
 

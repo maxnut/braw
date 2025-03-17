@@ -45,6 +45,7 @@ constexpr InstructionOpcode Mov      = {0x00, 0x89};          // MOV (register/m
 constexpr InstructionOpcode Movss    = {0xF3, 0x0F, 0x10, true};    // MOVSS (SSE)
 constexpr InstructionOpcode Movsd    = {0xF2, 0x0F, 0x10, true};    // MOVSD (SSE2)
 constexpr InstructionOpcode Movzx    = {0x00, 0x0F, 0xB6};    // MOVZX
+constexpr InstructionOpcode Movsx    = {0x00, 0x0F, 0xBE};    // MOVSX    
 constexpr InstructionOpcode Jmp      = {0x00, 0xE9};          // JMP (near jump)
 constexpr InstructionOpcode Cmp      = {0x00, 0x3D};          // CMP (immediate to register/memory)
 constexpr InstructionOpcode Ucomiss  = {0x00, 0x0F, 0x2E, true};    // UCOMISS (SSE comparison)
@@ -63,6 +64,8 @@ constexpr InstructionOpcode Lea      = {0x00, 0x8D};          // LEA (load effec
 constexpr InstructionOpcode Movsq    = {0x00, 0x0F, 0xD6};    // MOVSQ (SSE2, unaligned load)
 constexpr InstructionOpcode Movsb    = {0x00, 0xA4};          // MOVS (SSE2, unaligned load)
 constexpr InstructionOpcode Cdqe     = {0x00, 0x98};          // CDQE (convert doubleword to quadword)
+constexpr InstructionOpcode Movsxd   = {0x66, 0x0F, 0xBE, true};    // MOVSX (SSE2, convert byte to doubleword)
+constexpr InstructionOpcode Cvtss2sd = {0xF3, 0x0F, 0x5A, true};    // CVTSS2SD (SSE)
 constexpr InstructionOpcode LabelOp     = {0x00, 0x99, 0x99};
 
 static const std::map<InstructionOpcode, std::string> opcodeMap = {
@@ -83,6 +86,7 @@ static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Movss, "movss"},
     {Movsd, "movsd"},
     {Movzx, "movzx"},
+    {Movsx, "movsx"},
     {Jmp, "jmp"},
     {Cmp, "cmp"},
     {Ucomiss, "ucomiss"},
@@ -100,7 +104,9 @@ static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Lea, "lea"},
     {Movsq, "movsq"},
     {Movsb, "movsb"},
-    {Cdqe, "cdqe"}
+    {Cdqe, "cdqe"},
+    {Movsxd, "movsxd"},
+    {Cvtss2sd, "cvtss2sd"},
 };
 
 static const std::unordered_map<uint8_t, std::string> s_prefixes = {

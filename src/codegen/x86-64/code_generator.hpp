@@ -2,7 +2,7 @@
 
 #include "../operand.hpp"
 #include "braw_context.hpp"
-#include "codegen/x86-64/graph-color/register_allocator.hpp"
+#include "codegen/x86-64/register-allocator/register_allocator.hpp"
 #include "codegen/x86-64/move-resolver/move-resolver.hpp"
 #include "instruction.hpp"
 #include "ir/file.hpp"

@@ -82,7 +82,8 @@ BrawContext::BrawContext() {
             {
                 {"==", {CHAR_T}},
                 {"!=", {CHAR_T}}
-            }
+            },
+            {INT_T,LONG_T}
         }}
     };
 }

@@ -1,6 +1,7 @@
 #include "ir_builder.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
+#include "ir/operand.hpp"
 #include "ir/register.hpp"
 #include "parser/nodes/variable_declaration.hpp"
 #include "parser/nodes/binary_operator.hpp"
@@ -92,11 +93,15 @@ std::shared_ptr<Register> IRBuilder::makeOrGetRegister(const std::string& name, 
     return reg;
 }
 
-void IRBuilder::upsize(std::shared_ptr<Register> reg, std::shared_ptr<Register> to, BrawContext& context, IRFunctionContext& ictx) {
-    auto tmp = makeOrGetRegister(reg->m_id + "_upsize", ictx);
-    tmp->m_type = context.getTypeInfo(reg->m_type.m_name == INT_T ? LONG_T : DOUBLE_T).value();
-    tmp->m_registerType = getRegisterType(tmp->m_type);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, tmp, reg));
-    Operand op = tmp;
-    moveToRegister(to->m_id, op, context, ictx);
+void IRBuilder::upsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx) {
+    if(op.index() == 1 && std::get<1>(op) == to) {
+        auto reg = std::get<1>(op);
+        to = std::make_shared<Register>();
+        to->m_id = reg->m_id;
+        to->m_scale = reg->m_scale;
+    }
+
+    to->m_type = toType;
+    to->m_registerType = getRegisterType(to->m_type);
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, to, op));
 }

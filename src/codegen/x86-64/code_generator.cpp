@@ -2,7 +2,6 @@
 #include "braw_context.hpp"
 #include "codegen/operand.hpp"
 #include "codegen/x86-64/address.hpp"
-#include "codegen/x86-64/graph-color/register_allocator.hpp"
 #include "codegen/x86-64/immediate.hpp"
 #include "codegen/x86-64/instruction.hpp"
 #include "codegen/x86-64/label.hpp"
@@ -19,6 +18,7 @@
 #include "ir/operand.hpp"
 #include "ir/register.hpp"
 #include "ir/value.hpp"
+#include "rules.hpp"
 #include "type_info.hpp"
 #include "utils.hpp"
 #include <algorithm>
@@ -268,11 +268,17 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
         }
         case ::Instruction::Upsize: {
             auto bin = (const ::BasicInstruction*)instr;
-            if(std::get<1>(bin->m_o2)->m_type.m_name == INT_T) {
-                auto reg = cast<Operands::Address>(convertOperand(bin->m_o1, ctx));
-                move(reg, convertOperand(bin->m_o2, ctx), ctx);
-                Instruction in; in.m_opcode = Cdqe; addInstruction(in, ctx);
-                reg->m_typeInfo = ctx.m_brawCtx.getTypeInfo(LONG_T).value();
+            auto o1 = convertOperand(bin->m_o1, ctx);
+            auto o2 = convertOperand(bin->m_o2, ctx);
+            if(o2->m_typeInfo.m_name == INT_T || o2->m_typeInfo.m_name == CHAR_T) {
+                if(Rules::isPtr(o1->m_typeInfo.m_name) || o1->m_typeInfo.m_name == LONG_T || o1->m_typeInfo.m_name == INT_T) {
+                    Instruction in; in.m_opcode = o2->m_typeInfo.m_name == CHAR_T ? Movsx : Movsxd;
+                    in.addOperand(o1->m_type != Operand::Type::Address ? o1 : memoryValueToRegister(cast<Operands::Address>(o1), ctx));
+                    in.addOperand(o2);
+                    addInstruction(in, ctx);
+                    if(o1->m_type == Operand::Type::Address)
+                        move(o1, in.m_operands[0], ctx);
+                }
             }
             break;
         }
@@ -654,7 +660,7 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                 case 3:
                 case 5: {
                     static uint32_t id = 0;
-                    TypeInfo type = v.index() == 2 ? ctx.m_brawCtx.getTypeInfo(FLOAT_T).value() : v.index() == 3 ? ctx.m_brawCtx.getTypeInfo(DOUBLE_T).value() : Utils::makePointer(ctx.m_brawCtx.getTypeInfo(CHAR_T).value());
+                    TypeInfo type = v.index() == 2 ? ctx.m_brawCtx.getTypeInfo(FLOAT_T).value() : v.index() == 3 ? ctx.m_brawCtx.getTypeInfo(DOUBLE_T).value() : ctx.m_brawCtx.getTypeInfo(CHAR_T).value();
                     Label l{"v_" + std::to_string(id)};
                     ctx.m_file.m_data.m_labels.push_back({l.m_id, v});
                     id++;

@@ -70,4 +70,5 @@ private:
     static void moveToRegister(const std::string& name, Operand& op, BrawContext& context, IRFunctionContext& ictx);
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, IRFunctionContext& ictx);
     static RegisterType getRegisterType(const TypeInfo& type);
+    static void upsize(std::shared_ptr<Register> reg, std::shared_ptr<Register> to, BrawContext& context, IRFunctionContext& ictx);
 };

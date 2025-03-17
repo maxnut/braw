@@ -78,9 +78,6 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
 
     size_t labels = 0;
     for(uint32_t i = 0; i < f.m_text.m_instructions.size(); i++) {
-        while(f.m_text.m_labels.contains(labels))
-            out << f.m_text.m_labels.at(labels++).m_id << ":\n";
-
         emit(f.m_text.m_instructions[i], out, ctx);
         out << "\t" << commentPrefix << " ";
         for(auto& op : f.m_text.m_instructions[i].m_operands) 
@@ -91,6 +88,11 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
 }
 
 void Emitter::emit(const Instruction& instr, std::ostream& out, const BrawContext& ctx) {
+    if(instr.m_opcode == LabelOp) {
+        emit((const Operands::Label*)instr.m_operands[0].get(), instr.m_opcode, out, ctx);
+        out << ":";
+        return;
+    }
     opcodeInstruction(instr, out);
     out << " ";
     for(int i = 0; i < instr.m_operands.size(); i++) {

@@ -19,7 +19,8 @@ class FunctionContext;
 class MoveResolver {
 public:   
     static std::vector<Instruction> resolve(std::vector<Instruction> from, CodeGenerator& codegen, FunctionContext& ctx);
-
+    static bool operandEquals(std::shared_ptr<Operand> op1, std::shared_ptr<Operand> op2);
+    
 private:
     static uint64_t countOperand(std::shared_ptr<Operand> op, const std::vector<Instruction>& moves);
     static std::unique_ptr<MoveNode> buildGraph(const std::vector<Instruction>& moves);

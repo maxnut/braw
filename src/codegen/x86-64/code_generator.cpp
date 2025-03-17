@@ -128,14 +128,24 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         }
     }
 
+    // coalesce useless moves
+    std::erase_if(file.m_text.m_instructions, [](const Instruction& i) {
+        if((i.m_opcode == Mov) && MoveResolver::operandEquals(i.m_operands.at(0), i.m_operands.at(1)))
+            return true;
+        return false;
+    });
+
     return file;
 }
 
 void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
     switch(instr->m_type) {
-        case ::Instruction::Label:
-            ctx.m_file.m_text.m_labels[ctx.m_file.m_text.m_instructions.size() + ctx.m_file.m_text.m_labels.size()] = Label{((const ::Label*)instr)->m_id};
+        case ::Instruction::Label: {
+            Instruction i; i.m_opcode = LabelOp;
+            i.m_operands.push_back(std::make_shared<Operands::Label>(((const ::Label*)instr)->m_id));
+            addInstruction(i, ctx);
             break;
+        }
         case ::Instruction::Move: {
             auto bin = (const ::BasicInstruction*)instr;
             move(convertOperand(bin->m_o1, ctx), convertOperand(bin->m_o2, ctx), ctx); 

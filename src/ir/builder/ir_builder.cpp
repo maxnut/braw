@@ -91,3 +91,12 @@ std::shared_ptr<Register> IRBuilder::makeOrGetRegister(const std::string& name, 
     ictx.m_registers[name] = reg;
     return reg;
 }
+
+void IRBuilder::upsize(std::shared_ptr<Register> reg, std::shared_ptr<Register> to, BrawContext& context, IRFunctionContext& ictx) {
+    auto tmp = makeOrGetRegister(reg->m_id + "_upsize", ictx);
+    tmp->m_type = context.getTypeInfo(reg->m_type.m_name == INT_T ? LONG_T : DOUBLE_T).value();
+    tmp->m_registerType = getRegisterType(tmp->m_type);
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, tmp, reg));
+    Operand op = tmp;
+    moveToRegister(to->m_id, op, context, ictx);
+}

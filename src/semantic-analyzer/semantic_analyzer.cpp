@@ -12,6 +12,7 @@
 #include "parser/nodes/while.hpp"
 #include "parser/nodes/literal.hpp"
 #include "parser/nodes/return.hpp"
+#include "rules.hpp"
 #include "utils.hpp"
 
 #include <spdlog/fmt/fmt.h>
@@ -89,7 +90,10 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
             const AST::BinaryOperatorNode* op = static_cast<const AST::BinaryOperatorNode*>(node);
             auto leftOpt = getType(op->m_left.get(), ctx);
             auto rightOpt = getType(op->m_right.get(), ctx);
-            if(!leftOpt || !rightOpt || !leftOpt->m_operators.contains(op->m_operator)) return std::nullopt;
+            if(!leftOpt || !rightOpt || !hasOperator(leftOpt.value(), op->m_operator)) return std::nullopt;
+
+            if(Rules::isPtr(leftOpt->m_name))
+                return leftOpt.value();
 
             return ctx.getTypeInfo(leftOpt->m_operators[op->m_operator].m_returnType);
         }
@@ -209,4 +213,14 @@ SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
+}
+
+bool SemanticAnalyzer::hasOperator(const TypeInfo& type, const std::string& operatorName) {
+    static const std::unordered_set<std::string> operators = {
+        "+", "-"
+    };
+    if(Rules::isPtr(type.m_name))
+        return operators.contains(operatorName);
+
+    return type.m_operators.contains(operatorName);
 }

@@ -63,6 +63,7 @@ constexpr InstructionOpcode Lea      = {0x00, 0x8D};          // LEA (load effec
 constexpr InstructionOpcode Movsq    = {0x00, 0x0F, 0xD6};    // MOVSQ (SSE2, unaligned load)
 constexpr InstructionOpcode Movsb    = {0x00, 0xA4};          // MOVS (SSE2, unaligned load)
 constexpr InstructionOpcode Cdqe     = {0x00, 0x98};          // CDQE (convert doubleword to quadword)
+constexpr InstructionOpcode LabelOp     = {0x00, 0x99, 0x99};
 
 static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Nop, "nop"},

@@ -4,7 +4,6 @@
 #include "label.hpp"
 #include "instruction.hpp"
 
-#include <unordered_map>
 #include <vector>
 
 namespace CodeGen::x86_64 {
@@ -15,7 +14,6 @@ struct DataSection {
 
 struct TextSection {
     std::vector<Instruction> m_instructions;
-    std::unordered_map<uint32_t, Label> m_labels;
     std::vector<Label> m_globals;
     std::vector<Label> m_externals;
 };

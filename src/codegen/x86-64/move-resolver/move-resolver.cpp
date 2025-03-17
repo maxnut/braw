@@ -20,7 +20,7 @@ std::shared_ptr<T> cast(const std::shared_ptr<void>& ptr) {
     return std::static_pointer_cast<T>(ptr);
 }
 
-bool operandEquals(std::shared_ptr<Operand> op1, std::shared_ptr<Operand> op2) {
+bool MoveResolver::operandEquals(std::shared_ptr<Operand> op1, std::shared_ptr<Operand> op2) {
     if(!op1 || !op2 || op1->m_type != op2->m_type)
         return false;
 
@@ -57,7 +57,7 @@ void poop(const MoveNode* node) {
 const int findForSwap(std::shared_ptr<Operand> op, const std::vector<Instruction>& moves, size_t off) {
     for(size_t i = off; i < moves.size(); i++) {
         const Instruction& move = moves[i];
-        if(operandEquals(op, move.m_operands.at(1))) {
+        if(MoveResolver::operandEquals(op, move.m_operands.at(1))) {
             return i;
         }
     }
@@ -67,7 +67,7 @@ const int findForSwap(std::shared_ptr<Operand> op, const std::vector<Instruction
 const Instruction* findForGraph(std::shared_ptr<Operand> op, const std::vector<Instruction>& moves, std::unordered_set<int>& visited) {
     for(int i = moves.size() - 1; i >= 0; i--) {
         const Instruction& move = moves[i];
-        if(!visited.contains(i) && operandEquals(op, move.m_operands.at(1))) {
+        if(!visited.contains(i) && MoveResolver::operandEquals(op, move.m_operands.at(1))) {
             visited.insert(i);
             return &moves[i];
         }
@@ -78,7 +78,7 @@ const Instruction* findForGraph(std::shared_ptr<Operand> op, const std::vector<I
 const void replaceForGraph(std::shared_ptr<Operand> op, std::shared_ptr<Operand> replace, std::vector<Instruction>& moves) {
     for(int i = moves.size() - 1; i >= 0; i--) {
         Instruction& move = moves[i];
-        if(operandEquals(op, move.m_operands.at(1))) {
+        if(MoveResolver::operandEquals(op, move.m_operands.at(1))) {
             move.m_operands[1] = replace;
         }
     }

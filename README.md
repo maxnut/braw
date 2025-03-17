@@ -30,6 +30,11 @@ fn add(a: int, b: float) -> int: return a + b;
 if (a == 1): a = 2;
 ```
 
+### Arrays
+```braw
+let buf[10]: char*;
+```
+
 ## Examples
 Check the tests.
 

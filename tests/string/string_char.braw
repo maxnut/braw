@@ -1,18 +1,10 @@
-import "stdinout.braw"
-
 fn hello() -> char* {
     return "hello\n";
 }
 fn h() -> char {
     return 'h';
 }
-fn len(str: char*) -> int {
-    return str_len(str);
-}
 fn subscript() -> char {
     let str: char* = "hello";
     return str[0];
-}
-fn print_hello() -> void {
-    print_string("hello\n");
 }

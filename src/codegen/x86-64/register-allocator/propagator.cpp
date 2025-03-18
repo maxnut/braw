@@ -175,7 +175,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
     };
 
 
-    for(size_t i = result->m_instructionRange.first; i < result->m_instructionRange.second; i++) {
+    for(size_t i = result->m_instructionRange.first; i <= result->m_instructionRange.second; i++) {
         if(i == 0) {
             for(auto& param : function.m_args)
                 tryRegister(param, 0);

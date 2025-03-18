@@ -42,7 +42,7 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
         f.m_instructions = std::move(ictx.m_instructions);
     }
 
-    // CopyPropagator::propagate(f);
+    CopyPropagator::propagate(f);
 
     return f;
 }

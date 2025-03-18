@@ -66,6 +66,13 @@ constexpr InstructionOpcode Movsb    = {0x00, 0xA4};          // MOVS (SSE2, una
 constexpr InstructionOpcode Cdqe     = {0x00, 0x98};          // CDQE (convert doubleword to quadword)
 constexpr InstructionOpcode Movsxd   = {0x66, 0x0F, 0xBE, true};    // MOVSX (SSE2, convert byte to doubleword)
 constexpr InstructionOpcode Cvtss2sd = {0xF3, 0x0F, 0x5A, true};    // CVTSS2SD (SSE)
+constexpr InstructionOpcode Idiv     = {0x00, 0xF7, 0x07};    // IDIV
+constexpr InstructionOpcode Div      = {0x00, 0xF7, 0x06};    // DIV
+constexpr InstructionOpcode Divss    = {0xF3, 0x0F, 0x5E, true};    // DIVSS (SSE)
+constexpr InstructionOpcode Divsd    = {0xF2, 0x0F, 0x5E, true};    // DIVSD (SSE2)
+constexpr InstructionOpcode Rcpps    = {0x00, 0x0F, 0x51, true};    // RCPPS (SSE)
+constexpr InstructionOpcode Cqo      = {0x00, 0x99};          // CQO
+constexpr InstructionOpcode Cdq      = {0x00, 0x99, 0x01};          // CDQ
 constexpr InstructionOpcode LabelOp     = {0x00, 0x99, 0x99};
 
 static const std::map<InstructionOpcode, std::string> opcodeMap = {
@@ -107,6 +114,13 @@ static const std::map<InstructionOpcode, std::string> opcodeMap = {
     {Cdqe, "cdqe"},
     {Movsxd, "movsxd"},
     {Cvtss2sd, "cvtss2sd"},
+    {Idiv, "idiv"},
+    {Div, "div"},
+    {Divss, "divss"},
+    {Divsd, "divsd"},
+    {Rcpps, "rcpps"},
+    {Cqo, "cqo"},
+    {Cdq, "cdq"},
 };
 
 static const std::unordered_map<uint8_t, std::string> s_prefixes = {

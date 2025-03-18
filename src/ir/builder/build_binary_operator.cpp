@@ -22,6 +22,10 @@ Operand IRBuilder::buildBinaryOperator(const AST::BinaryOperatorNode* node, Braw
         moveToRegister(name, left, context, ictx);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Multiply, target, right));
     }
+    else if(node->m_operator == "/") {
+        moveToRegister(name, left, context, ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Divide, target, right));
+    }
     else if(node->m_operator == "-") {
         moveToRegister(name, left, context, ictx);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Subtract, target, right));

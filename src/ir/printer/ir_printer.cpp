@@ -105,6 +105,9 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
         case Instruction::Multiply:
             out << "mult ";
             break;
+        case Instruction::Divide:
+            out << "div ";
+            break;
         case Instruction::Move:
             out << "move ";
             break;

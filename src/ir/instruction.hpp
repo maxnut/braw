@@ -7,6 +7,7 @@ struct Instruction {
         Add,
         Subtract,
         Multiply,
+        Divide,
         Call,
         Return,
         CompareEquals,

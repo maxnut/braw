@@ -167,6 +167,11 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             mul(convertOperand(bin->m_o1, ctx), convertOperand(bin->m_o2, ctx), ctx); 
             break;
         }
+        case ::Instruction::Divide: {
+            auto bin = (const ::BasicInstruction*)instr;
+            div(convertOperand(bin->m_o1, ctx), convertOperand(bin->m_o2, ctx), ctx); 
+            break;
+        }
         case ::Instruction::CompareEquals: {
             auto bin = (const ::BasicInstruction*)instr;
             compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Sete, ctx); 
@@ -325,6 +330,35 @@ void CodeGenerator::mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
     in.m_opcode = isFloat(source) ? Mulss : isDouble(source) ? Mulsd : Imul;
+    in.addOperand(target);
+    in.addOperand(source);
+    addInstruction(std::move(in), ctx);
+}
+
+void CodeGenerator::div(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
+    if(source->m_typeInfo.m_name == INT_T || source->m_typeInfo.m_name == LONG_T) {
+        std::vector<std::shared_ptr<Operands::Register>> saveStack;
+        if(m_registers.at(Register::RAX)->m_typeInfo.m_name != "") saveStack.push_back(m_registers.at(Register::RAX));
+        if(m_registers.at(Register::RDX)->m_typeInfo.m_name != "") saveStack.push_back(m_registers.at(Register::RDX));
+        for(auto reg : saveStack)
+            push(reg, ctx);
+        move(m_registers.at(Register::RAX),target, ctx);
+        Instruction in; in.m_opcode = source->m_typeInfo.m_name == INT_T ? Cdq : Cqo; addInstruction(in, ctx);
+        if(source->m_type != Operand::Type::Register) {
+            move(m_registers.at(SPILL1), source, ctx);
+            source = m_registers.at(SPILL1);
+        }
+
+        in.m_operands.clear(); in.m_opcode = Idiv; in.addOperand(source); addInstruction(in, ctx);
+        move(target, m_registers.at(Register::RAX), ctx);
+        std::reverse(saveStack.begin(), saveStack.end());
+        for(auto reg : saveStack)
+            pop(reg, ctx);
+        return;
+    }
+    Instruction in;
+    if(bothAddress(target, source)) source = memoryValueToRegister(std::static_pointer_cast<Operands::Address>(source), ctx);
+    in.m_opcode = isFloat(source) ? Divss : Divsd;
     in.addOperand(target);
     in.addOperand(source);
     addInstruction(std::move(in), ctx);

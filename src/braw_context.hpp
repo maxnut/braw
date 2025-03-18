@@ -3,6 +3,7 @@
 #include "parser/nodes/function_definition.hpp"
 #include "type_info.hpp"
 
+#include <filesystem>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -42,6 +43,7 @@ struct BrawContext {
     std::unordered_map<std::string, TypeInfo> m_typeTable;
     std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionSignature>>> m_functionTable;
     std::shared_ptr<FunctionSignature> m_currentFunction = nullptr;
+    std::filesystem::path m_currentFile;
     Assembler m_assembler = NASM;
     bool m_returned = false;
     

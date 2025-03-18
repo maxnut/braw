@@ -1,0 +1,17 @@
+import "syscall.braw"
+
+fn file_open(name: char*, flags: int, mode: int) -> long {
+    return syscall(2, (void*)name, (void*)flags, (void*)mode, (void*)0, (void*)0, (void*)0);
+}
+
+fn file_write(descriptor: long, data: char*, size: long) -> long {
+    return syscall(1, (void*)descriptor, (void*)data, (void*)size, (void*)0, (void*)0, (void*)0);
+}
+
+fn file_read(descriptor: long, buffer: char*, size: long) -> long {
+    return syscall(0, (void*)descriptor, (void*)buffer, (void*)size, (void*)0, (void*)0, (void*)0);
+}
+
+fn file_close(descriptor: long) -> long {
+    return syscall(3, (void*)descriptor, (void*)0, (void*)0, (void*)0, (void*)0, (void*)0);
+}

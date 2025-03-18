@@ -1,9 +1,9 @@
 #include "parser/parser.hpp"
 #include "../variable_access.hpp"
 
-Result<std::unique_ptr<AST::VariableAccessNode>> Parser::parseVariableAccess(TokenCursor& cursor) {
+Result<std::unique_ptr<AST::VariableAccessNode>> Parser::parseVariableAccess(TokenCursor& cursor, const std::filesystem::path& path) {
     if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
-        return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER);
+        return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER, path);
 
     std::unique_ptr<AST::VariableAccessNode> variableAccess = std::make_unique<AST::VariableAccessNode>();
     variableAccess->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};

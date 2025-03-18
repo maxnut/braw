@@ -1,4 +1,4 @@
-#include "propagator.hpp"
+#include "liveness_propagator.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"

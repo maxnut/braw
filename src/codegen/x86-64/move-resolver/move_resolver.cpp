@@ -1,4 +1,4 @@
-#include "move-resolver.hpp"
+#include "move_resolver.hpp"
 #include "codegen/x86-64/code_generator.hpp"
 #include "codegen/x86-64/address.hpp"
 #include "codegen/x86-64/immediate.hpp"
@@ -7,7 +7,6 @@
 #include "codegen/x86-64/register.hpp"
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -44,14 +43,6 @@ bool MoveResolver::operandEquals(std::shared_ptr<Operand> op1, std::shared_ptr<O
     }
 
     return false;
-}
-
-void poop(const MoveNode* node) {
-    std::cout << cast<Operands::Register>(node->m_operand)->m_ids[Operand::Size::Qword];
-    if(node->m_next) {
-        std::cout << " -> ";
-        poop(node->m_next.get());
-    }
 }
 
 const int findForSwap(std::shared_ptr<Operand> op, const std::vector<Instruction>& moves, size_t off) {
@@ -94,7 +85,7 @@ std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, Co
         return false;
     });
     std::erase_if(from, [from, &result](Instruction& instr){
-        if(operandEquals(instr.m_operands.at(0), instr.m_operands.at(1)) || (countOperand(instr.m_operands.at(0), from) && countOperand(instr.m_operands.at(1), from) == 1)) {
+        if(operandEquals(instr.m_operands.at(0), instr.m_operands.at(1)) || (countOperand(instr.m_operands.at(0), from) == 1 && countOperand(instr.m_operands.at(1), from) == 1)) {
             result.push_back(instr);
             return true;
         }
@@ -108,8 +99,6 @@ std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, Co
     std::shared_ptr<Operands::Register> loop = nullptr;
     while(true) {
         std::unique_ptr<MoveNode> graphRoot = buildGraph(from);
-        // poop(graphRoot.get());
-        // std::cout << std::endl;
         loop = cast<Operands::Register>(findLoop(graphRoot.get()));
         if(!loop)
             break;

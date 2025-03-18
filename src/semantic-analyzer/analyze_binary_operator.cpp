@@ -12,8 +12,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::BinaryOperator
     TypeInfo leftType = getType(node->m_left.get(), ctx).value();
     TypeInfo rightType = getType(node->m_right.get(), ctx).value();
 
-    if(leftType != rightType && !(Rules::isPtr(leftType.m_name) && Rules::isPtr(rightType.m_name))) return mismatchedTypes(node, leftType.m_name, rightType.m_name);
-    if(!hasOperator(leftType, node->m_operator) && node->m_operator != "=") return unknownOperator(node);
+    if(leftType != rightType && !(Rules::isPtr(leftType.m_name) && Rules::isPtr(rightType.m_name))) return mismatchedTypes(node, leftType.m_name, rightType.m_name, ctx);
+    if(!hasOperator(leftType, node->m_operator) && node->m_operator != "=") return unknownOperator(node, ctx);
 
     return std::nullopt;
 }

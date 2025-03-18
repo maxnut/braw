@@ -5,7 +5,7 @@
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefinitionNode* node, BrawContext& ctx) {
     if(!ctx.getTypeInfo(node->m_signature.m_returnType))
-        return unknownType(node, node->m_signature.m_returnType);
+        return unknownType(node, node->m_signature.m_returnType, ctx);
 
     std::shared_ptr<FunctionSignature> func = std::make_shared<FunctionSignature>();
     func->m_name = node->m_signature.m_name;
@@ -18,7 +18,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
 
     for(auto& param : node->m_signature.m_parameters) {
         if(!ctx.getTypeInfo(param->m_type.m_name))
-            return unknownType(node, param->m_type.m_name);
+            return unknownType(node, param->m_type.m_name, ctx);
         func->m_parameters.push_back(ctx.getTypeInfo(param->m_type).value());
         func->m_parameterNames.push_back(param->m_name);
 
@@ -31,7 +31,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
     }
 
     if(ctx.functionExists(func))
-        return duplicateFunction(node, node->m_signature);
+        return duplicateFunction(node, node->m_signature, ctx);
 
     ctx.m_functionTable[func->m_name].push_back(func);
     ctx.m_currentFunction = func;
@@ -42,7 +42,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
         ctx.m_scopes.pop_back();
         if(errOpt) return errOpt;
         if(func->m_returnType.m_name != VOID_T && !ctx.m_returned)
-            return missingReturn(node, node->m_signature);
+            return missingReturn(node, node->m_signature, ctx);
         ctx.m_returned = false;
     }
 

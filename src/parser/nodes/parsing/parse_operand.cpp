@@ -1,7 +1,7 @@
 #include "parser/parser.hpp"
 #include "../unary_operator.hpp"
 
-Result<std::unique_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor) {
+Result<std::unique_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor, const std::filesystem::path& path) {
     std::unique_ptr<AST::UnaryOperatorNode> unary = nullptr;
     std::pair<uint32_t, uint32_t> rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
@@ -10,14 +10,14 @@ Result<std::unique_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor) {
         unary->m_operator = cursor.get().value().m_value;
         unary->m_rangeBegin = rangeBegin;
         cursor.next();
-        auto operandOpt = parseOperand(cursor);
+        auto operandOpt = parseOperand(cursor, path);
         if(!operandOpt)
             return std::unexpected{operandOpt.error()};
         unary->m_operand = std::move(operandOpt.value());
         return unary;
     }
     
-    auto primaryOpt = parsePrimary(cursor);
+    auto primaryOpt = parsePrimary(cursor, path);
     if(!primaryOpt)
         return std::unexpected{primaryOpt.error()};
 
@@ -27,11 +27,11 @@ Result<std::unique_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor) {
         if (cursor.get().value().m_type == Token::LEFT_BRACKET) {
             ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
             cursor.next();
-            auto indexOpt = parseExpression(cursor);
+            auto indexOpt = parseExpression(cursor, path);
             if(!indexOpt)
                 return std::unexpected{indexOpt.error()};
             if(!expectTokenType(cursor.get().value(), Token::RIGHT_BRACKET))
-                return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_BRACKET);
+                return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_BRACKET, path);
             std::unique_ptr<AST::UnaryOperatorNode> subscript = std::make_unique<AST::UnaryOperatorNode>();
             subscript->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
             subscript->m_operator = "[]";
@@ -42,7 +42,7 @@ Result<std::unique_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor) {
         }
         else if(cursor.get().value().m_value == "." || cursor.get().value().m_value == "->") {
             ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
-            auto dotArrowOpt = parseDotArrow(cursor, std::move(ret));
+            auto dotArrowOpt = parseDotArrow(cursor, std::move(ret), path);
             if(!dotArrowOpt)
                 return std::unexpected{dotArrowOpt.error()};
             ret = std::move(dotArrowOpt.value());

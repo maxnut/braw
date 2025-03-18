@@ -28,6 +28,7 @@ struct ReturnNode;
 
 struct SemanticError {
     std::string m_message;
+    std::filesystem::path m_path;
     std::pair<uint32_t, uint32_t> m_rangeBegin;
     std::pair<uint32_t, uint32_t> m_rangeEnd;
 };
@@ -55,14 +56,14 @@ private:
     static std::optional<TypeInfo> getType(const AST::Node* node, BrawContext& ctx);
     static bool hasOperator(const TypeInfo& type, const std::string& operatorName);
 
-    static SemanticError unknownType(const AST::Node* causer, const std::string& type);
-    static SemanticError mismatchedTypes(const AST::Node* causer, const std::string& type1, const std::string& type2);
-    static SemanticError duplicateFunction(const AST::Node* causer, const AST::FunctionSignature& signature);
-    static SemanticError missingReturn(const AST::Node* causer, const AST::FunctionSignature& signature);
-    static SemanticError unknownVariable(const AST::VariableAccessNode* causer);
-    static SemanticError unknownOperator(const AST::UnaryOperatorNode* causer);
-    static SemanticError unknownOperator(const AST::BinaryOperatorNode* causer);
-    static SemanticError unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& types);
-    static SemanticError unknownMember(const AST::Node* causer, const std::string& type, const std::string& member);
-    static SemanticError invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type);
+    static SemanticError unknownType(const AST::Node* causer, const std::string& type, BrawContext& ctx);
+    static SemanticError mismatchedTypes(const AST::Node* causer, const std::string& type1, const std::string& type2, BrawContext& ctx);
+    static SemanticError duplicateFunction(const AST::Node* causer, const AST::FunctionSignature& signature, BrawContext& ctx);
+    static SemanticError missingReturn(const AST::Node* causer, const AST::FunctionSignature& signature, BrawContext& ctx);
+    static SemanticError unknownVariable(const AST::VariableAccessNode* causer, BrawContext& ctx);
+    static SemanticError unknownOperator(const AST::UnaryOperatorNode* causer, BrawContext& ctx);
+    static SemanticError unknownOperator(const AST::BinaryOperatorNode* causer, BrawContext& ctx);
+    static SemanticError unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& types, BrawContext& ctx);
+    static SemanticError unknownMember(const AST::Node* causer, const std::string& type, const std::string& member, BrawContext& ctx);
+    static SemanticError invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type, BrawContext& ctx);
 };

@@ -3,7 +3,7 @@
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableAccessNode* node, BrawContext& ctx) {
     if(!ctx.isDefinedInScope(node->m_name))
-        return unknownVariable(node);
+        return unknownVariable(node, ctx);
     
     return std::nullopt;
 }

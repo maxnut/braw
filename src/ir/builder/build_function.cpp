@@ -1,3 +1,4 @@
+#include "ir/builder/copy_propagator.hpp"
 #include "ir_builder.hpp"
 #include <memory>
 
@@ -40,6 +41,8 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
             ictx.m_instructions.push_back(std::make_unique<Instruction>(Instruction::Return));
         f.m_instructions = std::move(ictx.m_instructions);
     }
+
+    // CopyPropagator::propagate(f);
 
     return f;
 }

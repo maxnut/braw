@@ -5,7 +5,7 @@
 #include "codegen/x86-64/immediate.hpp"
 #include "codegen/x86-64/instruction.hpp"
 #include "codegen/x86-64/label.hpp"
-#include "codegen/x86-64/move-resolver/move-resolver.hpp"
+#include "codegen/x86-64/move-resolver/move_resolver.hpp"
 #include "codegen/x86-64/olabel.hpp"
 #include "codegen/x86-64/register.hpp"
 #include "cursor.hpp"
@@ -93,6 +93,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
                     spills += range->m_scale > 1 ? type.m_size * range->m_scale : range->m_typeInfo.m_size;
                     ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, type);
                     ctx.m_virtualRegisters[range->m_id]->m_scale = range->m_scale;
+                    ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
                     if(range->m_scale > 1) {
                         spills += range->m_typeInfo.m_size;
                         auto newAddr = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, range->m_typeInfo);
@@ -273,7 +274,9 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             if(o2->m_typeInfo.m_name == INT_T || o2->m_typeInfo.m_name == CHAR_T) {
                 if(Rules::isPtr(o1->m_typeInfo.m_name) || o1->m_typeInfo.m_name == LONG_T || o1->m_typeInfo.m_name == INT_T) {
                     Instruction in; in.m_opcode = o2->m_typeInfo.m_name == CHAR_T ? Movsx : Movsxd;
-                    in.addOperand(o1->m_type != Operand::Type::Address ? o1 : memoryValueToRegister(cast<Operands::Address>(o1), ctx));
+                    auto maybeReg = m_registers.at(SPILL1)->clone();
+                    maybeReg->m_typeInfo = o1->m_typeInfo;
+                    in.addOperand(o1->m_type != Operand::Type::Address ? o1 : maybeReg);
                     in.addOperand(o2);
                     addInstruction(in, ctx);
                     if(o1->m_type == Operand::Type::Address)

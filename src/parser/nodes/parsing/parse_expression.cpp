@@ -1,8 +1,9 @@
 #include "parser/parser.hpp"
 #include "../binary_operator.hpp"
+#include <filesystem>
 
-Result<std::unique_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, int minPrecedence) {
-    auto leftOpt = parseOperand(cursor);
+Result<std::unique_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, const std::filesystem::path& path, int minPrecedence) {
+    auto leftOpt = parseOperand(cursor, path);
     if(!leftOpt)
         return std::unexpected{leftOpt.error()};
 
@@ -20,7 +21,7 @@ Result<std::unique_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, 
             break;
         }
 
-        auto rightOpt = parseExpression(cursor, precedence + 1);
+        auto rightOpt = parseExpression(cursor, path, precedence + 1);
         if(!rightOpt)
             return std::unexpected{rightOpt.error()};
 

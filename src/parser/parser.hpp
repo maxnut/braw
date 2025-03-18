@@ -26,6 +26,7 @@ struct ReturnNode;
 
 struct ParseError {
     std::string m_message;
+    std::filesystem::path m_path;
     int m_line;
     int m_column;
 };
@@ -35,35 +36,35 @@ using Result = std::expected<T, ParseError>;
 
 class Parser {
 public:
-    static Result<std::unique_ptr<AST::FileNode>> parse(std::vector<Token> tokens, std::filesystem::path path);
+    static Result<std::shared_ptr<AST::FileNode>> parse(std::vector<Token> tokens, std::filesystem::path path);
 
 private:
-    static Result<std::unique_ptr<AST::FileNode>> parseFile(TokenCursor& cursor, std::filesystem::path path);
-    static Result<std::unique_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor, bool allowOneLine = true);
-    static Result<std::unique_ptr<AST::Node>> parseInstruction(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::Node>> parseVariableDeclaration(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::Node>> parseExpression(TokenCursor& cursor, int minPrecedence = 0);
-    static Result<std::unique_ptr<AST::Node>> parseOperand(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::Node>> parsePrimary(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::LiteralNode>> parseLiteral(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::FunctionCallNode>> parseFunctionCall(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::VariableAccessNode>> parseVariableAccess(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::UnaryOperatorNode>> parseDotArrow(TokenCursor& cursor, std::unique_ptr<AST::Node> left);
-    static Result<std::unique_ptr<AST::UnaryOperatorNode>> parseCast(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::BinaryOperatorNode>> parseAssignment(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::ReturnNode>> parseReturn(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::IfNode>> parseIf(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor);
-    static Result<std::unique_ptr<AST::FileNode>> parseImport(TokenCursor& cursor);
-    static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor);
-    static Result<Identifier> parseTypename(TokenCursor& cursor);
+    static Result<std::shared_ptr<AST::FileNode>> parseFile(TokenCursor& cursor, std::filesystem::path path);
+    static Result<std::unique_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor, const std::filesystem::path& path, bool allowOneLine = true);
+    static Result<std::unique_ptr<AST::Node>> parseInstruction(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::Node>> parseVariableDeclaration(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::Node>> parseExpression(TokenCursor& cursor, const std::filesystem::path& path, int minPrecedence = 0);
+    static Result<std::unique_ptr<AST::Node>> parseOperand(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::Node>> parsePrimary(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::LiteralNode>> parseLiteral(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::FunctionCallNode>> parseFunctionCall(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::VariableAccessNode>> parseVariableAccess(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::UnaryOperatorNode>> parseDotArrow(TokenCursor& cursor, std::unique_ptr<AST::Node> left, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::UnaryOperatorNode>> parseCast(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::BinaryOperatorNode>> parseAssignment(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::ReturnNode>> parseReturn(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::IfNode>> parseIf(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::shared_ptr<AST::FileNode>> parseImport(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<Identifier> parseTypename(TokenCursor& cursor, const std::filesystem::path& path);
 
-    static std::unexpected<ParseError> unexpectedToken(Token& token);
-    static std::unexpected<ParseError> unexpectedTokenExpectedType(Token& token, Token::Type expectedType);
-    static std::unexpected<ParseError> unexpectedTokenExpectedTypes(Token& token, std::vector<Token::Type> expectedTypes);
-    static std::unexpected<ParseError> unexpectedTokenExpectedValue(Token& token, const std::string& expectedValue);
+    static std::unexpected<ParseError> unexpectedToken(Token& token, const std::filesystem::path& path);
+    static std::unexpected<ParseError> unexpectedTokenExpectedType(Token& token, Token::Type expectedType, const std::filesystem::path& path);
+    static std::unexpected<ParseError> unexpectedTokenExpectedTypes(Token& token, std::vector<Token::Type> expectedTypes, const std::filesystem::path& path);
+    static std::unexpected<ParseError> unexpectedTokenExpectedValue(Token& token, const std::string& expectedValue, const std::filesystem::path& path);
 
     static bool expectTokenType(const Token& token, Token::Type type) { return token.m_type == type; }
     static bool expectTokenTypes(const Token& token, std::vector<Token::Type> types) { return std::find(types.begin(), types.end(), token.m_type) != types.end(); }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ir/builder/copy_propagator.hpp"
 #include "ir/function.hpp"
 #include "ir/operand.hpp"
 #include "ir/register.hpp"
@@ -71,4 +72,6 @@ private:
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, IRFunctionContext& ictx);
     static RegisterType getRegisterType(const TypeInfo& type);
     static void upsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx);
+
+    friend class CopyPropagator;
 };

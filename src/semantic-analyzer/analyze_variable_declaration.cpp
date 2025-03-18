@@ -6,10 +6,10 @@
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableDeclarationNode* node, BrawContext& ctx) {
     auto typeOpt = ctx.getTypeInfo(node->m_type);
     if(!typeOpt)
-        return unknownType(node, node->m_type);
+        return unknownType(node, node->m_type, ctx);
 
     if(node->m_scale > 1 && !Rules::isPtr(typeOpt.value().m_name))
-        return mismatchedTypes(node, typeOpt.value().m_name, Utils::makePointer(typeOpt.value()).m_name);
+        return mismatchedTypes(node, typeOpt.value().m_name, Utils::makePointer(typeOpt.value()).m_name, ctx);
 
     if(node->m_value) {
         auto errorOpt = analyze(node->m_value.get(), ctx);
@@ -17,9 +17,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableDeclar
         TypeInfo type = getType(node->m_value.get(), ctx).value();
 
         if(node->m_scale > 1)
-            return mismatchedTypes(node, type.m_name, "array");
+            return mismatchedTypes(node, type.m_name, "array", ctx);
         if(type != typeOpt.value())
-            return mismatchedTypes(node, type.m_name, typeOpt.value().m_name);
+            return mismatchedTypes(node, type.m_name, typeOpt.value().m_name, ctx);
     }
 
     ctx.m_scopes.back()[node->m_name] = ScopeInfo{

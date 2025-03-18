@@ -1,7 +1,7 @@
 #include "parser/parser.hpp"
 #include "../literal.hpp"
 
-Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor) {
+Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor, const std::filesystem::path& path) {
     std::unique_ptr<AST::LiteralNode> literal = std::make_unique<AST::LiteralNode>();
     literal->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     Token tkn = cursor.get().value();
@@ -27,6 +27,7 @@ Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
         else
             return std::unexpected{ParseError{
                 "Invalid literal: " + tkn.m_value,
+                path,
                 tkn.m_line,
                 tkn.m_column,
             }};
@@ -35,17 +36,18 @@ Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
         literal->m_value = std::string(cursor.next().get().value().m_value);
 
         if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
-            return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE);
+            return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, path);
     }
     else if(tkn.m_type == Token::SEMIQUOTE) {
         literal->m_value = (char)(cursor.next().get().value().m_value.at(0));
 
         if(!expectTokenType(cursor.next().get().value(), Token::SEMIQUOTE))
-            return unexpectedTokenExpectedType(cursor.value(), Token::SEMIQUOTE);
+            return unexpectedTokenExpectedType(cursor.value(), Token::SEMIQUOTE, path);
     }
     else
         return std::unexpected{ParseError{
                 "Invalid literal: " + tkn.m_value,
+                path,
                 tkn.m_line,
                 tkn.m_column,
             }};

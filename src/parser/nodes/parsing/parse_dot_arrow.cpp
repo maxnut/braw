@@ -1,9 +1,9 @@
 #include "parser/parser.hpp"
 #include "../unary_operator.hpp"
 
-Result<std::unique_ptr<AST::UnaryOperatorNode>> Parser::parseDotArrow(TokenCursor& cursor, std::unique_ptr<AST::Node> left) {
+Result<std::unique_ptr<AST::UnaryOperatorNode>> Parser::parseDotArrow(TokenCursor& cursor, std::unique_ptr<AST::Node> left, const std::filesystem::path& path) {
     if(!expectTokenType(cursor.get().value(), Token::OPERATOR))
-        return unexpectedTokenExpectedType(cursor.value(), Token::OPERATOR);
+        return unexpectedTokenExpectedType(cursor.value(), Token::OPERATOR, path);
 
     std::unique_ptr<AST::UnaryOperatorNode> dotArrow = std::make_unique<AST::UnaryOperatorNode>();
     dotArrow->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};

@@ -125,46 +125,51 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
     return std::nullopt;
 }
 
-SemanticError SemanticAnalyzer::unknownType(const AST::Node* causer, const std::string& type) {
-    return SemanticError("Unknown type: " + type, causer->m_rangeBegin, causer->m_rangeEnd);
+SemanticError SemanticAnalyzer::unknownType(const AST::Node* causer, const std::string& type, BrawContext& ctx) {
+    return SemanticError("Unknown type: " + type, ctx.m_currentFile, causer->m_rangeBegin, causer->m_rangeEnd);
 }
 
-SemanticError SemanticAnalyzer::mismatchedTypes(const AST::Node* causer, const std::string& type1, const std::string& type2) {
+SemanticError SemanticAnalyzer::mismatchedTypes(const AST::Node* causer, const std::string& type1, const std::string& type2, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Mismatched types: {} and {}", type1, type2),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::duplicateFunction(const AST::Node* causer, const AST::FunctionSignature& signature) {
+SemanticError SemanticAnalyzer::duplicateFunction(const AST::Node* causer, const AST::FunctionSignature& signature, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Function {} already defined", Utils::functionSignatureString(signature)),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::missingReturn(const AST::Node* causer, const AST::FunctionSignature& signature) {
+SemanticError SemanticAnalyzer::missingReturn(const AST::Node* causer, const AST::FunctionSignature& signature, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Function {} doesn't return a value", Utils::functionSignatureString(signature)),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::unknownVariable(const AST::VariableAccessNode* causer) {
+SemanticError SemanticAnalyzer::unknownVariable(const AST::VariableAccessNode* causer, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Unknown variable: {}", causer->m_name.m_name),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::unknownOperator(const AST::UnaryOperatorNode* causer) {
+SemanticError SemanticAnalyzer::unknownOperator(const AST::UnaryOperatorNode* causer, BrawContext& ctx) {
     if(causer->m_data.m_name.size() > 0) {
         return SemanticError(
             fmt::format("Unknown operator: {} ({})", causer->m_operator, causer->m_data.m_name),
+            ctx.m_currentFile,
             causer->m_rangeBegin,
             causer->m_rangeEnd
         );
@@ -172,20 +177,22 @@ SemanticError SemanticAnalyzer::unknownOperator(const AST::UnaryOperatorNode* ca
 
     return SemanticError(
         fmt::format("Unknown operator: {}", causer->m_operator),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::unknownOperator(const AST::BinaryOperatorNode* causer) {
+SemanticError SemanticAnalyzer::unknownOperator(const AST::BinaryOperatorNode* causer, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Unknown operator: {}", causer->m_operator),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& parameters) {
+SemanticError SemanticAnalyzer::unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& parameters, BrawContext& ctx) {
     std::string parameterString = "";
     for(int i = 0; i < causer->m_parameters.size(); i++) {
         parameterString += parameters[i].m_name;
@@ -194,22 +201,25 @@ SemanticError SemanticAnalyzer::unknownFunction(const AST::FunctionCallNode* cau
 
     return SemanticError(
         fmt::format("Unknown function: {}({})", causer->m_name.m_name, parameterString),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::unknownMember(const AST::Node* causer, const std::string& type, const std::string& member) {
+SemanticError SemanticAnalyzer::unknownMember(const AST::Node* causer, const std::string& type, const std::string& member, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Unknown member {} in {}", member, type),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );
 }
 
-SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type) {
+SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Invalid cast from {} to {}", type, causer->m_data.m_name),
+        ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
     );

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "propagator.hpp"
+#include "liveness_propagator.hpp"
 
 #include <memory>
 #include <string>

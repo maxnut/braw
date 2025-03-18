@@ -1,1 +1,1 @@
-ext fn syscall(num: int, arg1: void*, arg2: void*, arg3: void*, arg4: void*, arg5: void*, arg6: void*) -> void;
+ext fn syscall(num: int, arg1: void*, arg2: void*, arg3: void*, arg4: void*, arg5: void*, arg6: void*) -> long;

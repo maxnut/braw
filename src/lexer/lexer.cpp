@@ -151,7 +151,7 @@ Token tryParseSingleToken(Cursor<std::string::iterator> cursor, int lineNumber) 
 
 std::optional<std::vector<Token>> Lexer::tokenize(std::filesystem::path path) {
     if(path.extension() != ".braw") {
-        spdlog::error("guy {}", path.extension().string());
+        spdlog::error("Invalid extension: {}", path.filename().string());
         return std::nullopt;
     }
     std::vector<Token> tokens;

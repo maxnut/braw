@@ -1,9 +1,13 @@
 #include "ir_builder.hpp"
+#include <unordered_map>
 
 std::vector<File> IRBuilder::build(const AST::FileNode* root, BrawContext& context) {
+    static std::unordered_set<std::filesystem::path> imported;
     std::vector<File> files;
 
     for(auto& imp : root->m_imports) {
+        if(imported.contains(imp->m_path)) continue;
+        imported.insert(imp->m_path);
         auto imports = build(imp.get(), context);
         for(auto& imp2 : imports) {
             if(imp2.m_functions.size() <= 0) continue;

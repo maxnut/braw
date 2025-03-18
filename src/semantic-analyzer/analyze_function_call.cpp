@@ -13,7 +13,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionCallNo
     }
 
     if(!ctx.getFunction(node->m_name, parameters))
-        return unknownFunction(node, parameters);
+        return unknownFunction(node, parameters, ctx);
 
     return std::nullopt;
 }

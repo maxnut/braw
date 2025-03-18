@@ -1,5 +1,4 @@
 #include "codegen/x86-64/register-allocator/register_allocator.hpp"
-#include "codegen/x86-64/register-allocator/propagator.hpp"
 #include "codegen/x86-64/register.hpp"
 #include "ir/register.hpp"
 

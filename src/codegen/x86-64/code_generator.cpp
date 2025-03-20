@@ -94,14 +94,6 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
                     ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, type);
                     ctx.m_virtualRegisters[range->m_id]->m_scale = range->m_scale;
                     ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
-                    if(range->m_scale > 1) {
-                        spills += range->m_typeInfo.m_size;
-                        auto newAddr = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, range->m_typeInfo);
-                        auto spillReg = memoryAddressToRegister(cast<Operands::Address>(ctx.m_virtualRegisters[range->m_id]), ctx);
-                        move(newAddr, spillReg, ctx);
-                        ctx.m_virtualRegisters[range->m_id] = newAddr;
-                        ctx.m_virtualRegisters[range->m_id]->m_scale = 1;
-                    }
                     for(auto& arg : f.m_args) {
                         if(arg->m_id == range->m_id) {
                             m_registers.at(result.m_registers.at(range->m_id))->m_typeInfo = range->m_typeInfo;
@@ -739,8 +731,10 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                     std::shared_ptr<Operands::Register> base = m_registers.at(SPILL2);
                     std::shared_ptr<Operands::Address> addr2 = cast<Operands::Address>(addr->clone());
                     addr2->m_typeInfo = Utils::makePointer(addr->m_typeInfo);
-                    move(base, addr2, ctx);
-                    // memoryAddressToRegister(addr, base, ctx);
+                    if(src.m_scale > 1)
+                        memoryAddressToRegister(addr2, base, ctx);
+                    else
+                        move(base, addr2, ctx);
                     addr->m_scale = src.m_scale;
                     addr->m_index = indexReg;
                     addr = cast<Operands::Address>(addr->clone());

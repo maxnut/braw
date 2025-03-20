@@ -1,18 +1,18 @@
 #include "parser/parser.hpp"
 #include "../variable_declaration.hpp"
 
-Result<std::unique_ptr<AST::Node>> Parser::parseVariableDeclaration(TokenCursor& cursor, const std::filesystem::path& path) {
-    std::unique_ptr<AST::Node> ret = nullptr;
-
+Result<std::unique_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDeclaration(TokenCursor& cursor, const std::filesystem::path& path, bool omitLet) {
     std::unique_ptr<AST::VariableDeclarationNode> variableDeclaration = std::make_unique<AST::VariableDeclarationNode>();
     variableDeclaration->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
-    if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
-        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, path);
-    if(!expectTokenValue(cursor.get().value(), "let"))
-        return unexpectedTokenExpectedValue(cursor.value(), "let", path);
+    if(!omitLet) {
+        if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
+            return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, path);
+        if(!expectTokenValue(cursor.get().next().value(), "let"))
+            return unexpectedTokenExpectedValue(cursor.value(), "let", path);
+    }
 
-    variableDeclaration->m_name = cursor.next().get().next().value().m_value;
+    variableDeclaration->m_name = cursor.get().next().value().m_value;
 
     if(cursor.get().value().m_type == Token::LEFT_BRACKET) {
         if(!expectTokenTypes(cursor.next().get().value(), {Token::INTEGER, Token::LONG}))
@@ -41,7 +41,6 @@ Result<std::unique_ptr<AST::Node>> Parser::parseVariableDeclaration(TokenCursor&
     }
 
     variableDeclaration->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
-    ret = std::move(variableDeclaration);
 
-    return ret;
+    return variableDeclaration;
 }

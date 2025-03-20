@@ -83,7 +83,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
                 if(!range->m_isPointedOrDereferenced && result.m_registers.contains(range->m_id)) {
                     ctx.m_virtualRegisters[range->m_id] = range->m_registerType == RegisterType::Struct ? cast<Operand>(std::make_shared<Operands::Address>(m_registers.at(result.m_registers.at(range->m_id)), -range->m_typeInfo.m_size, range->m_typeInfo)) : m_registers.at(result.m_registers.at(range->m_id))->clone();
                     ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
-                    ctx.m_virtualRegisters[range->m_id]->m_scale = range->m_scale;
+                    ctx.m_virtualRegisters[range->m_id]->m_scaleSize = range->m_scale;
                     Operands::Register::RegisterGroup group = result.m_registers.at(range->m_id);
                     if(group == Operands::Register::RBX || group == Operands::Register::R12 || group == Operands::Register::R13 || group == Operands::Register::R14 || group == Operands::Register::R15)
                         ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));
@@ -92,7 +92,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
                     TypeInfo type = range->m_scale > 1 ? Utils::getRawType(range->m_typeInfo, ctx.m_brawCtx).value() : range->m_typeInfo;
                     spills += range->m_scale > 1 ? type.m_size * range->m_scale : range->m_typeInfo.m_size;
                     ctx.m_virtualRegisters[range->m_id] = std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -spills, type);
-                    ctx.m_virtualRegisters[range->m_id]->m_scale = range->m_scale;
+                    ctx.m_virtualRegisters[range->m_id]->m_scaleSize = range->m_scale;
                     ctx.m_virtualRegisters[range->m_id]->m_typeInfo = range->m_typeInfo;
                     for(auto& arg : f.m_args) {
                         if(arg->m_id == range->m_id) {
@@ -295,6 +295,7 @@ void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operan
     else in.m_opcode = Mov;
     
     target->m_typeInfo = source->m_typeInfo;
+    target->m_scaleSize = source->m_scaleSize;
     in.addOperand(target);
     in.addOperand(source);
     addInstruction(std::move(in), ctx);
@@ -415,8 +416,10 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
                     auto spill = memoryAddressToRegister(op->m_type == Operand::Type::Register ? std::make_shared<Operands::Address>(op, 0, op->m_typeInfo) : cast<Operands::Address>(op), ctx)->clone();
                     move(m_registers.at(reg),spill, ctx);
                 }
-                else
+                else if(op->m_scaleSize <= 1)
                     move(m_registers.at(reg), op, ctx);
+                else
+                    memoryAddressToRegister(cast<Operands::Address>(op), m_registers.at(reg), ctx);
             }
         }
     }
@@ -715,9 +718,13 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                 addr->m_offset = addr->m_offset + addrType.m_size + addrOff;
                 auto off = addrOff < 0 ? addrType.m_size + addrOff : addrOff;
                 addr->m_typeInfo = src.m_typeInfo;
+                addr->m_scale = src.m_scale;
+                addr->m_scaleSize = src.m_base->m_scale;
             }
-            else
+            else {
                 addr = std::make_shared<Operands::Address>(ctx.m_virtualRegisters.at(src.m_base->m_id), addrOff, src.m_typeInfo);
+                addr->m_scaleSize = src.m_scaleSize;
+            }
 
             if(src.m_index) {
                 std::shared_ptr<Operand> index = convertOperand(src.m_index, ctx);
@@ -731,12 +738,13 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
                     std::shared_ptr<Operands::Register> base = m_registers.at(SPILL2);
                     std::shared_ptr<Operands::Address> addr2 = cast<Operands::Address>(addr->clone());
                     addr2->m_typeInfo = Utils::makePointer(addr->m_typeInfo);
-                    if(src.m_scale > 1)
+                    if(addr2->m_scaleSize > 1)
                         memoryAddressToRegister(addr2, base, ctx);
                     else
                         move(base, addr2, ctx);
                     addr->m_scale = src.m_scale;
                     addr->m_index = indexReg;
+                    addr->m_scaleSize = 1;
                     addr = cast<Operands::Address>(addr->clone());
                     addr->m_base = base;
                     addr->m_offset = 0;

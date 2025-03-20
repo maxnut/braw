@@ -16,7 +16,7 @@ constexpr const char* CHAR_T = "char";
 struct MemberInfo {
     std::string m_type;
     size_t m_offset = 0;
-    size_t m_arraySize = 0;
+    size_t m_scale = 0;
 };
 
 struct OperatorInfo {

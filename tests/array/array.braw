@@ -1,0 +1,22 @@
+fn simple() -> int {
+    let arr[5]: int*;
+    arr[2] = 1;
+    return arr[2];
+}
+
+fn ptr() -> int {
+    let arr[5]: int*;
+    arr[2] = 1;
+    let ptr: int* = arr;
+    return ptr[2];
+}
+
+struct V {
+    arr[5]: int*;
+};
+
+fn in_struct() -> int {
+    let v: V;
+    v.arr[2] = 1;
+    return v.arr[2];
+}

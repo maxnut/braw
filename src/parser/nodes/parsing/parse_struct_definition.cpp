@@ -20,25 +20,11 @@ Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCurs
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_BRACE, path);
 
     while(cursor.get().value().m_type != Token::RIGHT_BRACE) {
-        std::unique_ptr<AST::VariableDeclarationNode> varDecl = std::make_unique<AST::VariableDeclarationNode>();
+        auto optVar = parseVariableDeclaration(cursor, path, true);
+        if(!optVar)
+            return std::unexpected{optVar.error()};
 
-        if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
-            return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER, path);
-
-        varDecl->m_name = cursor.get().next().value().m_value;
-
-        if(!expectTokenType(cursor.get().next().value(), Token::COLON))
-            return unexpectedTokenExpectedType(cursor.value(), Token::COLON, path);
-
-        auto typeName = parseTypename(cursor, path);
-        if(!typeName)
-            return std::unexpected{typeName.error()};
-        varDecl->m_type = typeName.value();
-
-        if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
-            return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, path);
-        
-        structNode->m_members.push_back(std::move(varDecl));
+        structNode->m_members.push_back(std::move(optVar.value()));
         cursor.next();
     }
 

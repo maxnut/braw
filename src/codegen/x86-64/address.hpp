@@ -25,6 +25,7 @@ struct Address : Operand {
     virtual std::shared_ptr<Operand> clone() const override {
         auto base = m_base->clone();
         auto ptr = std::make_shared<Address>(base, m_offset, m_typeInfo, m_index, m_scale);
+        ptr->m_scaleSize = m_scaleSize;
         return ptr;
     }
 };

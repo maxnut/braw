@@ -9,8 +9,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::StructNode* no
         if(!ctx.getTypeInfo(member->m_type))
             return unknownType(node, member->m_type, ctx);
 
-        info.m_members[member->m_name] = MemberInfo{member->m_type, size, 0};
-        size += ctx.getTypeInfo(member->m_type)->m_size;
+        info.m_members[member->m_name] = MemberInfo{member->m_type, size, member->m_scale};
+        size += ctx.getTypeInfo(member->m_type)->m_size * member->m_scale;
     }
 
     info.m_size = size;

@@ -11,4 +11,5 @@ struct Address {
     TypeInfo m_typeInfo;
     std::shared_ptr<Register> m_index = nullptr;
     int64_t m_scale = 0;
+    int64_t m_scaleSize = 0;
 };

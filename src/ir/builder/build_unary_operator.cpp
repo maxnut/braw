@@ -16,14 +16,15 @@
 
 Operand IRBuilder::dotOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx) {
     auto t = getOperandType(op, context, ictx);
-    int64_t offset = t.m_members.at(node->m_data).m_offset; 
-    auto tMember = context.getTypeInfo(t.m_members.at(node->m_data).m_type).value();
+    MemberInfo member = t.m_members.at(node->m_data);
+    int64_t offset = member.m_offset; 
+    auto tMember = context.getTypeInfo(member.m_type).value();
     switch(op.index()) {
         default:
-            return Address(std::get<std::shared_ptr<Register>>(op), offset, tMember);
+            return Address(std::get<std::shared_ptr<Register>>(op), offset, tMember, nullptr, 0, member.m_scale);
         case 3: {
             Address addr = std::get<Address>(op);
-            return Address(addr.m_base, addr.m_offset + offset, tMember);
+            return Address(addr.m_base, addr.m_offset + offset, tMember, nullptr, 0, member.m_scale);
         }
     }
 }
@@ -77,7 +78,10 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
             auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_1", ictx);
             tmp->m_type = getOperandType(op, context, ictx);
             tmp->m_registerType = getRegisterType(tmp->m_type);
-            moveToRegister(tmp->m_id, op, context, ictx);
+            if(std::holds_alternative<Address>(op) && std::get<Address>(op).m_scaleSize > 1)
+                ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, tmp, op));
+            else
+                moveToRegister(tmp->m_id, op, context, ictx);
             op = tmp;
         }
 

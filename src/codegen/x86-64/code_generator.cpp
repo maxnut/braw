@@ -400,7 +400,6 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
         if((isFloat(op) && !floatCursor.hasNext()) || (isDouble(op) && !floatCursor.hasNext()) || ((op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == LONG_T) && !cursor.hasNext())) {
             push(op, ctx);
             spilled += op->m_typeInfo.m_size;
-            ctx.m_spills += op->m_typeInfo.m_size;
             continue;
         }
 

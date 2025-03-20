@@ -2,7 +2,7 @@
 Bugs included for free
 
 ## Usage
-Run ```/brawc file.braw -o build --assemble --link```, this will spit out an executable
+Run ```brawc file.braw -o build --assemble --link```, this will spit out an executable
 
 The compiler targets x86-64 Sys-V, so you need to run it under that
 

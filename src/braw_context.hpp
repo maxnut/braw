@@ -1,6 +1,5 @@
 #pragma once
 
-#include "parser/nodes/function_definition.hpp"
 #include "type_info.hpp"
 
 #include <filesystem>
@@ -25,11 +24,6 @@ struct FunctionSignature {
     bool m_external = false;
 };
 
-enum Assembler {
-    NASM,
-    GAS
-};
-
 struct BrawContext {
     BrawContext();
 
@@ -44,7 +38,6 @@ struct BrawContext {
     std::unordered_map<std::string, std::vector<std::shared_ptr<FunctionSignature>>> m_functionTable;
     std::shared_ptr<FunctionSignature> m_currentFunction = nullptr;
     std::filesystem::path m_currentFile;
-    Assembler m_assembler = NASM;
     bool m_returned = false;
     
     size_t m_stackSize = 0;

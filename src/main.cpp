@@ -23,7 +23,6 @@ int main(int argc, char** argv) {
     args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
     args::Positional<std::string> inputFile(parser, "file", "The source file to compile");
     args::ValueFlag<std::string> outputDirectory(parser, "output", "The directory to output to", {'o', "output"}, "out.asm");
-    args::ValueFlag<std::string> assembler(parser, "assembler", "Assembler to use (nasm or gas)", {'a', "assembler"}, "gas");
     args::Flag assemble(parser, "assemble", "Assemble the output file", {"assemble"});
     args::Flag link(parser, "link", "Link the output file", {'l', "link"});
 
@@ -50,11 +49,6 @@ int main(int argc, char** argv) {
     std::filesystem::path outputPath = outputDirectory.Get();
     std::filesystem::create_directories(outputPath);
 
-    std::string assemblerChoice = assembler.Get();
-    if (assemblerChoice != "nasm" && assemblerChoice != "gas") {
-        spdlog::error("Invalid assembler choice. Use 'nasm' or 'gas'.");
-        return 1;
-    }
     auto tokens = Lexer::tokenize(filepath);
     if (!tokens) {
         //TODO: add proper error return to lexer
@@ -76,11 +70,6 @@ int main(int argc, char** argv) {
 
     BrawContext ctx = ctxOr.value();
 
-    if(assemblerChoice == "nasm")
-        ctx.m_assembler = NASM;
-    else if(assemblerChoice == "gas")
-        ctx.m_assembler = GAS;
-    
     std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
 
     for(File& file : res) {
@@ -118,8 +107,7 @@ int main(int argc, char** argv) {
             if(allExt) continue;
             std::filesystem::path codegenOutputPath = outputPath / (file.m_path.stem().string() + ".asm");
             std::filesystem::path assemblerOutputPath = outputPath / (file.m_path.stem().string() + ".o");
-            std::string prefix = ctx.m_assembler == NASM ? "nasm -f elf64" : "as --64 -g";
-            std::string cmd = prefix + " -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
+            std::string cmd = "as --64 -g -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
             spdlog::info("Assembling {} with command: {}", file.m_path.string(), cmd);
             int result = std::system((cmd).c_str());
             if(result != 0) {

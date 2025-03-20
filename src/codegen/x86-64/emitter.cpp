@@ -27,19 +27,15 @@ void opcodeInstruction(const Instruction& obj, std::ostream& os) {
 }
 
 void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const BrawContext& ctx) {
-    const char* sectionPrefix = ctx.m_assembler == NASM ? "section" : ".section";
-    const char* globalPrefix = ctx.m_assembler == NASM ? "global" : ".global";
-    const char* externPrefix = ctx.m_assembler == NASM ? "extern" : ".extern";
-    const char* commentPrefix = ctx.m_assembler == NASM ? ";" : "#";
-    const char* floatPrefix = ctx.m_assembler == NASM ? "dd" : ".float";
-    const char* doublePrefix = ctx.m_assembler == NASM ? "dd" : ".double";
-    const char* stringPrefix = ctx.m_assembler == NASM ? "dd" : ".asciz";
+    const char* sectionPrefix = ".section";
+    const char* globalPrefix = ".global";
+    const char* externPrefix = ".extern";
+    const char* commentPrefix = "#";
+    const char* floatPrefix = ".float";
+    const char* doublePrefix = ".double";
+    const char* stringPrefix = ".asciz";
 
-    if(ctx.m_assembler == NASM)
-        out << "bits 64\n\n";
-    else if(ctx.m_assembler == GAS)
-        out << ".intel_syntax noprefix\n\n";
-
+    out << ".intel_syntax noprefix\n\n";
     out << sectionPrefix << " .data\n";
 
     for(const auto& pair : f.m_data.m_labels) {
@@ -57,11 +53,7 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
                 break;
             }
             case 5: {
-                out << stringPrefix << " ";
-                if(ctx.m_assembler == GAS) out << "\"";
-                out << std::get<std::string>(value);
-                if(ctx.m_assembler == GAS) out << "\"";
-                out << "\n";
+                out << stringPrefix << " " << "\"" << std::get<std::string>(value) << "\"" << "\n";
                 break;
             }
             default: break;
@@ -131,12 +123,12 @@ void Emitter::emit(const Operands::Immediate* imm, const InstructionOpcode& inst
 void Emitter::emit(const Operands::Address* addr, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
     Operand::Size size = instr == Lea ? Operand::Size::Qword : Operand::getSize(addr->m_typeInfo);
     switch(size) {
-        case Operand::Size::Byte: out << (ctx.m_assembler == GAS ? "BYTE PTR " : "byte "); break;
-        case Operand::Size::Word: out << (ctx.m_assembler == GAS ? "WORD PTR " : "word "); break;
-        case Operand::Size::Dword: out << (ctx.m_assembler == GAS ? "DWORD PTR " : "dword "); break;
-        case Operand::Size::Qword: out << (ctx.m_assembler == GAS ? "QWORD PTR " : "qword "); break;
-        case Operand::Size::Oword: out << (ctx.m_assembler == GAS ? "OWORD PTR " : "oword "); break;
-        case Operand::Size::Yword: out << (ctx.m_assembler == GAS ? "YWORD PTR " : "yword "); break;
+        case Operand::Size::Byte: out << "BYTE PTR "; break;
+        case Operand::Size::Word: out << "WORD PTR "; break;
+        case Operand::Size::Dword: out << "DWORD PTR "; break;
+        case Operand::Size::Qword: out << "QWORD PTR "; break;
+        case Operand::Size::Oword: out << "OWORD PTR "; break;
+        case Operand::Size::Yword: out << "YWORD PTR "; break;
         default: break;
     }
 

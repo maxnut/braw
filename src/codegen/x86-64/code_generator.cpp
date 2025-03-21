@@ -287,6 +287,9 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
 }
 
 void CodeGenerator::move(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
+    if(source->m_scaleSize > 1)
+        source = memoryAddressToRegister(cast<Operands::Address>(source), ctx);
+    
     Instruction in;
     if(bothAddress(target, source)) source = memoryValueToRegister(cast<Operands::Address>(source), ctx);
     

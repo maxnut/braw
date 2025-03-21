@@ -76,24 +76,33 @@ const void replaceForGraph(std::shared_ptr<Operand> op, std::shared_ptr<Operand>
 }
 
 std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, CodeGenerator& codegen, FunctionContext& ctx) {
-    std::vector<Instruction> result;
-    std::erase_if(from, [from, &result](Instruction& instr){
+    std::vector<Instruction> result; result.reserve(from.size());
+    std::unordered_map<Instruction*, size_t> positions; positions.reserve(from.size());
+    for(size_t i = 0; i < from.size(); i++)
+        positions[&from[i]] = i;
+
+    std::vector<std::pair<size_t, Instruction>> indexed;
+    
+    std::erase_if(from, [from, &indexed, &positions](Instruction& instr){
         if(instr.m_opcode != Mov) {
-            result.push_back(instr);
+            indexed.push_back({positions[&instr], instr});
             return true;
         }
         return false;
     });
-    std::erase_if(from, [from, &result](Instruction& instr){
+    std::erase_if(from, [from, &indexed, &positions](Instruction& instr){
         if(operandEquals(instr.m_operands.at(0), instr.m_operands.at(1)) || (countOperand(instr.m_operands.at(0), from) == 1 && countOperand(instr.m_operands.at(1), from) == 1)) {
-            result.push_back(instr);
+            indexed.push_back({positions[&instr], instr});
             return true;
         }
         return false;
     });
 
-    if(from.empty())
+    if(from.empty()) {
+        for(const auto& [idx, instr] : indexed)
+            result.push_back(instr);
         return result;
+    }
 
     std::vector<std::shared_ptr<Operands::Register>> pushed;
     std::shared_ptr<Operands::Register> loop = nullptr;
@@ -127,6 +136,10 @@ std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, Co
         if(operandEquals(instr.m_operands.at(0), instr.m_operands.at(1)))
             continue;
         result.push_back(instr);
+    }
+
+    for(const auto& [idx, instr] : indexed) {
+        result.insert(result.begin() + idx, instr);
     }
     
     std::reverse(pushed.begin(), pushed.end());

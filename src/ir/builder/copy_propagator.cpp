@@ -2,6 +2,7 @@
 #include "ir/builder/ir_builder.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
+#include "ir/instructions/call.hpp"
 #include "ir/operand.hpp"
 #include <vector>
 
@@ -111,8 +112,15 @@ bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& poin
                 doReplace(&basic->m_o4);
                 break;
             }
+            case Instruction::Call: {
+                CallInstruction* call = (CallInstruction*)f.m_instructions[from].get();
+                doReplace((Operand*)&call->m_optReturn);
+                for(auto& param : call->m_parameters) {
+                    doReplace(&param);
+                }
+                break;
+            }
             case Instruction::Label:
-            case Instruction::Call:
             case Instruction::Return:
                 break;
         }

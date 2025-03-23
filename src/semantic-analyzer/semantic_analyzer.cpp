@@ -1,5 +1,6 @@
 #include "semantic_analyzer.hpp"
 #include "parser/nodes/file.hpp"
+#include "parser/nodes/for.hpp"
 #include "parser/nodes/function_definition.hpp"
 #include "parser/nodes/scope.hpp"
 #include "parser/nodes/variable_declaration.hpp"
@@ -50,6 +51,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::Node* root, Br
             return analyze(static_cast<const AST::IfNode*>(root), context);
         case AST::Node::While:
             return analyze(static_cast<const AST::WhileNode*>(root), context);
+        case AST::Node::For:
+            return analyze(static_cast<const AST::ForNode*>(root), context);
         case AST::Node::Literal:
             return analyze(static_cast<const AST::LiteralNode*>(root), context);
         case AST::Node::Return:

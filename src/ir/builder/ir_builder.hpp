@@ -6,6 +6,7 @@
 #include "ir/register.hpp"
 #include "parser/nodes/file.hpp"
 #include "ir/file.hpp"
+#include "parser/nodes/for.hpp"
 #include "parser/nodes/node.hpp"
 #include "braw_context.hpp"
 
@@ -56,6 +57,7 @@ private:
     static void build(const AST::VariableDeclarationNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::IfNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::WhileNode* node, BrawContext& context, IRFunctionContext& ictx);
+    static void build(const AST::ForNode* node, BrawContext& context, IRFunctionContext& ictx);
     static void build(const AST::ReturnNode* node, BrawContext& context, IRFunctionContext& ictx);
     static Operand buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx);
     static Operand buildExpression(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx);

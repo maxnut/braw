@@ -22,6 +22,7 @@ struct IfNode;
 struct WhileNode;
 struct LiteralNode;
 struct ReturnNode;
+struct ForNode;
 }
 
 struct ParseError {
@@ -56,6 +57,7 @@ private:
     static Result<std::unique_ptr<AST::ReturnNode>> parseReturn(TokenCursor& cursor, const std::filesystem::path& path);
     static Result<std::unique_ptr<AST::IfNode>> parseIf(TokenCursor& cursor, const std::filesystem::path& path);
     static Result<std::unique_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor, const std::filesystem::path& path);
+    static Result<std::unique_ptr<AST::ForNode>> parseFor(TokenCursor& cursor, const std::filesystem::path& path);
     static Result<std::unique_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor, const std::filesystem::path& path);
     static Result<std::shared_ptr<AST::FileNode>> parseImport(TokenCursor& cursor, const std::filesystem::path& path);
     static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor, const std::filesystem::path& path);

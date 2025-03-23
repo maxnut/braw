@@ -18,6 +18,7 @@ struct Node {
         Literal,
         If,
         While,
+        For,
         Struct,
         Return,
     };

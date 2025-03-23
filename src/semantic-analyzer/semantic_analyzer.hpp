@@ -24,6 +24,7 @@ struct IfNode;
 struct WhileNode;
 struct LiteralNode;
 struct ReturnNode;
+struct ForNode;
 }
 
 struct SemanticError {
@@ -50,6 +51,7 @@ private:
     static std::optional<SemanticError> analyze(const AST::FunctionCallNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::IfNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::WhileNode*, BrawContext&);
+    static std::optional<SemanticError> analyze(const AST::ForNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::LiteralNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::ReturnNode*, BrawContext&);
 

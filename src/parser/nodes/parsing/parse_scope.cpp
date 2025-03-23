@@ -13,9 +13,25 @@ Result<std::unique_ptr<AST::ScopeNode>> Parser::parseScope(TokenCursor& cursor, 
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_BRACE, path);
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_BRACE) {
+        Rules::InstructionType instructionType = Rules::getInstructionType(cursor);
+
         auto instructionOpt = parseInstruction(cursor, path);
         if(!instructionOpt)
             return std::unexpected{instructionOpt.error()};
+
+        switch(instructionType) {
+            default: {
+                if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
+                    return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, path);
+                cursor.tryNext();
+                break;
+            }
+            case Rules::InstructionType::WHILE:
+            case Rules::InstructionType::FOR:
+            case Rules::InstructionType::IF:
+                break;
+        }
+        
         scope->m_instructions.push_back(std::move(instructionOpt.value()));
 
         if(oneLine) break;

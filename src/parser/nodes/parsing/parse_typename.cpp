@@ -1,6 +1,6 @@
 #include "parser/parser.hpp"
 
-Result<Identifier> Parser::parseTypename(TokenCursor& cursor, const std::filesystem::path& path) {
+Result<Identifier> Parser::parseTypename(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
     if(!expectTokenTypes(cursor.get().value(), {Token::IDENTIFIER, Token::KEYWORD}))
         return unexpectedTokenExpectedTypes(cursor.value(), {Token::IDENTIFIER, Token::KEYWORD}, path);
 

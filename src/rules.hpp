@@ -114,10 +114,11 @@ namespace Rules {
     }
 
     inline bool isImport(TokenCursor cursor) {
-        if(cursor.get().value().m_value != "import")
-            return false;
+        return cursor.get().value().m_value == "import";
+    }
 
-        return true;
+    inline bool isDefine(TokenCursor cursor) {
+        return cursor.get().value().m_value == "define";
     }
 
     inline bool isString(TokenCursor cursor) {

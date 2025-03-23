@@ -2,12 +2,12 @@
 #include "../binary_operator.hpp"
 #include <filesystem>
 
-Result<std::unique_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, const std::filesystem::path& path, int minPrecedence) {
-    auto leftOpt = parseOperand(cursor, path);
+Result<std::shared_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file, int minPrecedence) {
+    auto leftOpt = parseOperand(cursor, path, file);
     if(!leftOpt)
         return std::unexpected{leftOpt.error()};
 
-    std::unique_ptr<AST::Node> left = std::move(leftOpt.value());
+    std::shared_ptr<AST::Node> left = std::move(leftOpt.value());
 
     while(cursor.hasNext()) {
         if(cursor.get().value().m_type != Token::OPERATOR)
@@ -21,11 +21,11 @@ Result<std::unique_ptr<AST::Node>> Parser::parseExpression(TokenCursor& cursor, 
             break;
         }
 
-        auto rightOpt = parseExpression(cursor, path, precedence + 1);
+        auto rightOpt = parseExpression(cursor, path, file, precedence + 1);
         if(!rightOpt)
             return std::unexpected{rightOpt.error()};
 
-        std::unique_ptr<AST::BinaryOperatorNode> op = std::make_unique<AST::BinaryOperatorNode>();
+        std::shared_ptr<AST::BinaryOperatorNode> op = std::make_shared<AST::BinaryOperatorNode>();
         op->m_operator = opToken.m_value;
         op->m_left = std::move(left);
         op->m_right = std::move(rightOpt.value());

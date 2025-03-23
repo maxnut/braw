@@ -13,7 +13,7 @@ struct VariableDeclarationNode : Node {
 
     Identifier m_type;
     Identifier m_name;
-    std::unique_ptr<Node> m_value = nullptr;
+    std::shared_ptr<Node> m_value = nullptr;
     size_t m_scale = 1;
 };
 

@@ -15,7 +15,7 @@ struct FunctionSignature {
     
     Identifier m_returnType;
     Identifier m_name;
-    std::vector<std::unique_ptr<AST::VariableDeclarationNode>> m_parameters; 
+    std::vector<std::shared_ptr<AST::VariableDeclarationNode>> m_parameters; 
     bool m_external = false;
 };
 
@@ -23,7 +23,7 @@ struct FunctionDefinitionNode : Node {
     FunctionDefinitionNode() : Node(Type::FunctionDefinition) {}
 
     FunctionSignature m_signature;
-    std::unique_ptr<ScopeNode> m_scope;
+    std::shared_ptr<ScopeNode> m_scope;
 };
 
 }

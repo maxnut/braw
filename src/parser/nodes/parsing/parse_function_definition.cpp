@@ -1,11 +1,11 @@
 #include "parser/parser.hpp"
 #include "../function_definition.hpp"
 
-Result<std::unique_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefinition(TokenCursor& cursor, const std::filesystem::path& path) {
-    std::unique_ptr<AST::FunctionDefinitionNode> node = std::make_unique<AST::FunctionDefinitionNode>();
+Result<std::shared_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefinition(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+    std::shared_ptr<AST::FunctionDefinitionNode> node = std::make_shared<AST::FunctionDefinitionNode>();
     node->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     
-    auto signatureOpt = parseFunctionSignature(cursor, path);
+    auto signatureOpt = parseFunctionSignature(cursor, path, file);
     if(!signatureOpt)
         return std::unexpected{signatureOpt.error()};
 
@@ -17,7 +17,7 @@ Result<std::unique_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefini
         cursor.tryNext();
     }
     else {
-        auto scopeOpt = parseScope(cursor, path);
+        auto scopeOpt = parseScope(cursor, path, file);
         if(!scopeOpt)
             return std::unexpected{scopeOpt.error()};
         node->m_scope = std::move(scopeOpt.value());

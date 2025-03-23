@@ -13,8 +13,8 @@ struct UnaryOperatorNode : Node {
 
     std::string m_operator;
     Identifier m_data;
-    std::unique_ptr<Node> m_expression = nullptr;
-    std::unique_ptr<Node> m_operand;
+    std::shared_ptr<Node> m_expression = nullptr;
+    std::shared_ptr<Node> m_operand;
 };
 
 }

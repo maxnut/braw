@@ -1,8 +1,8 @@
 #include "parser/parser.hpp"
 #include "../scope.hpp"
 
-Result<std::unique_ptr<AST::ScopeNode>> Parser::parseScope(TokenCursor& cursor, const std::filesystem::path& path, bool allowOneLine) {
-    std::unique_ptr<AST::ScopeNode> scope = std::make_unique<AST::ScopeNode>();
+Result<std::shared_ptr<AST::ScopeNode>> Parser::parseScope(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file, bool allowOneLine) {
+    std::shared_ptr<AST::ScopeNode> scope = std::make_shared<AST::ScopeNode>();
     scope->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
     bool oneLine = cursor.get().value().m_type == Token::COLON && allowOneLine;
@@ -15,7 +15,7 @@ Result<std::unique_ptr<AST::ScopeNode>> Parser::parseScope(TokenCursor& cursor, 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_BRACE) {
         Rules::InstructionType instructionType = Rules::getInstructionType(cursor);
 
-        auto instructionOpt = parseInstruction(cursor, path);
+        auto instructionOpt = parseInstruction(cursor, path, file);
         if(!instructionOpt)
             return std::unexpected{instructionOpt.error()};
 

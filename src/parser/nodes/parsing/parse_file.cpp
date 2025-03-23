@@ -1,5 +1,7 @@
+#include "parser/identifier.hpp"
 #include "parser/parser.hpp"
 #include "../file.hpp"
+#include "rules.hpp"
 #include <memory>
 #include <unordered_map>
 
@@ -14,7 +16,7 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
     
     while(cursor.hasNext()) {
         if(Rules::isFunctionDefinition(cursor)) {
-            auto function = parseFunctionDefinition(cursor, path);
+            auto function = parseFunctionDefinition(cursor, path, file);
             
             if(!function)
                 return std::unexpected{function.error()};
@@ -23,7 +25,7 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             continue;
         }
         else if(Rules::isStructDefinition(cursor)) {
-            auto type = parseStructDefinition(cursor, path);
+            auto type = parseStructDefinition(cursor, path, file);
 
             if(!type)
                 return std::unexpected{type.error()};
@@ -32,12 +34,34 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             continue;
         }
         else if(Rules::isImport(cursor)) {
-            auto import = parseImport(cursor, path);
+            auto import = parseImport(cursor, path, file);
 
             if(!import)
                 return std::unexpected{import.error()};
 
             file->m_imports.push_back(import.value());
+            continue;
+        }
+        else if(Rules::isDefine(cursor)) {
+            cursor.tryNext();
+
+            if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
+                return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER, path);
+
+            Identifier name = cursor.get().next().value().m_value;
+
+            if(cursor.get().next().value().m_value != "=")
+                return unexpectedTokenExpectedValue(cursor.value(), "=", path);
+
+            auto expOpt = parseExpression(cursor, path, file);
+            if(!expOpt)
+                return std::unexpected{expOpt.error()};
+
+            file->m_defines[name] = std::move(expOpt.value());
+
+            if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
+                return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, path);
+            cursor.tryNext();
             continue;
         }
 

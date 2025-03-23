@@ -7,10 +7,10 @@ namespace AST {
 struct ForNode : Node {
     ForNode() : Node(Type::For) {}
 
-    std::unique_ptr<Node> m_initializer;
-    std::unique_ptr<Node> m_condition;
-    std::unique_ptr<Node> m_increment;
-    std::unique_ptr<ScopeNode> m_body;
+    std::shared_ptr<Node> m_initializer;
+    std::shared_ptr<Node> m_condition;
+    std::shared_ptr<Node> m_increment;
+    std::shared_ptr<ScopeNode> m_body;
 };
 
 }

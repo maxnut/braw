@@ -7,23 +7,23 @@
 #include "../for.hpp"
 #include "rules.hpp"
 
-Result<std::unique_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor, const std::filesystem::path& path) {
-    Result<std::unique_ptr<AST::Node>> instruction;
+Result<std::shared_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+    Result<std::shared_ptr<AST::Node>> instruction;
 
     if(Rules::isVariableDeclaration(cursor))
-        instruction = parseVariableDeclaration(cursor, path);
+        instruction = parseVariableDeclaration(cursor, path, file);
     else if(Rules::isAssignment(cursor))
-        instruction = parseAssignment(cursor, path);
+        instruction = parseAssignment(cursor, path, file);
     else if(Rules::isReturn(cursor))
-        instruction = parseReturn(cursor, path);
+        instruction = parseReturn(cursor, path, file);
     else if(Rules::isIf(cursor))
-        instruction = parseIf(cursor, path);
+        instruction = parseIf(cursor, path, file);
     else if(Rules::isWhile(cursor))
-        instruction = parseWhile(cursor, path);
+        instruction = parseWhile(cursor, path, file);
     else if(Rules::isFor(cursor))
-        instruction = parseFor(cursor, path);
+        instruction = parseFor(cursor, path, file);
     else
-        instruction = parseExpression(cursor, path);
+        instruction = parseExpression(cursor, path, file);
     
     return instruction;
 }

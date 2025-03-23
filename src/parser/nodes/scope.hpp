@@ -10,7 +10,7 @@ namespace AST {
 struct ScopeNode : Node {
     ScopeNode() : Node(Type::Scope) {}
 
-    std::vector<std::unique_ptr<Node>> m_instructions;
+    std::vector<std::shared_ptr<Node>> m_instructions;
 };
 
 }

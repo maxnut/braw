@@ -4,7 +4,7 @@
 #include "spdlog/fmt/bundled/format.h"
 #include "utils.hpp"
 
-Result<std::shared_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor, const std::filesystem::path& fpath) {
+Result<std::shared_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor, const std::filesystem::path& fpath, std::shared_ptr<AST::FileNode> file) {
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
         return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, fpath);
 

@@ -1,8 +1,8 @@
 #include "parser/parser.hpp"
 #include "../struct.hpp"
 
-Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCursor& cursor, const std::filesystem::path& path) {
-    std::unique_ptr<AST::StructNode> structNode = std::make_unique<AST::StructNode>();
+Result<std::shared_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+    std::shared_ptr<AST::StructNode> structNode = std::make_shared<AST::StructNode>();
     structNode->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
@@ -20,7 +20,7 @@ Result<std::unique_ptr<AST::StructNode>> Parser::parseStructDefinition(TokenCurs
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_BRACE, path);
 
     while(cursor.get().value().m_type != Token::RIGHT_BRACE) {
-        auto optVar = parseVariableDeclaration(cursor, path, true);
+        auto optVar = parseVariableDeclaration(cursor, path, file, true);
         if(!optVar)
             return std::unexpected{optVar.error()};
 

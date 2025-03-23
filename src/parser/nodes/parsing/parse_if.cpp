@@ -1,11 +1,11 @@
 #include "parser/parser.hpp"
 #include "../if.hpp"
 
-Result<std::unique_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor, const std::filesystem::path& path) {
+Result<std::shared_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
         return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, path);
 
-    std::unique_ptr<AST::IfNode> ifNode = std::make_unique<AST::IfNode>();
+    std::shared_ptr<AST::IfNode> ifNode = std::make_shared<AST::IfNode>();
     ifNode->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     
     cursor.next();
@@ -13,7 +13,7 @@ Result<std::unique_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor, const 
     if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN, path);
 
-    auto conditionOpt = parseExpression(cursor, path);
+    auto conditionOpt = parseExpression(cursor, path, file);
     if(!conditionOpt)
         return std::unexpected{conditionOpt.error()};
     ifNode->m_condition = std::move(conditionOpt.value());
@@ -21,7 +21,7 @@ Result<std::unique_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor, const 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, path);
 
-    auto scopeOpt = parseScope(cursor, path);
+    auto scopeOpt = parseScope(cursor, path, file);
     if(!scopeOpt)
         return std::unexpected{scopeOpt.error()};
     ifNode->m_then = std::move(scopeOpt.value());
@@ -31,13 +31,13 @@ Result<std::unique_ptr<AST::IfNode>> Parser::parseIf(TokenCursor& cursor, const 
     if(cursor.hasNext() && cursor.get().value().m_value == "else") {
         cursor.next();
         if(cursor.get().value().m_value == "if") {
-            auto elseIfOpt = parseIf(cursor, path);
+            auto elseIfOpt = parseIf(cursor, path, file);
             if(!elseIfOpt)
                 return std::unexpected{elseIfOpt.error()};
             ifNode->m_else = std::move(elseIfOpt.value());
         }
         else {
-            auto elseScopeOpt = parseScope(cursor, path);
+            auto elseScopeOpt = parseScope(cursor, path, file);
             if(!elseScopeOpt)
                 return std::unexpected{elseScopeOpt.error()};
             ifNode->m_else = std::move(elseScopeOpt.value());

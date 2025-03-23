@@ -12,7 +12,7 @@ struct FunctionCallNode : Node {
     FunctionCallNode() : Node(Type::FunctionCall) {}
 
     Identifier m_name;
-    std::vector<std::unique_ptr<Node>> m_parameters;
+    std::vector<std::shared_ptr<Node>> m_parameters;
 };
 
 }

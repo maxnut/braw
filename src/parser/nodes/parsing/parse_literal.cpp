@@ -1,8 +1,8 @@
 #include "parser/parser.hpp"
 #include "../literal.hpp"
 
-Result<std::unique_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor, const std::filesystem::path& path) {
-    std::unique_ptr<AST::LiteralNode> literal = std::make_unique<AST::LiteralNode>();
+Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+    std::shared_ptr<AST::LiteralNode> literal = std::make_shared<AST::LiteralNode>();
     literal->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     Token tkn = cursor.get().value();
 

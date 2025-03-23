@@ -1,8 +1,8 @@
 #include "parser/parser.hpp"
 #include "../variable_declaration.hpp"
 
-Result<std::unique_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDeclaration(TokenCursor& cursor, const std::filesystem::path& path, bool omitLet) {
-    std::unique_ptr<AST::VariableDeclarationNode> variableDeclaration = std::make_unique<AST::VariableDeclarationNode>();
+Result<std::shared_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDeclaration(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file, bool omitLet) {
+    std::shared_ptr<AST::VariableDeclarationNode> variableDeclaration = std::make_shared<AST::VariableDeclarationNode>();
     variableDeclaration->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
     if(!omitLet) {
@@ -25,7 +25,7 @@ Result<std::unique_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDecla
     if(!expectTokenType(cursor.get().next().value(), Token::COLON))
         return unexpectedTokenExpectedType(cursor.value(), Token::COLON, path);
 
-    auto typeOpt = parseTypename(cursor, path);
+    auto typeOpt = parseTypename(cursor, path, file);
     if(!typeOpt)
         return std::unexpected{typeOpt.error()};
 
@@ -33,7 +33,7 @@ Result<std::unique_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDecla
     bool assignment = Rules::isAssignment(cursor);
     if(assignment) {
         cursor.next();
-        auto exprOpt = parseExpression(cursor, path);
+        auto exprOpt = parseExpression(cursor, path, file);
         if(!exprOpt)
             return std::unexpected{exprOpt.error()};
 

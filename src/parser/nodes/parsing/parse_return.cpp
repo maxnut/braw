@@ -1,12 +1,12 @@
 #include "parser/parser.hpp"
 #include "../return.hpp"
 
-Result<std::unique_ptr<AST::ReturnNode>> Parser::parseReturn(TokenCursor& cursor, const std::filesystem::path& path) {
-    std::unique_ptr<AST::ReturnNode> returnNode = std::make_unique<AST::ReturnNode>();
+Result<std::shared_ptr<AST::ReturnNode>> Parser::parseReturn(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+    std::shared_ptr<AST::ReturnNode> returnNode = std::make_shared<AST::ReturnNode>();
     returnNode->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
     if(cursor.next().get().value().m_type != Token::SEMICOLON) {
-        auto valueOpt = parseExpression(cursor, path);
+        auto valueOpt = parseExpression(cursor, path, file);
         if(!valueOpt)
             return std::unexpected{valueOpt.error()};
         returnNode->m_value = std::move(valueOpt.value());

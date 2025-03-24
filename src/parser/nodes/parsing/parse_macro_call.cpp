@@ -111,9 +111,18 @@ std::shared_ptr<AST::Node> deepClone(std::shared_ptr<AST::Node> node, const std:
     return nullptr;
 }
 
+std::shared_ptr<AST::MacroNode> findMacro(std::shared_ptr<AST::FileNode> file, const Identifier& name) {
+    std::shared_ptr<AST::MacroNode> ret = nullptr;
+    for(auto& import : file->m_imports)
+        ret = findMacro(import, name);
+    ret = file->m_macros.contains(name) ? file->m_macros[name] : ret;
+    return ret;
+}
+
 Result<std::shared_ptr<AST::Node>> Parser::parseMacroCall(TokenCursor& cursor, ParserContext& ctx) {
     Identifier name = cursor.next().get().next().value().m_value;
-    if(!ctx.m_file->m_macros.contains(name))
+    auto macro = findMacro(ctx.m_file, name);
+    if(!macro)
         return unknownMacro(cursor.value(), ctx.m_path);
 
     std::vector<std::shared_ptr<AST::Node>> parameters;
@@ -132,5 +141,5 @@ Result<std::shared_ptr<AST::Node>> Parser::parseMacroCall(TokenCursor& cursor, P
         }
         cursor.tryNext();
     }
-    return deepClone(ctx.m_file->m_macros[name]->m_node, parameters);
+    return deepClone(macro->m_node, parameters);
 }

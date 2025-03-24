@@ -7,23 +7,25 @@
 #include "../for.hpp"
 #include "rules.hpp"
 
-Result<std::shared_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+Result<std::shared_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor, ParserContext& ctx) {
     Result<std::shared_ptr<AST::Node>> instruction;
 
     if(Rules::isVariableDeclaration(cursor))
-        instruction = parseVariableDeclaration(cursor, path, file);
+        instruction = parseVariableDeclaration(cursor, ctx);
     else if(Rules::isAssignment(cursor))
-        instruction = parseAssignment(cursor, path, file);
+        instruction = parseAssignment(cursor, ctx);
     else if(Rules::isReturn(cursor))
-        instruction = parseReturn(cursor, path, file);
+        instruction = parseReturn(cursor, ctx);
     else if(Rules::isIf(cursor))
-        instruction = parseIf(cursor, path, file);
+        instruction = parseIf(cursor, ctx);
     else if(Rules::isWhile(cursor))
-        instruction = parseWhile(cursor, path, file);
+        instruction = parseWhile(cursor, ctx);
     else if(Rules::isFor(cursor))
-        instruction = parseFor(cursor, path, file);
+        instruction = parseFor(cursor, ctx);
+    else if(cursor.get().value().m_type == Token::LEFT_BRACE)
+        instruction = parseScope(cursor, ctx);
     else
-        instruction = parseExpression(cursor, path, file);
+        instruction = parseExpression(cursor, ctx);
     
     return instruction;
 }

@@ -13,10 +13,12 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
     std::shared_ptr<AST::FileNode> file = std::make_shared<AST::FileNode>();
     file->m_path = path;
     file->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+
+    ParserContext ctx{path, file};
     
     while(cursor.hasNext()) {
         if(Rules::isFunctionDefinition(cursor)) {
-            auto function = parseFunctionDefinition(cursor, path, file);
+            auto function = parseFunctionDefinition(cursor, ctx);
             
             if(!function)
                 return std::unexpected{function.error()};
@@ -25,7 +27,7 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             continue;
         }
         else if(Rules::isStructDefinition(cursor)) {
-            auto type = parseStructDefinition(cursor, path, file);
+            auto type = parseStructDefinition(cursor, ctx);
 
             if(!type)
                 return std::unexpected{type.error()};
@@ -34,7 +36,7 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             continue;
         }
         else if(Rules::isImport(cursor)) {
-            auto import = parseImport(cursor, path, file);
+            auto import = parseImport(cursor, ctx);
 
             if(!import)
                 return std::unexpected{import.error()};
@@ -43,29 +45,16 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             continue;
         }
         else if(Rules::isDefine(cursor)) {
-            cursor.tryNext();
+            auto macro = parseMacro(cursor, ctx);
 
-            if(!expectTokenType(cursor.get().value(), Token::IDENTIFIER))
-                return unexpectedTokenExpectedType(cursor.value(), Token::IDENTIFIER, path);
+            if(!macro)
+                return std::unexpected{macro.error()};
 
-            Identifier name = cursor.get().next().value().m_value;
-
-            if(cursor.get().next().value().m_value != "=")
-                return unexpectedTokenExpectedValue(cursor.value(), "=", path);
-
-            auto expOpt = parseExpression(cursor, path, file);
-            if(!expOpt)
-                return std::unexpected{expOpt.error()};
-
-            file->m_defines[name] = std::move(expOpt.value());
-
-            if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
-                return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, path);
-            cursor.tryNext();
+            file->m_macros.insert({macro.value()->m_name, macro.value()});
             continue;
         }
 
-        return unexpectedToken(cursor.get().value(), path);
+        return unexpectedToken(cursor.get().value(), ctx.m_path);
     }
 
     file->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};

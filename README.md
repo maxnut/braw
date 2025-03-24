@@ -37,6 +37,18 @@ if (a == 1): a = 2;
 let buf[10]: char*;
 ```
 
+### Macros
+```braw
+fn add(a: int, b: int) -> int: return a + b;
+define COOL_CONST 2;
+define CALL_ADD(a, b) add(#a, #b);
+define IDK $CALL_ADD(1, $COOL_CONST) - 1;
+
+fn main() -> int {
+    return $IDK; // will evaluate to 'return add(1, 2) - 1;
+}
+```
+
 ## Examples
 Check the tests
 

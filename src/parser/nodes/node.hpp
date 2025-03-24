@@ -21,6 +21,8 @@ struct Node {
         For,
         Struct,
         Return,
+        Macro,
+        MacroParameter
     };
 
     Node() = default;

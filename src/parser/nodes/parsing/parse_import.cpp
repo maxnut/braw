@@ -4,18 +4,18 @@
 #include "spdlog/fmt/bundled/format.h"
 #include "utils.hpp"
 
-Result<std::shared_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor, const std::filesystem::path& fpath, std::shared_ptr<AST::FileNode> file) {
+Result<std::shared_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor, ParserContext& ctx) {
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
-        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, fpath);
+        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, ctx.m_path);
 
     if(!expectTokenValue(cursor.get().value(), "import"))
-        return unexpectedTokenExpectedValue(cursor.value(), "import", fpath);
+        return unexpectedTokenExpectedValue(cursor.value(), "import", ctx.m_path);
 
     if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
-        return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, fpath);
+        return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, ctx.m_path);
 
     if(!expectTokenType(cursor.next().get().value(), Token::STRING))
-        return unexpectedTokenExpectedType(cursor.value(), Token::STRING, fpath);
+        return unexpectedTokenExpectedType(cursor.value(), Token::STRING, ctx.m_path);
 
     std::filesystem::path path = cursor.get().value().m_value;
     if(std::filesystem::exists(Utils::getStdPath()) && std::filesystem::exists(Utils::getStdPath() / "include" / path))
@@ -39,7 +39,7 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseImport(TokenCursor& cursor, 
         }};
 
     if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
-        return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, fpath);
+        return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, ctx.m_path);
 
     cursor.tryNext();
 

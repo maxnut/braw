@@ -52,3 +52,33 @@ std::unexpected<ParseError> Parser::unexpectedTokenExpectedValue(Token& token, c
     };
     return std::unexpected{error};
 }
+
+std::unexpected<ParseError> Parser::notMacro(Token& token, const std::filesystem::path& path) {
+    ParseError error {
+        fmt::format("Tried to access macro parameter {} but not currently in a macro", token.m_value),
+        path,
+        token.m_line,
+        token.m_column
+    };
+    return std::unexpected{error};
+}
+
+std::unexpected<ParseError> Parser::unknownMacro(Token& token, const std::filesystem::path& path) {
+    ParseError error {
+        fmt::format("Macro {} not found", token.m_value),
+        path,
+        token.m_line,
+        token.m_column
+    };
+    return std::unexpected{error};
+}
+
+std::unexpected<ParseError> Parser::unknownMacroParameter(Token& token, const std::filesystem::path& path) {
+    ParseError error {
+        fmt::format("Unknown macro parameter {}", token.m_value),
+        path,
+        token.m_line,
+        token.m_column
+    };
+    return std::unexpected{error};
+}

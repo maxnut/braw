@@ -1,7 +1,7 @@
 #include "parser/parser.hpp"
 #include "../literal.hpp"
 
-Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor, ParserContext& ctx) {
     std::shared_ptr<AST::LiteralNode> literal = std::make_shared<AST::LiteralNode>();
     literal->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     Token tkn = cursor.get().value();
@@ -27,7 +27,7 @@ Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
         else
             return std::unexpected{ParseError{
                 "Invalid literal: " + tkn.m_value,
-                path,
+                ctx.m_path,
                 tkn.m_line,
                 tkn.m_column,
             }};
@@ -36,18 +36,18 @@ Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
         literal->m_value = std::string(cursor.next().get().value().m_value);
 
         if(!expectTokenType(cursor.next().get().value(), Token::QUOTE))
-            return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, path);
+            return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, ctx.m_path);
     }
     else if(tkn.m_type == Token::SEMIQUOTE) {
         literal->m_value = (char)(cursor.next().get().value().m_value.at(0));
 
         if(!expectTokenType(cursor.next().get().value(), Token::SEMIQUOTE))
-            return unexpectedTokenExpectedType(cursor.value(), Token::SEMIQUOTE, path);
+            return unexpectedTokenExpectedType(cursor.value(), Token::SEMIQUOTE, ctx.m_path);
     }
     else
         return std::unexpected{ParseError{
                 "Invalid literal: " + tkn.m_value,
-                path,
+                ctx.m_path,
                 tkn.m_line,
                 tkn.m_column,
             }};

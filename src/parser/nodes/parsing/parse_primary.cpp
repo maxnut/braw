@@ -4,26 +4,26 @@
 #include "../literal.hpp"
 #include "../unary_operator.hpp"
 
-Result<std::shared_ptr<AST::Node>> Parser::parsePrimary(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+Result<std::shared_ptr<AST::Node>> Parser::parsePrimary(TokenCursor& cursor, ParserContext& ctx) {
     Result<std::shared_ptr<AST::Node>> result;
     Token beg = cursor.get().value();
 
     if(Rules::isFunctionCall(cursor))
-        result = parseFunctionCall(cursor, path, file);
+        result = parseFunctionCall(cursor, ctx);
     else if(Rules::isVariableAccess(cursor))
-        result = parseVariableAccess(cursor, path, file);
+        result = parseVariableAccess(cursor, ctx);
     else if(Rules::isLiteral(cursor))
-        result = parseLiteral(cursor, path, file);
+        result = parseLiteral(cursor, ctx);
     else if(Rules::isCast(cursor))
-        result = parseCast(cursor, path, file);
+        result = parseCast(cursor, ctx);
     else if(beg.m_type == Token::LEFT_PAREN) {
         cursor.next();
-        result = parseExpression(cursor, path, file);
+        result = parseExpression(cursor, ctx);
         if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
-            return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, path);
+            return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
     }
     else
-        result = unexpectedToken(beg, path);
+        result = unexpectedToken(beg, ctx.m_path);
 
     return result;
 }

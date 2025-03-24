@@ -3,9 +3,9 @@
 #include "../unary_operator.hpp"
 #include <memory>
 
-Result<std::shared_ptr<AST::UnaryOperatorNode>> Parser::parseDotArrow(TokenCursor& cursor, std::shared_ptr<AST::Node> left, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+Result<std::shared_ptr<AST::UnaryOperatorNode>> Parser::parseDotArrow(TokenCursor& cursor, std::shared_ptr<AST::Node> left, ParserContext& ctx) {
     if(!expectTokenType(cursor.get().value(), Token::OPERATOR))
-        return unexpectedTokenExpectedType(cursor.value(), Token::OPERATOR, path);
+        return unexpectedTokenExpectedType(cursor.value(), Token::OPERATOR, ctx.m_path);
 
     std::shared_ptr<AST::UnaryOperatorNode> dotArrow = std::make_shared<AST::UnaryOperatorNode>();
     dotArrow->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};

@@ -16,6 +16,7 @@ namespace Rules {
         IF,
         WHILE,
         FOR,
+        SCOPE,
         VARIABLE_DECLARATION,
         FUNCTION_CALL,
         VARIABLE_ACCESS,
@@ -121,6 +122,14 @@ namespace Rules {
         return cursor.get().value().m_value == "define";
     }
 
+    inline bool isMacroCall(TokenCursor cursor) {
+        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_type == Token::IDENTIFIER;
+    }
+
+    inline bool isMacroParameter(TokenCursor cursor) {
+        return cursor.get().value().m_value == "#" && cursor.next().get().value().m_type == Token::IDENTIFIER;
+    }
+
     inline bool isString(TokenCursor cursor) {
         if(cursor.get().value().m_type != Token::QUOTE)
             return false;
@@ -194,6 +203,8 @@ namespace Rules {
             return InstructionType::FUNCTION_CALL;
         else if(isVariableAccess(cursor))
             return InstructionType::VARIABLE_ACCESS;
+        else if(cursor.get().value().m_type == Token::LEFT_BRACE)
+            return InstructionType::SCOPE;
         else
             return COUNT;
     }

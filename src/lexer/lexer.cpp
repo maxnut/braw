@@ -44,6 +44,8 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"/", Token::OPERATOR},
     {"&", Token::OPERATOR},
     {"@", Token::OPERATOR},
+    {"$", Token::OPERATOR},
+    {"#", Token::OPERATOR},
     {"<", Token::OPERATOR},
     {">", Token::OPERATOR},
     {"<=", Token::OPERATOR},

@@ -2,7 +2,7 @@
 #include "parser/parser.hpp"
 #include "../function_definition.hpp"
 
-Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& cursor, ParserContext& ctx) {
     AST::FunctionSignature sig;
 
     if(cursor.get().value().m_value == "ext") {
@@ -11,14 +11,14 @@ Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& curso
     }
 
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
-        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, path);
+        return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, ctx.m_path);
     if(!expectTokenValue(cursor.get().value(), "fn"))
-        return unexpectedTokenExpectedValue(cursor.value(), "fn", path);
+        return unexpectedTokenExpectedValue(cursor.value(), "fn", ctx.m_path);
 
     sig.m_name = cursor.next().get().value().m_value;
 
     if(!expectTokenType(cursor.next().get().next().value(), Token::LEFT_PAREN))
-        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN, path);
+        return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN, ctx.m_path);
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_PAREN) {
         std::shared_ptr<AST::VariableDeclarationNode> var = std::make_shared<AST::VariableDeclarationNode>();
@@ -26,9 +26,9 @@ Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& curso
         var->m_name = cursor.get().next().value().m_value;
 
         if(!expectTokenType(cursor.get().next().value(), Token::COLON))
-            return unexpectedTokenExpectedType(cursor.value(), Token::COLON, path);
+            return unexpectedTokenExpectedType(cursor.value(), Token::COLON, ctx.m_path);
 
-        Result<Identifier> typeRes = parseTypename(cursor, path, file);
+        Result<Identifier> typeRes = parseTypename(cursor, ctx);
         if(!typeRes)
             return std::unexpected{typeRes.error()};
         
@@ -38,18 +38,18 @@ Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& curso
         if(cursor.get().value().m_type == Token::COMMA)
             cursor.next();
         else if(cursor.value().m_type != Token::RIGHT_PAREN)
-            return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, path);
+            return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
     }
 
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
-        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, path);
+        return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
 
     if(!expectTokenType(cursor.get().value(), Token::OPERATOR))
-        return unexpectedTokenExpectedType(cursor.value(), Token::OPERATOR, path);
+        return unexpectedTokenExpectedType(cursor.value(), Token::OPERATOR, ctx.m_path);
     if(!expectTokenValue(cursor.get().next().value(), "->"))
-        return unexpectedTokenExpectedValue(cursor.value(), "->", path);
+        return unexpectedTokenExpectedValue(cursor.value(), "->", ctx.m_path);
 
-    Result<Identifier> typeRes = parseTypename(cursor, path, file);
+    Result<Identifier> typeRes = parseTypename(cursor, ctx);
     if(!typeRes)
         return std::unexpected{typeRes.error()};
     sig.m_returnType = typeRes.value();

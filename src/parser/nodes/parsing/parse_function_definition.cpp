@@ -1,11 +1,11 @@
 #include "parser/parser.hpp"
 #include "../function_definition.hpp"
 
-Result<std::shared_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefinition(TokenCursor& cursor, const std::filesystem::path& path, std::shared_ptr<AST::FileNode> file) {
+Result<std::shared_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefinition(TokenCursor& cursor, ParserContext& ctx) {
     std::shared_ptr<AST::FunctionDefinitionNode> node = std::make_shared<AST::FunctionDefinitionNode>();
     node->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     
-    auto signatureOpt = parseFunctionSignature(cursor, path, file);
+    auto signatureOpt = parseFunctionSignature(cursor, ctx);
     if(!signatureOpt)
         return std::unexpected{signatureOpt.error()};
 
@@ -13,11 +13,11 @@ Result<std::shared_ptr<AST::FunctionDefinitionNode>> Parser::parseFunctionDefini
 
     if(node->m_signature.m_external) {
         if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
-            return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, path);
+            return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, ctx.m_path);
         cursor.tryNext();
     }
     else {
-        auto scopeOpt = parseScope(cursor, path, file);
+        auto scopeOpt = parseScope(cursor, ctx);
         if(!scopeOpt)
             return std::unexpected{scopeOpt.error()};
         node->m_scope = std::move(scopeOpt.value());

@@ -45,7 +45,7 @@ define CALL_ADD(a, b) add(#a, #b);
 define IDK $CALL_ADD(1, $COOL_CONST) - 1;
 
 fn main() -> int {
-    return $IDK; // will evaluate to 'return add(1, 2) - 1';
+    return $IDK; // will evaluate to 'return add(1, 2) - 1;'
 }
 ```
 

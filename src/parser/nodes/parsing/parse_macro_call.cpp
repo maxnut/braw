@@ -141,5 +141,9 @@ Result<std::shared_ptr<AST::Node>> Parser::parseMacroCall(TokenCursor& cursor, P
         }
         cursor.tryNext();
     }
+
+    if(parameters.size() != macro->m_parameters.size())
+        return invalidMacroParameters(cursor.value(), ctx.m_path);
+    
     return deepClone(macro->m_node, parameters);
 }

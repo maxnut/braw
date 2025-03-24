@@ -82,3 +82,13 @@ std::unexpected<ParseError> Parser::unknownMacroParameter(Token& token, const st
     };
     return std::unexpected{error};
 }
+
+std::unexpected<ParseError> Parser::invalidMacroParameters(Token& token, const std::filesystem::path& path) {
+    ParseError error {
+        fmt::format("Invalid macro parameters"),
+        path,
+        token.m_line,
+        token.m_column
+    };
+    return std::unexpected{error};
+}

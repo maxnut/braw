@@ -81,6 +81,7 @@ private:
     static std::unexpected<ParseError> notMacro(Token& token, const std::filesystem::path& path);
     static std::unexpected<ParseError> unknownMacro(Token& token, const std::filesystem::path& path);
     static std::unexpected<ParseError> unknownMacroParameter(Token& token, const std::filesystem::path& path);
+    static std::unexpected<ParseError> invalidMacroParameters(Token& token, const std::filesystem::path& path);
 
     static bool expectTokenType(const Token& token, Token::Type type) { return token.m_type == type; }
     static bool expectTokenTypes(const Token& token, std::vector<Token::Type> types) { return std::find(types.begin(), types.end(), token.m_type) != types.end(); }

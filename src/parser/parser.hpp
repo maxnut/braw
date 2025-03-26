@@ -2,6 +2,8 @@
 
 #include "nodes/file.hpp"
 #include "identifier.hpp"
+#include "parser/nodes/macro_call.hpp"
+#include "parser/nodes/macro_parameter_reference.hpp"
 #include "rules.hpp"
 
 #include <expected>
@@ -69,8 +71,14 @@ private:
     static Result<std::shared_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::FileNode>> parseImport(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::MacroNode>> parseMacro(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::MacroParameterReferenceNode>> parseMacroParameterReference(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::MacroParameterNode>> parseMacroParameter(TokenCursor& cursor, ParserContext& ctx);
-    static Result<std::shared_ptr<AST::Node>> parseMacroCall(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::MacroCallNode>> parseMacroCall(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::Node>> parseMacroIf(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::Node>> parseMacroForeach(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::Node>> parseMacroMakeFunction(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::Node>> parseMacroMakeVariable(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::MacroParameterNode>> parseMacroDotChain(TokenCursor& cursor, std::shared_ptr<AST::MacroParameterNode> left, ParserContext& ctx);
     static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor, ParserContext& ctx);
     static Result<Identifier> parseTypename(TokenCursor& cursor, ParserContext& ctx);
 
@@ -79,9 +87,6 @@ private:
     static std::unexpected<ParseError> unexpectedTokenExpectedTypes(Token& token, std::vector<Token::Type> expectedTypes, const std::filesystem::path& path);
     static std::unexpected<ParseError> unexpectedTokenExpectedValue(Token& token, const std::string& expectedValue, const std::filesystem::path& path);
     static std::unexpected<ParseError> notMacro(Token& token, const std::filesystem::path& path);
-    static std::unexpected<ParseError> unknownMacro(Token& token, const std::filesystem::path& path);
-    static std::unexpected<ParseError> unknownMacroParameter(Token& token, const std::filesystem::path& path);
-    static std::unexpected<ParseError> invalidMacroParameters(Token& token, const std::filesystem::path& path);
 
     static bool expectTokenType(const Token& token, Token::Type type) { return token.m_type == type; }
     static bool expectTokenTypes(const Token& token, std::vector<Token::Type> types) { return std::find(types.begin(), types.end(), token.m_type) != types.end(); }

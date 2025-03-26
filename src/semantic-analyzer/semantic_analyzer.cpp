@@ -16,15 +16,28 @@
 #include "rules.hpp"
 #include "utils.hpp"
 
+#include <optional>
 #include <spdlog/fmt/fmt.h>
 
-std::expected<BrawContext, SemanticError> SemanticAnalyzer::analyze(const AST::FileNode* file) {
+std::expected<BrawContext, SemanticError> SemanticAnalyzer::fillTypes(const AST::FileNode* file) {
     BrawContext ctx;
-    std::optional<SemanticError> errorOpt = analyze(file, ctx);
+    std::optional<SemanticError> errorOpt = fillTypes(file, ctx);
 
     if(errorOpt)
         return std::unexpected{errorOpt.value()};
     return ctx;
+}
+
+std::optional<SemanticError> SemanticAnalyzer::fillTypes(const AST::FileNode* file, BrawContext& context) {
+    for(auto import : file->m_imports) {
+        auto errOpt = fillTypes(import.get(), context);
+        if(errOpt) return errOpt;
+    }
+    for(auto sstruct : file->m_structs) {
+        auto errOpt = analyze(sstruct.get(), context);
+        if(errOpt) return errOpt;
+    }
+    return std::nullopt;
 }
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::Node* root, BrawContext& context) {
@@ -57,7 +70,12 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::Node* root, Br
             return analyze(static_cast<const AST::LiteralNode*>(root), context);
         case AST::Node::Return:
             return analyze(static_cast<const AST::ReturnNode*>(root), context);
-    }
+        case AST::Node::Macro:
+        case AST::Node::MacroParameterReference:
+        case AST::Node::MacroParameter:
+        case AST::Node::MacroCall:
+            break;
+        }
     return SemanticError("Unexpected node type");
 }
 

@@ -126,8 +126,24 @@ namespace Rules {
         return cursor.get().value().m_value == "$" && cursor.next().get().value().m_type == Token::IDENTIFIER;
     }
 
-    inline bool isMacroParameter(TokenCursor cursor) {
-        return cursor.get().value().m_value == "#" && cursor.next().get().value().m_type == Token::IDENTIFIER;
+    inline bool isMacroIf(TokenCursor cursor) {
+        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_value == "if";
+    }
+
+    inline bool isMacroForeach(TokenCursor cursor) {
+        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_value == "foreach";
+    }
+
+    inline bool isMacroMakeFunction(TokenCursor cursor) {
+        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_value == "make_function";
+    }
+
+    inline bool isMacroMakeVariable(TokenCursor cursor) {
+        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_value == "make_variable";
+    }
+
+    inline bool isMacroParameterReference(TokenCursor cursor) {
+        return cursor.get().value().m_value == "#" && cursor.next().get().value().m_type == Token::IDENTIFIER && cursor.next().get().value().m_type != Token::LEFT_PAREN;
     }
 
     inline bool isString(TokenCursor cursor) {

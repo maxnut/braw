@@ -26,7 +26,7 @@ Result<std::shared_ptr<AST::MacroNode>> Parser::parseMacro(TokenCursor& cursor, 
     
     Rules::InstructionType instructionType = Rules::getInstructionType(cursor);
     ctx.m_currentMacro = ret;
-    auto optNode = parseInstruction(cursor, ctx);
+    auto optNode = parseScope(cursor, ctx, true);
     ctx.m_currentMacro = nullptr;
     if(!optNode)
         return std::unexpected{optNode.error()};

@@ -24,6 +24,14 @@ Result<std::shared_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor,
         instruction = parseFor(cursor, ctx);
     else if(cursor.get().value().m_type == Token::LEFT_BRACE)
         instruction = parseScope(cursor, ctx);
+    else if(Rules::isMacroIf(cursor))
+        instruction = parseMacroIf(cursor, ctx);
+    else if(Rules::isMacroForeach(cursor))
+        instruction = parseMacroForeach(cursor, ctx);
+    else if(Rules::isMacroMakeFunction(cursor))
+        instruction = parseMacroMakeFunction(cursor, ctx);
+    else if(Rules::isMacroMakeVariable(cursor))
+        instruction = parseMacroMakeVariable(cursor, ctx);
     else
         instruction = parseExpression(cursor, ctx);
     

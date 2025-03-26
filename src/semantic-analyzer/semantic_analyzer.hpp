@@ -36,11 +36,12 @@ struct SemanticError {
 
 class SemanticAnalyzer {
 public:
-    static std::expected<BrawContext, SemanticError> analyze(const AST::FileNode*);
+    static std::optional<SemanticError> analyze(const AST::FileNode*, BrawContext&);
+    static std::expected<BrawContext, SemanticError> fillTypes(const AST::FileNode*);
 
 private:
+    static std::optional<SemanticError> fillTypes(const AST::FileNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::Node*, BrawContext&);
-    static std::optional<SemanticError> analyze(const AST::FileNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::FunctionDefinitionNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::ScopeNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::VariableDeclarationNode*, BrawContext&);

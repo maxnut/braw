@@ -2,6 +2,7 @@
 
 #include "function_definition.hpp"
 #include "parser/nodes/macro.hpp"
+#include "parser/nodes/macro_call.hpp"
 #include "parser/nodes/node.hpp"
 #include "struct.hpp"
 
@@ -18,6 +19,7 @@ struct FileNode : Node {
     std::vector<std::shared_ptr<FunctionDefinitionNode>> m_functions;
     std::vector<std::shared_ptr<StructNode>> m_structs;
     std::vector<std::shared_ptr<FileNode>> m_imports;
+    std::vector<std::shared_ptr<MacroCallNode>> m_macroCalls;
     std::unordered_map<std::string, std::shared_ptr<MacroNode>> m_macros;
     std::filesystem::path m_path;
 };

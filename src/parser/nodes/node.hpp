@@ -22,7 +22,14 @@ struct Node {
         Struct,
         Return,
         Macro,
-        MacroParameter
+        MacroParameterReference,
+        MacroParameter,
+        MacroCall,
+        MacroIf,
+        MacroDot,
+        MacroForeach,
+        MacroMakeFunction,
+        MacroMakeVariable
     };
 
     Node() = default;

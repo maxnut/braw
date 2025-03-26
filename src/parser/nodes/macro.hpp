@@ -3,6 +3,7 @@
 
 #include "node.hpp"
 #include "parser/identifier.hpp"
+#include "parser/nodes/scope.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -14,8 +15,8 @@ struct MacroNode : Node {
     MacroNode() : Node(Type::Macro) {}
 
     Identifier m_name;
-    std::shared_ptr<Node> m_node = nullptr;
-    std::unordered_map<std::string, uint32_t> m_parameters;
+    std::shared_ptr<ScopeNode> m_node = nullptr;
+    std::vector<Identifier> m_parameters;
 };
 
 }

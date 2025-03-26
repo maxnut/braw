@@ -53,6 +53,15 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             file->m_macros.insert({macro.value()->m_name, macro.value()});
             continue;
         }
+        else if(Rules::isMacroCall(cursor)) {
+            auto call = parseMacroCall(cursor, ctx);
+
+            if(!call)
+                return std::unexpected{call.error()};
+
+            file->m_macroCalls.push_back(call.value());
+            continue;
+        }
 
         return unexpectedToken(cursor.get().value(), ctx.m_path);
     }

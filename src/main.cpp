@@ -62,9 +62,14 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    auto ctxOr = SemanticAnalyzer::analyze(ast.value().get());
+    auto ctxOr = SemanticAnalyzer::fillTypes(ast.value().get());
     if (!ctxOr) {
         spdlog::error("{}({},{}): SemanticError: {}", ctxOr.error().m_path.string(), ctxOr.error().m_rangeBegin.first, ctxOr.error().m_rangeBegin.second, ctxOr.error().m_message);
+        return 1;
+    }
+    auto err = SemanticAnalyzer::analyze(ast.value().get(), ctxOr.value());
+    if(err) {
+        spdlog::error("{}({},{}): SemanticError: {}", err->m_path.string(), err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_message);
         return 1;
     }
 

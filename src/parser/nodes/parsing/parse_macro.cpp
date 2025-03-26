@@ -15,7 +15,7 @@ Result<std::shared_ptr<AST::MacroNode>> Parser::parseMacro(TokenCursor& cursor, 
         cursor.tryNext();
         while(cursor.hasNext()) {
             Identifier param = cursor.get().next().value().m_value;
-            ret->m_parameters[param] = ret->m_parameters.size();
+            ret->m_parameters.push_back(param);
             if(cursor.get().value().m_type == Token::RIGHT_PAREN)
                 break;
             if(!expectTokenType(cursor.get().next().value(), Token::COMMA))
@@ -24,26 +24,11 @@ Result<std::shared_ptr<AST::MacroNode>> Parser::parseMacro(TokenCursor& cursor, 
         cursor.tryNext();
     }
     
-    Rules::InstructionType instructionType = Rules::getInstructionType(cursor);
     ctx.m_currentMacro = ret;
     auto optNode = parseScope(cursor, ctx, true);
     ctx.m_currentMacro = nullptr;
     if(!optNode)
         return std::unexpected{optNode.error()};
-
-    switch(instructionType) {
-        default: {
-            if(!expectTokenType(cursor.get().value(), Token::SEMICOLON))
-                return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, ctx.m_path);
-            cursor.tryNext();
-            break;
-        }
-        case Rules::InstructionType::WHILE:
-        case Rules::InstructionType::FOR:
-        case Rules::InstructionType::SCOPE:
-        case Rules::InstructionType::IF:
-            break;
-    }
 
     ret->m_node = optNode.value();
     ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};

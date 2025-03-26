@@ -13,10 +13,11 @@ namespace AST {
 
 struct MacroNode : Node {
     MacroNode() : Node(Type::Macro) {}
+    MacroNode(const std::string& name, std::shared_ptr<ScopeNode> node, const std::vector<std::string>& parameters) : Node(Type::Macro), m_name(name), m_node(node), m_parameters(parameters) {}
 
-    Identifier m_name;
+    std::string m_name;
     std::shared_ptr<ScopeNode> m_node = nullptr;
-    std::vector<Identifier> m_parameters;
+    std::vector<std::string> m_parameters;
 };
 
 }

@@ -65,6 +65,16 @@ Result<std::shared_ptr<AST::MacroParameterNode>> Parser::parseMacroParameter(Tok
         cursor.tryNext();
         return param;
     }
+    else if(cursor.get().value().m_value == "#") {
+        auto param = std::make_shared<AST::MacroParameterASTNode>();               
+        param->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+        auto inOpt = parseMacroParameterReference(cursor, ctx);
+        if(!inOpt)
+            return std::unexpected{inOpt.error()};
+        param->m_ast = inOpt.value();
+        param->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
+        return param;
+    }
     auto param = std::make_shared<AST::MacroParameterASTNode>();               
     param->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     auto inOpt = parseInstruction(cursor, ctx);
@@ -91,6 +101,7 @@ Result<std::shared_ptr<AST::MacroCallNode>> Parser::parseMacroCall(TokenCursor& 
                 if(!paramDotOpt)
                     return std::unexpected{paramDotOpt.error()};
                 paramOpt = paramDotOpt.value();
+                paramOpt.value()->m_parameterType = AST::MacroParameterType::Dot;
             }
             call->m_parameters.push_back(std::move(paramOpt.value()));
             if(cursor.get().value().m_type == Token::RIGHT_PAREN)

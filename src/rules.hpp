@@ -131,7 +131,8 @@ namespace Rules {
     }
 
     inline bool isMacroForeach(TokenCursor cursor) {
-        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_value == "foreach";
+        return cursor.get().next().value().m_value == "$" &&
+            cursor.get().value().m_value == "foreach";
     }
 
     inline bool isMacroMakeFunction(TokenCursor cursor) {
@@ -207,11 +208,11 @@ namespace Rules {
             return InstructionType::ASSIGNMENT;
         else if(isReturn(cursor))
             return InstructionType::RETURN;
-        else if(isIf(cursor))
+        else if(isIf(cursor) || isMacroIf(cursor))
             return InstructionType::IF;
         else if(isWhile(cursor))
             return InstructionType::WHILE;
-        else if(isFor(cursor))
+        else if(isFor(cursor) || isMacroForeach(cursor))
             return InstructionType::FOR;
         else if(isVariableDeclaration(cursor))
             return InstructionType::VARIABLE_DECLARATION;
@@ -219,7 +220,7 @@ namespace Rules {
             return InstructionType::FUNCTION_CALL;
         else if(isVariableAccess(cursor))
             return InstructionType::VARIABLE_ACCESS;
-        else if(cursor.get().value().m_type == Token::LEFT_BRACE)
+        else if(cursor.get().value().m_type == Token::LEFT_BRACE || isMacroMakeFunction(cursor))
             return InstructionType::SCOPE;
         else
             return COUNT;

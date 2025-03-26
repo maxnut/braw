@@ -17,7 +17,7 @@ Result<std::shared_ptr<AST::Node>> Parser::parseMacroIf(TokenCursor& cursor, Par
     if(!callOpt)
         return std::unexpected{callOpt.error()};
     macroIf->m_condition = std::move(std::static_pointer_cast<AST::MacroCallNode>(callOpt.value()));
-    if(!expectTokenType(cursor.get().value(), Token::RIGHT_PAREN))
+    if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
 
     auto scopeOpt = parseScope(cursor, ctx);
@@ -36,15 +36,15 @@ Result<std::shared_ptr<AST::Node>> Parser::parseMacroForeach(TokenCursor& cursor
     if(!expectTokenType(cursor.get().value(), Token::LEFT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN, ctx.m_path);
     cursor.next();
-    macroForeach->m_varName = cursor.value().m_value;
+    macroForeach->m_varName = cursor.get().value().m_value;
     if(!expectTokenType(cursor.next().get().next().value(), Token::COLON))
         return unexpectedTokenExpectedType(cursor.value(), Token::COLON, ctx.m_path);
     
-    auto callOpt = parseMacroCall(cursor, ctx);
+    auto callOpt = parseMacroParameter(cursor, ctx);
     if(!callOpt)
         return std::unexpected{callOpt.error()};
-    macroForeach->m_collection = std::move(std::static_pointer_cast<AST::MacroCallNode>(callOpt.value()));
-    if(!expectTokenType(cursor.get().value(), Token::RIGHT_PAREN))
+    macroForeach->m_collection = std::move(callOpt.value());
+    if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
 
     auto scopeOpt = parseScope(cursor, ctx);
@@ -85,7 +85,7 @@ Result<std::shared_ptr<AST::Node>> Parser::parseMacroMakeFunction(TokenCursor& c
         return std::unexpected{scopeOpt.error()};
     macroMakeFunction->m_parameterContainer = scopeOpt.value();
 
-    if(!expectTokenType(cursor.get().value(), Token::RIGHT_PAREN))
+    if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
 
     scopeOpt = parseScope(cursor, ctx);

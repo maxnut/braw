@@ -18,6 +18,7 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"else", Token::KEYWORD},
     {"while", Token::KEYWORD},
     {"for", Token::KEYWORD},
+    {"foreach", Token::KEYWORD},
     {"return", Token::KEYWORD},
     {"break", Token::KEYWORD},
     {"continue", Token::KEYWORD},

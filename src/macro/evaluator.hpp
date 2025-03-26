@@ -24,24 +24,26 @@ struct MacroError {
 
 struct EvaluatorContext {
     BrawContext& m_ctx;
-    std::unordered_map<std::string, std::shared_ptr<Node>> m_variables;
     std::shared_ptr<AST::FileNode> m_file;
+    std::unordered_map<std::string, std::shared_ptr<Node>> m_variables;
     AST::Node::Type m_rootType;
 };
 
 class Evaluator {
 public:
     static std::optional<MacroError> processAST(std::shared_ptr<AST::FileNode> node, BrawContext& ctx) { return processAST(node, nullptr, nullptr, ctx); }
-    static std::expected<std::shared_ptr<AST::Node>, MacroError> evaluate(std::shared_ptr<AST::MacroNode> macro, std::shared_ptr<AST::MacroCallNode> macroCall, std::shared_ptr<AST::FileNode> file, BrawContext& ctx);
+    static std::expected<std::shared_ptr<Node>, MacroError> evaluate(std::shared_ptr<AST::MacroNode> macro, std::shared_ptr<AST::MacroCallNode> macroCall, std::shared_ptr<AST::FileNode> file, EvaluatorContext& old);
 
 private:
     static std::optional<MacroError> processAST(std::shared_ptr<AST::Node> node, std::shared_ptr<AST::Node>* replaceTarget, std::shared_ptr<AST::FileNode> file, BrawContext& ctx);
-    static std::expected<std::shared_ptr<AST::Node>, MacroError> deepClone(std::shared_ptr<AST::Node> node, EvaluatorContext& ctx);
-    static std::shared_ptr<Node> convertParameter(std::shared_ptr<AST::MacroParameterNode> param, EvaluatorContext& ctx);
-    static bool expectParameterType(std::shared_ptr<AST::MacroParameterNode> param, AST::MacroParameterType type) { return param->m_parameterType == type; }
+    static std::expected<std::shared_ptr<Node>, MacroError> deepClone(std::shared_ptr<AST::Node> node, EvaluatorContext& ctx);
+    static std::expected<std::shared_ptr<Node>, MacroError> convertParameter(std::shared_ptr<AST::MacroParameterNode> param, EvaluatorContext& ctx);
+    static std::expected<std::shared_ptr<Node>, MacroError> nodeFromType(const std::string type, std::shared_ptr<AST::Node> node, EvaluatorContext& ctx);
 
     static MacroError unexpectedParameterTypeExpected(std::shared_ptr<AST::MacroParameterNode> causer, AST::MacroParameterType expected, const std::filesystem::path& path);
-    static MacroError macroNotFound(std::shared_ptr<AST::MacroCallNode> causer, const std::filesystem::path& path);
+    static MacroError unknownMacro(std::shared_ptr<AST::MacroCallNode> causer, const std::filesystem::path& path);
+    static MacroError unknownFunction(std::shared_ptr<AST::MacroParameterFunctionNode> causer, const std::filesystem::path& path);
+    static MacroError unknownType(std::shared_ptr<AST::Node> causer, const std::string& type, const std::filesystem::path& path);
 };
 
 }

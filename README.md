@@ -39,14 +39,27 @@ let buf[10]: char*;
 
 ## Macros
 
-Macros are made using the `define` keyword:
+Macros are made using the `define` keyword, and called by using the $ symbol:
 ```braw
 define CONST: 5;
+
+fn wow() -> void {
+  let a: int = $CONST;
+}
+```
+
+They can also take in parameters:
+```braw
+define CONST(param): 5 + #param;
+
+fn wow() -> void {
+  let a: int = $CONST(5);
+}
 ```
 
 ### Overview
 
-They can take in arguments
+They can take in parameters
 - Instructions (by directly passing an instruction)
 - Values (by doing `#"val"`)
 - Types (by doing `#<int>`)

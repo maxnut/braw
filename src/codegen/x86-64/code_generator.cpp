@@ -73,6 +73,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         generate(f.m_instructions.at(0).get(), ctx); //label
 
         push(m_registers.at(Operands::Register::RBP), ctx);
+        ctx.m_spills = 0;
         move(m_registers.at(Operands::Register::RBP), m_registers.at(Operands::Register::RSP), ctx);
 
         int64_t spills = 0;
@@ -388,14 +389,14 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     if(skipArgs > 0)
         cursor.next(skipArgs);
 
-    size_t spilled = 0;
+    size_t spilledBeg = ctx.m_spills;
     size_t beg = ctx.m_file.m_text.m_instructions.size();
+    std::unordered_set<size_t> ignore;
     for(auto& arg : args) {
         auto op = convertOperand(arg, ctx);
         
         if((isFloat(op) && !floatCursor.hasNext()) || (isDouble(op) && !floatCursor.hasNext()) || ((op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == LONG_T) && !cursor.hasNext())) {
             push(op, ctx);
-            spilled += op->m_typeInfo.m_size;
             continue;
         }
 
@@ -405,8 +406,11 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
         } else {
             auto reg = cursor.get().next().value();
             if(arg.index() == 1 && std::get<1>(arg)->m_registerType == RegisterType::Struct) {
+                size_t begg = ctx.m_file.m_text.m_instructions.size();
                 op = copyAddressToNew(cast<Operands::Address>(op), std::get<1>(arg)->m_type.m_size, ctx);
-                spilled += std::get<1>(arg)->m_type.m_size;
+                for(; begg < ctx.m_file.m_text.m_instructions.size(); ++begg) {
+                    ignore.insert(begg - beg);
+                }
             }
 
             if(!op->m_typeInfo.m_builtin && op->m_type == Operand::Type::Address) {
@@ -427,9 +431,10 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
         }
     }
     size_t end = ctx.m_file.m_text.m_instructions.size() - 1;
+    size_t spilled = ctx.m_spills - spilledBeg;
 
     std::vector<Instruction> from(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
-    std::vector<Instruction> result = MoveResolver::resolve(from, *this, ctx);
+    std::vector<Instruction> result = MoveResolver::resolve(from, ignore, *this, ctx);
     ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
     ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
@@ -438,14 +443,14 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     i.addOperand(label);
     addInstruction(i, ctx);
 
-    std::reverse(saveStack.begin(), saveStack.end());
-    for(auto reg : saveStack)
-        pop(reg, ctx);
-
     if(spilled > 0) {
         add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(spilled, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
         ctx.m_spills -= spilled;
     }
+
+    std::reverse(saveStack.begin(), saveStack.end());
+    for(auto reg : saveStack)
+        pop(reg, ctx);
 
     if(optReturn) {
         auto retReg = isFloat(optReturn) || isDouble(optReturn) ? cast<Operands::Register>(m_registers.at(Operands::Register::XMM0)->clone()) : cast<Operands::Register>(m_registers.at(Operands::Register::RAX)->clone());
@@ -456,13 +461,15 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
 }
 
 void CodeGenerator::ret(FunctionContext& ctx) {
-    if(ctx.m_spills > 0)
-        add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(ctx.m_spills, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
     
     std::reverse(ctx.m_savedRegisters.begin(), ctx.m_savedRegisters.end());
     for(auto reg : ctx.m_savedRegisters)
         pop(reg, ctx);
+
+    if(ctx.m_spills > 0)
+        add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(ctx.m_spills, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
     
+    ctx.m_spills += 8;
     pop(m_registers.at(Operands::Register::RBP), ctx);
     Instruction i;
     i.m_opcode = Ret;
@@ -470,8 +477,8 @@ void CodeGenerator::ret(FunctionContext& ctx) {
 }
 
 void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) {
-    ctx.m_spills += target->m_typeInfo.m_size;
     if(target->m_type == Operand::Type::Immediate) {
+        ctx.m_spills += 8;
         Instruction i;
         i.m_opcode = Push;
         i.addOperand(target);
@@ -483,6 +490,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
         Instruction i;
 
         if(!isFloat(reg) && !isDouble(reg)) {
+            ctx.m_spills += 8;
             i.m_opcode = Push;
             auto clone = target->clone();
             // TODO find a way to force qword
@@ -492,6 +500,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
         }
 
         sub(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>((int)reg->m_typeInfo.m_size, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
+        ctx.m_spills += target->m_typeInfo.m_size;
         move(std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP), -ctx.m_spills, TypeInfo{}), reg, ctx);
         return;
     }
@@ -515,7 +524,7 @@ void CodeGenerator::pop(std::shared_ptr<Operands::Register> target, FunctionCont
     auto clone = target->clone();
     i.addOperand(clone);
     addInstruction(i, ctx);
-    ctx.m_spills -= target->m_typeInfo.m_size;
+    ctx.m_spills -= 8;
 }
 
 

@@ -56,7 +56,7 @@ Result<std::shared_ptr<AST::Node>> Parser::parseMacroForeach(TokenCursor& cursor
     return macroForeach;
 }
 
-Result<std::shared_ptr<AST::Node>> Parser::parseMacroMakeFunction(TokenCursor& cursor, ParserContext& ctx) {
+Result<std::shared_ptr<AST::MacroMakeFunctionNode>> Parser::parseMacroMakeFunction(TokenCursor& cursor, ParserContext& ctx) {
     std::shared_ptr<AST::MacroMakeFunctionNode> macroMakeFunction = std::make_shared<AST::MacroMakeFunctionNode>();
     macroMakeFunction->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     cursor.next(2);

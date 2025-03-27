@@ -4,6 +4,7 @@
 #include "parser/nodes/function_definition.hpp"
 
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <cstdint>
 #include <expected>
@@ -69,4 +70,7 @@ private:
     static SemanticError unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& types, BrawContext& ctx);
     static SemanticError unknownMember(const AST::Node* causer, const std::string& type, const std::string& member, BrawContext& ctx);
     static SemanticError invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type, BrawContext& ctx);
+    static SemanticError invalidInstruction(const AST::Node* causer, const AST::Node* origin, BrawContext& ctx);
+
+    static std::unordered_set<AST::Node::Type> expressionWhitelist;
 };

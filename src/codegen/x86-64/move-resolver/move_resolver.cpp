@@ -75,7 +75,7 @@ const void replaceForGraph(std::shared_ptr<Operand> op, std::shared_ptr<Operand>
     }
 }
 
-std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, CodeGenerator& codegen, FunctionContext& ctx) {
+std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, std::unordered_set<size_t> ignore, CodeGenerator& codegen, FunctionContext& ctx) {
     std::vector<Instruction> result; result.reserve(from.size());
     std::unordered_map<Instruction*, size_t> positions; positions.reserve(from.size());
     for(size_t i = 0; i < from.size(); i++)
@@ -83,8 +83,8 @@ std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, Co
 
     std::vector<std::pair<size_t, Instruction>> indexed;
     
-    std::erase_if(from, [from, &indexed, &positions](Instruction& instr){
-        if(instr.m_opcode != Mov) {
+    std::erase_if(from, [from, &indexed, &positions, &ignore](Instruction& instr){
+        if(instr.m_opcode != Mov || ignore.contains(positions[&instr])) {
             indexed.push_back({positions[&instr], instr});
             return true;
         }

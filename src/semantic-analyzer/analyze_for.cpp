@@ -2,6 +2,8 @@
 #include "parser/nodes/for.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::ForNode* node, BrawContext& ctx) {
+    if(!expressionWhitelist.contains(node->m_condition->m_type)) return invalidInstruction(node->m_condition.get(), node, ctx);
+    
     auto errorOpt = analyze(node->m_initializer.get(), ctx);
     if(errorOpt) return errorOpt;
 

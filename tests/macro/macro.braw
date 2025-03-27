@@ -1,0 +1,19 @@
+struct V {
+    a: int;
+    b: int;
+};
+
+define TEST(type) {
+    $foreach(var : #type) {
+        $make_function($concat(#"get_", #var.name), #var, {$make_variable(#"v", #type);}) {
+            return $make_dot(v, #var.name);
+        }
+    }
+}
+
+$TEST(#<V>);
+
+fn macro() -> int {
+    let v: V; v.a = 1; v.b = 1;
+    return get_a(v) + get_b(v);
+}

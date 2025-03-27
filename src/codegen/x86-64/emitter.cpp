@@ -35,6 +35,7 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
     const char* doublePrefix = ".double";
     const char* stringPrefix = ".asciz";
 
+    out << ".section .note.GNU-stack,\"\",@progbits\n";
     out << ".intel_syntax noprefix\n\n";
     out << sectionPrefix << " .data\n";
 

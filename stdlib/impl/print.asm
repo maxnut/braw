@@ -1,3 +1,4 @@
+.section .note.GNU-stack,"",@progbits
 .intel_syntax noprefix
 .section .text
 .global print_int

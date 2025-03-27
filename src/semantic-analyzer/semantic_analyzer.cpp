@@ -74,7 +74,12 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::Node* root, Br
         case AST::Node::MacroParameterReference:
         case AST::Node::MacroParameter:
         case AST::Node::MacroCall:
-            break;
+        case AST::Node::MacroIf:
+        case AST::Node::MacroDot:
+        case AST::Node::MacroForeach:
+        case AST::Node::MacroMakeFunction:
+        case AST::Node::MacroMakeVariable:
+          break;
         }
     return SemanticError("Unexpected node type");
 }
@@ -246,6 +251,16 @@ SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer
     );
 }
 
+
+SemanticError SemanticAnalyzer::invalidInstruction(const AST::Node* causer, const AST::Node* origin, BrawContext& ctx) {
+    return SemanticError(
+        fmt::format("This instruction cannot be used at {}", Utils::extractRangeWithContext(ctx.m_currentFile, origin->m_rangeBegin.first, origin->m_rangeBegin.second, origin->m_rangeEnd.first, origin->m_rangeEnd.second, 0, false, 0)),
+        ctx.m_currentFile,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}
+
 bool SemanticAnalyzer::hasOperator(const TypeInfo& type, const std::string& operatorName) {
     static const std::unordered_set<std::string> operators = {
         "+", "-"
@@ -255,3 +270,8 @@ bool SemanticAnalyzer::hasOperator(const TypeInfo& type, const std::string& oper
 
     return type.m_operators.contains(operatorName);
 }
+
+std::unordered_set<AST::Node::Type> SemanticAnalyzer::expressionWhitelist = {
+    AST::Node::Literal, AST::Node::VariableAccess, AST::Node::FunctionCall,
+    AST::Node::BinaryOperator, AST::Node::UnaryOperator
+};

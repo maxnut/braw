@@ -6,6 +6,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionCallNo
     parameters.reserve(node->m_parameters.size());
 
     for(auto& param : node->m_parameters) {
+        if(!expressionWhitelist.contains(param->m_type)) return invalidInstruction(param.get(), node, ctx);
         auto errorOpt = analyze(param.get(), ctx);
         if(errorOpt) return errorOpt;
 

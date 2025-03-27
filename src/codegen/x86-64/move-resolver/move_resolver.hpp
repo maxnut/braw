@@ -4,6 +4,7 @@
 #include "codegen/x86-64/instruction.hpp"
 #include <cstdint>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 namespace CodeGen::x86_64 {
@@ -18,7 +19,7 @@ class FunctionContext;
 
 class MoveResolver {
 public:   
-    static std::vector<Instruction> resolve(std::vector<Instruction> from, CodeGenerator& codegen, FunctionContext& ctx);
+    static std::vector<Instruction> resolve(std::vector<Instruction> from, std::unordered_set<size_t> ignore, CodeGenerator& codegen, FunctionContext& ctx);
     static bool operandEquals(std::shared_ptr<Operand> op1, std::shared_ptr<Operand> op2);
     
 private:

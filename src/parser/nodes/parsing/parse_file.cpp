@@ -2,6 +2,7 @@
 #include "parser/parser.hpp"
 #include "../file.hpp"
 #include "rules.hpp"
+#include <cmath>
 #include <memory>
 #include <unordered_map>
 
@@ -58,6 +59,9 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
 
             if(!call)
                 return std::unexpected{call.error()};
+
+            if(!expectTokenType(cursor.get().next().value(), Token::SEMICOLON))
+                return unexpectedTokenExpectedType(cursor.value(), Token::SEMICOLON, ctx.m_path);
 
             file->m_macroCalls.push_back(call.value());
             continue;

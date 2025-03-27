@@ -5,6 +5,9 @@
 #include "type_info.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorNode* node, BrawContext& ctx) {
+    if(!expressionWhitelist.contains(node->m_operand->m_type)) return invalidInstruction(node->m_operand.get(), node, ctx);
+    if(node->m_expression && !expressionWhitelist.contains(node->m_expression->m_type)) return invalidInstruction(node->m_expression.get(), node, ctx);
+
     auto errorOpt = analyze(node->m_operand.get(), ctx);
     if(errorOpt) return errorOpt;
 

@@ -13,6 +13,8 @@
 #include "parser/nodes/macro_call.hpp"
 #include "parser/nodes/macro_foreach.hpp"
 #include "parser/nodes/macro_if.hpp"
+#include "parser/nodes/macro_make_function.hpp"
+#include "parser/nodes/macro_make_variable.hpp"
 #include "parser/nodes/macro_parameter.hpp"
 #include "parser/nodes/node.hpp"
 #include "parser/nodes/return.hpp"
@@ -24,6 +26,7 @@
 #include "parser/nodes/while.hpp"
 #include "parser/parser.hpp"
 #include "spdlog/fmt/bundled/core.h"
+#include <__expected/unexpect.h>
 #include <__expected/unexpected.h>
 #include <memory>
 #include <optional>
@@ -114,7 +117,9 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::convertParameter(std
 
 std::shared_ptr<AST::MacroNode> findMacro(const std::string& name, std::shared_ptr<AST::FileNode> file) {
     static std::unordered_map<std::string, std::shared_ptr<AST::MacroNode>> builtin = {
-        {"compare", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("compare", nullptr, {"left", "right"}))}
+        {"compare", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("compare", nullptr, {"left", "right"}))},
+        {"make_dot", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("make_dot", nullptr, {"left", "right"}))},
+        {"concat", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("concat", nullptr, {"left", "right"}))}
     };
 
     if(builtin.contains(name))
@@ -319,9 +324,51 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::deepClone(std::share
             ret->m_node = scope;
             break;
         }
+        case AST::Node::MacroMakeFunction: {
+            auto macroMakeFunctionNode = std::static_pointer_cast<AST::MacroMakeFunctionNode>(node);
+            auto nameOpt = convertParameter(macroMakeFunctionNode->m_name, ctx);
+            if(!nameOpt) return std::unexpected{nameOpt.error()};
+            auto name = nameOpt.value();
+            auto typeOpt = convertParameter(macroMakeFunctionNode->m_returnType, ctx);
+            if(!typeOpt) return std::unexpected{nameOpt.error()};
+            auto type = typeOpt.value();
+
+            std::shared_ptr<AST::FunctionDefinitionNode> def = std::make_shared<AST::FunctionDefinitionNode>();
+            def->m_rangeBegin = node->m_rangeBegin;
+            def->m_rangeEnd = node->m_rangeEnd;
+            def->m_signature.m_name = name->m_value;
+            def->m_signature.m_returnType = type->m_value;
+            
+            for(auto instr : macroMakeFunctionNode->m_parameterContainer->m_instructions) {
+                auto instrClone = deepClone(instr, ctx);
+                if(!instrClone) return std::unexpected{instrClone.error()};
+                if(instrClone.value()->m_node->m_type != AST::Node::VariableDeclaration)
+                    return std::unexpected{notVariableDeclaration(instrClone.value()->m_node, ctx.m_file->m_path)};
+                def->m_signature.m_parameters.push_back(std::static_pointer_cast<AST::VariableDeclarationNode>(instrClone.value()->m_node));
+            }
+            auto bodyOpt = deepClone(macroMakeFunctionNode->m_body, ctx);
+            if(!bodyOpt) return std::unexpected{bodyOpt.error()};
+            def->m_scope = std::static_pointer_cast<AST::ScopeNode>(bodyOpt.value()->m_node);
+            ret->m_node = def;
+            break;
+        }
+        case AST::Node::MacroMakeVariable: {
+            auto macroMakeVariableNode = std::static_pointer_cast<AST::MacroMakeVariableNode>(node);
+            auto nameOpt = convertParameter(macroMakeVariableNode->m_name, ctx);
+            if(!nameOpt) return std::unexpected{nameOpt.error()};
+            auto name = nameOpt.value();
+            auto typeOpt = convertParameter(macroMakeVariableNode->m_type, ctx);
+            if(!typeOpt) return std::unexpected{typeOpt.error()};
+            auto type = typeOpt.value();
+            std::shared_ptr<AST::VariableDeclarationNode> decl = std::make_shared<AST::VariableDeclarationNode>();
+            decl->m_rangeBegin = macroMakeVariableNode->m_rangeBegin;
+            decl->m_rangeEnd = macroMakeVariableNode->m_rangeEnd;
+            decl->m_name = name->m_value;
+            decl->m_type = type->m_value;
+            ret->m_node = decl;
+            break;
+        }
         case AST::Node::MacroParameter:
-        case AST::Node::MacroMakeFunction:
-        case AST::Node::MacroMakeVariable:
         case AST::Node::MacroDot:
         case AST::Node::File:
         case AST::Node::Macro:
@@ -329,6 +376,22 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::deepClone(std::share
             break;
         }
     return ret;
+}
+
+std::vector<std::shared_ptr<AST::Node>> extractInstruction(std::shared_ptr<AST::ScopeNode> node) {
+    std::vector<std::shared_ptr<AST::Node>> res;
+
+    for(auto& instr : node->m_instructions) {
+        if(instr->m_type == AST::Node::Scope) {
+            auto scope = std::static_pointer_cast<AST::ScopeNode>(instr);
+            auto instrs = extractInstruction(scope);
+            res.insert(res.end(), instrs.begin(), instrs.end());
+            continue;
+        }
+        res.push_back(instr);
+    }
+
+    return res;
 }
 
 std::optional<MacroError> Evaluator::processAST(std::shared_ptr<AST::Node> node, std::shared_ptr<AST::Node>* replaceTarget, std::shared_ptr<AST::FileNode> path, BrawContext& ctx) {
@@ -357,11 +420,25 @@ std::optional<MacroError> Evaluator::processAST(std::shared_ptr<AST::Node> node,
             for(auto& import : file->m_imports)
                 processAST(import, (std::shared_ptr<AST::Node>*)&import, file, ctx);
 
-            for(auto& macrocall : file->m_macroCalls)
-                processAST(macrocall, (std::shared_ptr<AST::Node>*)&macrocall, file, ctx);
-
             for(auto& fun : file->m_functions)
                 processAST(fun, (std::shared_ptr<AST::Node>*)&fun, file, ctx);
+
+            for(auto& make : file->m_macroCalls) {
+                std::shared_ptr<AST::Node> tmp;
+                auto err = processAST(make, &tmp, file, ctx);
+                if(err) return err;
+                if(tmp->m_type == AST::Node::FunctionDefinition)
+                    file->m_functions.insert(file->m_functions.begin(), std::static_pointer_cast<AST::FunctionDefinitionNode>(tmp));
+                else if(tmp->m_type == AST::Node::Scope) {
+                    auto instrs = extractInstruction(std::static_pointer_cast<AST::ScopeNode>(tmp));
+                    for(auto& fun : instrs) {
+                        if(fun->m_type != AST::Node::FunctionDefinition) return notFunctionDefinition(fun, file->m_path);
+                        file->m_functions.insert(file->m_functions.begin(), std::static_pointer_cast<AST::FunctionDefinitionNode>(fun));
+                    }
+                }
+                else
+                    return notFunctionDefinition(tmp, file->m_path);
+            }
             break;
         }
         case AST::Node::Scope: {
@@ -439,9 +516,29 @@ std::shared_ptr<Node> macroCompare(EvaluatorContext& ctx) {
     return ret;
 }
 
+std::shared_ptr<Node> macroConcat(EvaluatorContext& ctx) {
+    std::shared_ptr<Node> ret = std::make_shared<Node>();
+    ret->m_value = ctx.m_variables["left"]->m_value + ctx.m_variables["right"]->m_value;
+    return ret;
+}
+
+std::shared_ptr<Node> macroMakeDot(EvaluatorContext& ctx, std::shared_ptr<AST::MacroCallNode> call) {
+    std::shared_ptr<Node> ret = std::make_shared<Node>();
+    std::shared_ptr<AST::UnaryOperatorNode> dot = std::make_shared<AST::UnaryOperatorNode>();
+    dot->m_rangeBegin = call->m_rangeBegin;
+    dot->m_rangeEnd = call->m_rangeEnd;
+    dot->m_operator = ".";
+    dot->m_operand = ctx.m_variables["left"]->m_node;
+    dot->m_data = ctx.m_variables["right"]->m_value;
+    ret->m_node = dot;
+    return ret;
+}
+
 std::expected<std::shared_ptr<Node>, MacroError> Evaluator::evaluate(std::shared_ptr<AST::MacroNode> macro, std::shared_ptr<AST::MacroCallNode> macroCall, std::shared_ptr<AST::FileNode> file, EvaluatorContext& old) {
     EvaluatorContext ectx{old.m_ctx};
     ectx.m_file = file;
+    if(macro->m_parameters.size() != macroCall->m_parameters.size())
+        return std::unexpected{expectedParamCount(macroCall, macroCall->m_parameters.size(), macro->m_parameters.size(), file->m_path)};
     for(size_t i = 0; i < macro->m_parameters.size(); i++) {
         auto paramOpt = convertParameter(macroCall->m_parameters[i], old);
         if(!paramOpt) return std::unexpected{paramOpt.error()};
@@ -450,9 +547,18 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::evaluate(std::shared
 
     if(macro->m_name == "compare")
         return macroCompare(ectx);
+    else if(macro->m_name == "concat")
+        return macroConcat(ectx);
+    else if(macro->m_name == "make_dot")
+        return macroMakeDot(ectx, macroCall);
     
     auto nodeOr = deepClone(macro->m_node, ectx);
     if(!nodeOr) return std::unexpected{nodeOr.error()};
+
+    std::shared_ptr<AST::ScopeNode> scope = std::static_pointer_cast<AST::ScopeNode>(nodeOr.value()->m_node);
+    if(scope->m_instructions.size() == 1 && scope->m_instructions.at(0)->m_type != AST::Node::Scope)
+        nodeOr.value()->m_node = scope->m_instructions.at(0);
+    
     return nodeOr.value();
 }
 
@@ -501,6 +607,33 @@ MacroError Evaluator::unknownFunction(std::shared_ptr<AST::MacroParameterFunctio
 MacroError Evaluator::unknownType(std::shared_ptr<AST::Node> causer, const std::string& type, const std::filesystem::path& path) {
     return MacroError {
         fmt::format("Unknown type {}", type),
+        path,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    };
+}
+
+MacroError Evaluator::notVariableDeclaration(std::shared_ptr<AST::Node> causer, const std::filesystem::path& path) {
+    return MacroError {
+        fmt::format("Not a variable declaration"),
+        path,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    };
+}
+
+MacroError Evaluator::notFunctionDefinition(std::shared_ptr<AST::Node> causer, const std::filesystem::path& path) {
+    return MacroError {
+        fmt::format("Not a function definition"),
+        path,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    };
+}
+
+MacroError Evaluator::expectedParamCount(std::shared_ptr<AST::Node> causer, int got, int expected, const std::filesystem::path& path) {
+    return MacroError {
+        fmt::format("Expected {} parameters, got {}", expected, got),
         path,
         causer->m_rangeBegin,
         causer->m_rangeEnd

@@ -65,20 +65,21 @@ int main(int argc, char** argv) {
 
     auto ctxOr = SemanticAnalyzer::fillTypes(ast.value().get());
     if (!ctxOr) {
-        spdlog::error("{}({},{}): SemanticError: {}", ctxOr.error().m_path.string(), ctxOr.error().m_rangeBegin.first, ctxOr.error().m_rangeBegin.second, ctxOr.error().m_message);
+        SemanticError err = ctxOr.error();
+        spdlog::error("{}({},{}): SemanticError: {}\n{}", err.m_path.string(), err.m_rangeBegin.first, err.m_rangeBegin.second, err.m_message, Utils::extractRangeWithContext(err.m_path, err.m_rangeBegin.first, err.m_rangeBegin.second, err.m_rangeEnd.first, err.m_rangeEnd.second));
         return 1;
     }
 
     std::optional<Macro::MacroError> macroErr = Macro::Evaluator::processAST(ast.value(), ctxOr.value());
 
     if(macroErr) {
-        spdlog::error("{}({},{}): MacroError: {}", macroErr->m_path.string(), macroErr->m_rangeBegin.first, macroErr->m_rangeBegin.second, macroErr->m_message);
+        spdlog::error("{}({},{}): MacroError: {}\n{}", macroErr->m_path.string(), macroErr->m_rangeBegin.first, macroErr->m_rangeBegin.second, macroErr->m_message, Utils::extractRangeWithContext(macroErr->m_path, macroErr->m_rangeBegin.first, macroErr->m_rangeBegin.second, macroErr->m_rangeEnd.first, macroErr->m_rangeEnd.second));
         return 1;
     }
     
     std::optional<SemanticError> err = SemanticAnalyzer::analyze(ast.value().get(), ctxOr.value());
     if(err) {
-        spdlog::error("{}({},{}): Semanticrror: {}", err->m_path.string(), err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_message);
+        spdlog::error("{}({},{}): SemanticError: {}\n{}", err->m_path.string(), err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_message, Utils::extractRangeWithContext(err->m_path, err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_rangeEnd.first, err->m_rangeEnd.second));
         return 1;
     }
 

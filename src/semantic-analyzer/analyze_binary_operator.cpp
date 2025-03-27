@@ -3,6 +3,9 @@
 #include "parser/nodes/binary_operator.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::BinaryOperatorNode* node, BrawContext& ctx) {
+    if(!expressionWhitelist.contains(node->m_left->m_type)) return invalidInstruction(node->m_left.get(), node, ctx);
+    if(!expressionWhitelist.contains(node->m_right->m_type)) return invalidInstruction(node->m_right.get(), node, ctx);
+
     auto errorOpt = analyze(node->m_left.get(), ctx);
     if(errorOpt) return errorOpt;
 

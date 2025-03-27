@@ -44,6 +44,9 @@ private:
     static MacroError unknownMacro(std::shared_ptr<AST::MacroCallNode> causer, const std::filesystem::path& path);
     static MacroError unknownFunction(std::shared_ptr<AST::MacroParameterFunctionNode> causer, const std::filesystem::path& path);
     static MacroError unknownType(std::shared_ptr<AST::Node> causer, const std::string& type, const std::filesystem::path& path);
+    static MacroError notVariableDeclaration(std::shared_ptr<AST::Node> causer, const std::filesystem::path& path);
+    static MacroError notFunctionDefinition(std::shared_ptr<AST::Node> causer, const std::filesystem::path& path);
+    static MacroError expectedParamCount(std::shared_ptr<AST::Node> causer, int got, int expected, const std::filesystem::path& path);
 };
 
 }

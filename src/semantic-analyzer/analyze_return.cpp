@@ -3,6 +3,7 @@
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::ReturnNode* node, BrawContext& ctx) {
     if(node->m_value) {
+        if(!expressionWhitelist.contains(node->m_value->m_type)) return invalidInstruction(node->m_value.get(), node, ctx);
         auto errOpt = analyze(node->m_value.get(), ctx);
         if(errOpt) return errOpt;
         ctx.m_returned = true;

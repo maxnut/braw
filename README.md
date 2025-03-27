@@ -37,6 +37,50 @@ if (a == 1): a = 2;
 let buf[10]: char*;
 ```
 
+## Macros
+
+Macros are made using the `define` keyword:
+```braw
+define CONST: 5;
+```
+
+### Overview
+
+They can take in arguments
+- Instructions (by directly passing an instruction)
+- Values (by doing `#"val"`)
+- Types (by doing `#<int>`)
+- Functions (by doing `#fun()`)
+
+Parameters get assigned a values based on their kind:
+- Instructions have no value
+- Values have the provided value
+- Types have the typename
+- Functions have the function name
+
+Parameters also have fields, accessible by doing `#param.field`:
+- Types have their members (`#param.memberName`)
+- Functions have their return type (`#param.returnType`) and their parameters (`#param.parameters`)
+
+Instructions passed as a parameter can be expanded inside the macro by simply referencing them outside a macro call
+
+For example `#param` will try to expand whatever instruction was passed to the parameter
+
+### Constructs
+
+There are various construct you can use to do compile-time code manipulation:
+- `$concat(a, b)` which returns the concatenation of two values
+- `$compare(a, b)` which returns `true` if the values are equal or `false` otherwise
+- `$not(val)` which negates the boolean value
+- `$and(a, b)` which ands two boolean values
+- `$or(a, b)` which ors two boolean values
+- `$if(val) {}` which checks if the value is true and either includes or excludes its body from the macro
+- `$foreach(v : value) {}` which runs for every member of the value and includes its body in the macro each time
+- `$make_variable(name, type)` which creates a variable declaration
+- `$make_function(name, returnType, {parameters}) {}` which creates a function (parameters are variable declarations)
+- `$make_dot(expression, value)` which creates a dot operator
+- `$make_arrow(expression, value)` which creates an arrow operator
+
 ## Examples
 Check the tests
 

@@ -118,7 +118,11 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::convertParameter(std
 std::shared_ptr<AST::MacroNode> findMacro(const std::string& name, std::shared_ptr<AST::FileNode> file) {
     static std::unordered_map<std::string, std::shared_ptr<AST::MacroNode>> builtin = {
         {"compare", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("compare", nullptr, {"left", "right"}))},
+        {"not", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("not", nullptr, {"value"}))},
+        {"and", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("and", nullptr, {"left", "right"}))},
+        {"or", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("or", nullptr, {"left", "right"}))},
         {"make_dot", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("make_dot", nullptr, {"left", "right"}))},
+        {"make_arrow", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("make_arrow", nullptr, {"left", "right"}))},
         {"concat", std::shared_ptr<AST::MacroNode>(new AST::MacroNode("concat", nullptr, {"left", "right"}))}
     };
 
@@ -516,6 +520,25 @@ std::shared_ptr<Node> macroCompare(EvaluatorContext& ctx) {
     return ret;
 }
 
+std::shared_ptr<Node> macroNot(EvaluatorContext& ctx) {
+    std::shared_ptr<Node> ret = std::make_shared<Node>();
+    std::string val = ctx.m_variables["value"]->m_value;
+    ret->m_value = val == "true" ? "false" : val == "false" ? "true" : "";
+    return ret;
+}
+
+std::shared_ptr<Node> macroAnd(EvaluatorContext& ctx) {
+    std::shared_ptr<Node> ret = std::make_shared<Node>();
+    ret->m_value = ctx.m_variables["left"]->m_value == "true" && ctx.m_variables["right"]->m_value == "true" ? "true" : "false";
+    return ret;
+}
+
+std::shared_ptr<Node> macroOr(EvaluatorContext& ctx) {
+    std::shared_ptr<Node> ret = std::make_shared<Node>();
+    ret->m_value = ctx.m_variables["left"]->m_value == "true" || ctx.m_variables["right"]->m_value == "true" ? "true" : "false";
+    return ret;
+}
+
 std::shared_ptr<Node> macroConcat(EvaluatorContext& ctx) {
     std::shared_ptr<Node> ret = std::make_shared<Node>();
     ret->m_value = ctx.m_variables["left"]->m_value + ctx.m_variables["right"]->m_value;
@@ -528,6 +551,18 @@ std::shared_ptr<Node> macroMakeDot(EvaluatorContext& ctx, std::shared_ptr<AST::M
     dot->m_rangeBegin = call->m_rangeBegin;
     dot->m_rangeEnd = call->m_rangeEnd;
     dot->m_operator = ".";
+    dot->m_operand = ctx.m_variables["left"]->m_node;
+    dot->m_data = ctx.m_variables["right"]->m_value;
+    ret->m_node = dot;
+    return ret;
+}
+
+std::shared_ptr<Node> macroMakeArrow(EvaluatorContext& ctx, std::shared_ptr<AST::MacroCallNode> call) {
+    std::shared_ptr<Node> ret = std::make_shared<Node>();
+    std::shared_ptr<AST::UnaryOperatorNode> dot = std::make_shared<AST::UnaryOperatorNode>();
+    dot->m_rangeBegin = call->m_rangeBegin;
+    dot->m_rangeEnd = call->m_rangeEnd;
+    dot->m_operator = "->";
     dot->m_operand = ctx.m_variables["left"]->m_node;
     dot->m_data = ctx.m_variables["right"]->m_value;
     ret->m_node = dot;
@@ -549,8 +584,16 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::evaluate(std::shared
         return macroCompare(ectx);
     else if(macro->m_name == "concat")
         return macroConcat(ectx);
+    else if(macro->m_name == "not")
+        return macroNot(ectx);
+    else if(macro->m_name == "and")
+        return macroAnd(ectx);
+    else if(macro->m_name == "or")
+        return macroOr(ectx);
     else if(macro->m_name == "make_dot")
         return macroMakeDot(ectx, macroCall);
+    else if(macro->m_name == "make_arrow")
+        return macroMakeArrow(ectx, macroCall);
     
     auto nodeOr = deepClone(macro->m_node, ectx);
     if(!nodeOr) return std::unexpected{nodeOr.error()};

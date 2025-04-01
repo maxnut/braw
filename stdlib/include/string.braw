@@ -5,14 +5,15 @@ fn str_len(str: char*) -> int {
     return idx;
 }
 
-fn str_reverse(str: char*) -> void {
+fn str_reverse(s: char*) -> void {
+    let i = 0l;
     let c: char;
-    let j = 0l;
-    for(let i = 0l; i < (long)str_len(str); i = i+1l) {
-        c = str[i];
-        str[i] = str[j];
-        str[j] = c;
-        j = j - 1l;
+ 
+    for (let j = (long)str_len(s) - 1l; i < j; j = j - 1l) {
+        c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+        i = i+1l;
     }
 }
 

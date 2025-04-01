@@ -84,6 +84,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::Node* root, BrawCont
     return SemanticError("Unexpected node type");
 }
 
+//TODO: add error handling
 std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawContext& ctx) {
     switch (node->m_type) {
         case AST::Node::VariableDeclaration: {
@@ -127,8 +128,11 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
             const AST::FunctionCallNode* call = static_cast<const AST::FunctionCallNode*>(node);
             std::vector<TypeInfo> params;
             params.reserve(call->m_parameters.size());
-            for(auto& param : call->m_parameters)
+            for(auto& param : call->m_parameters) {
+                auto errOpt = analyze(param.get(), ctx);
+                if(errOpt) return std::nullopt;
                 params.push_back(getType(param.get(), ctx).value());
+            }
             return ctx.getFunction(call->m_name, params)->m_returnType;
         }
         case AST::Node::Literal: {

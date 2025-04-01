@@ -24,6 +24,10 @@ void CopyPropagator::propagate(Function& f) {
                 auto basic = (BasicInstruction*)f.m_instructions[i].get();
                 if(basic->m_o1.index() != 1 || (basic->m_o2.index() != 1 && basic->m_o2.index() != 3))
                     continue;
+
+                if(basic->m_o2.index() == 3) // TODO: remove this when modification point fetching works with addresses
+                    continue;
+                    
                 auto reg = std::get<1>(((BasicInstruction*)f.m_instructions[i].get())->m_o1);
                 if(replace(f, points.at(reg->m_id), i + 1, block.m_instructionRange.second, reg->m_id, basic->m_o2)) {
                     removed = true;

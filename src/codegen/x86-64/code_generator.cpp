@@ -165,6 +165,11 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             div(convertOperand(bin->m_o1, ctx), convertOperand(bin->m_o2, ctx), ctx); 
             break;
         }
+        case ::Instruction::Modulo: {
+            auto bin = (const ::BasicInstruction*)instr;
+            mod(convertOperand(bin->m_o1, ctx), convertOperand(bin->m_o2, ctx), ctx); 
+            break;
+        }
         case ::Instruction::CompareEquals: {
             auto bin = (const ::BasicInstruction*)instr;
             compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Sete, ctx); 
@@ -345,8 +350,8 @@ void CodeGenerator::mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand
 void CodeGenerator::div(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     if(source->m_typeInfo.m_name == INT_T || source->m_typeInfo.m_name == LONG_T) {
         std::vector<std::shared_ptr<Operands::Register>> saveStack;
-        if(m_registers.at(Register::RAX)->m_typeInfo.m_name != "") saveStack.push_back(m_registers.at(Register::RAX));
-        if(m_registers.at(Register::RDX)->m_typeInfo.m_name != "") saveStack.push_back(m_registers.at(Register::RDX));
+        if(isRegisterAlive(Register::RAX, ctx)) saveStack.push_back(m_registers.at(Register::RAX));
+        if(isRegisterAlive(Register::RDX, ctx)) saveStack.push_back(m_registers.at(Register::RDX));
         for(auto reg : saveStack)
             push(reg, ctx);
         move(m_registers.at(Register::RAX),target, ctx);
@@ -373,8 +378,8 @@ void CodeGenerator::div(std::shared_ptr<Operand> target, std::shared_ptr<Operand
 
 void CodeGenerator::mod(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     std::vector<std::shared_ptr<Operands::Register>> saveStack;
-    if(m_registers.at(Register::RAX)->m_typeInfo.m_name != "") saveStack.push_back(m_registers.at(Register::RAX));
-    if(m_registers.at(Register::RDX)->m_typeInfo.m_name != "") saveStack.push_back(m_registers.at(Register::RDX));
+    if(isRegisterAlive(Register::RAX, ctx)) saveStack.push_back(m_registers.at(Register::RAX));
+    if(isRegisterAlive(Register::RDX, ctx)) saveStack.push_back(m_registers.at(Register::RDX));
     for(auto reg : saveStack)
         push(reg, ctx);
     move(m_registers.at(Register::RAX),target, ctx);
@@ -399,7 +404,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
 
     size_t blockIndex = ctx.m_allocatorResult.m_propagated.blockForInstruction.at(ctx.m_instructionIndex);
     for(auto range : ctx.m_allocatorResult.m_propagated.blocks.at(blockIndex)->m_rangeVector) {
-        if(!(range->m_range.first <= ctx.m_instructionIndex && ctx.m_instructionIndex <= range->m_range.second) || range->m_isAssignedFirst)
+        if(!(range->m_range.first <= ctx.m_instructionIndex && ctx.m_instructionIndex <= range->m_range.second)/*  || range->m_isAssignedFirst TODO: figure this out */)
             continue;
 
         std::shared_ptr<Operand> arg = ctx.m_virtualRegisters.at(range->m_id);
@@ -618,11 +623,11 @@ std::shared_ptr<Operands::Address> CodeGenerator::copyAddressToNew(std::shared_p
 void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx) {
     std::vector<std::shared_ptr<Operands::Register>> save;
 
-    if(m_registers.at(Register::RDI)->m_typeInfo.m_name != "")
+    if(isRegisterAlive(Register::RDI, ctx))
         save.push_back(m_registers.at(Register::RDI));
-    if(m_registers.at(Register::RSI)->m_typeInfo.m_name != "")
+    if(isRegisterAlive(Register::RSI, ctx))
         save.push_back(m_registers.at(Register::RSI));
-    if(m_registers.at(Register::RCX)->m_typeInfo.m_name != "")
+    if(isRegisterAlive(Register::RCX, ctx))
         save.push_back(m_registers.at(Register::RCX));
 
     for(auto reg : save)
@@ -669,11 +674,11 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Addres
 void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx) {
     std::vector<std::shared_ptr<Operands::Register>> save;
 
-    if(m_registers.at(Register::RDI)->m_typeInfo.m_name != "")
+    if(isRegisterAlive(Register::RDI, ctx))
         save.push_back(m_registers.at(Register::RDI));
-    if(m_registers.at(Register::RSI)->m_typeInfo.m_name != "")
+    if(isRegisterAlive(Register::RSI, ctx))
         save.push_back(m_registers.at(Register::RSI));
-    if(m_registers.at(Register::RCX)->m_typeInfo.m_name != "")
+    if(isRegisterAlive(Register::RCX, ctx))
         save.push_back(m_registers.at(Register::RCX));
 
     for(auto reg : save)
@@ -823,6 +828,22 @@ bool CodeGenerator::isFloat(std::shared_ptr<Operand> o) const {
 
 bool CodeGenerator::isDouble(std::shared_ptr<Operand> o) const {
     return o->m_typeInfo.m_name == DOUBLE_T;
+}
+
+bool CodeGenerator::isRegisterAlive(Operands::Register::RegisterGroup reg, FunctionContext& ctx) const {
+    size_t blockIndex = ctx.m_allocatorResult.m_propagated.blockForInstruction.at(ctx.m_instructionIndex);
+    for(auto range : ctx.m_allocatorResult.m_propagated.blocks.at(blockIndex)->m_rangeVector) {
+        if(!(range->m_range.first <= ctx.m_instructionIndex && ctx.m_instructionIndex <= range->m_range.second) || range->m_isAssignedFirst)
+            continue;
+
+        std::shared_ptr<Operand> arg = ctx.m_virtualRegisters.at(range->m_id);
+
+        if(arg->m_type != Operand::Type::Register || cast<Operands::Register>(arg)->m_group != reg)
+            continue;
+
+        return true;
+    }
+    return false;
 }
 
 void CodeGenerator::initializeRegisters() {

@@ -67,6 +67,7 @@ private:
     bool isRegister(std::shared_ptr<Operand> o) const {return o->m_type == Operand::Type::Register;}
     bool bothRegisters(std::shared_ptr<Operand> o1, std::shared_ptr<Operand> o2) const {return isRegister(o1) && isRegister(o2);};
     bool isSmaller(std::shared_ptr<Operands::Register> op, std::shared_ptr<Operands::Register> than) const {return op->m_typeInfo.m_size < than->m_typeInfo.m_size;}
+    bool isRegisterAlive(Operands::Register::RegisterGroup reg, FunctionContext& ctx) const;
 
 private:
     std::unordered_map<Operands::Register::RegisterGroup, std::shared_ptr<Operands::Register>> m_registers;

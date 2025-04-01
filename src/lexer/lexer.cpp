@@ -1,6 +1,7 @@
 #include "lexer.hpp"
 #include "type_info.hpp"
 
+#include <cctype>
 #include <spdlog/spdlog.h>
 
 #include <fstream>
@@ -141,20 +142,20 @@ Token parseChar(Cursor<std::string::iterator>& cursor, int lineNumber) {
 Token tryParseSingleToken(Cursor<std::string::iterator> cursor, int lineNumber) {
     Token token(Token::COUNT, lineNumber, cursor.getIndex() + 1);
     std::string val = "";
-    char last = 0;
 
     while(cursor.hasNext() && !std::isspace(cursor.get().value())) {
         val += cursor.get().next().value();
 
         if(s_tokenTypes.contains(val)) {
-            last = cursor.value();
             token.m_type = s_tokenTypes.at(val);
+            if(token.m_type == Token::KEYWORD && std::isalnum(cursor.get().value()) && !std::isspace(cursor.get().value()))
+                token.m_type = Token::COUNT;
             token.m_value = val;
             continue;
         }
     }
 
-    if(token.m_type == Token::COUNT && )
+    if(token.m_type == Token::COUNT)
         return {};
     
     return token;

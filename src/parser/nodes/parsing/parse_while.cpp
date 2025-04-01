@@ -5,11 +5,16 @@ Result<std::shared_ptr<AST::WhileNode>> Parser::parseWhile(TokenCursor& cursor, 
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
         return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, ctx.m_path);
 
-    if(!expectTokenValue(cursor.get().value(), "while"))
-        return unexpectedTokenExpectedValue(cursor.value(), "while", ctx.m_path);
-
     std::shared_ptr<AST::WhileNode> whileNode = std::make_shared<AST::WhileNode>();
     whileNode->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+
+    if(cursor.get().value().m_value == "do") {
+        cursor.next();
+        whileNode->m_do = true;
+    }
+
+    if(!expectTokenValue(cursor.get().value(), "while"))
+        return unexpectedTokenExpectedValue(cursor.value(), "while", ctx.m_path);
 
     cursor.next();
 

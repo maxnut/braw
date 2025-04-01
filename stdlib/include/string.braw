@@ -4,3 +4,36 @@ fn str_len(str: char*) -> int {
         idx = idx + 1;
     return idx;
 }
+
+fn str_reverse(str: char*) -> void {
+    let c: char;
+    let j = 0l;
+    for(let i = 0l; i < (long)str_len(str); i = i+1l) {
+        c = str[i];
+        str[i] = str[j];
+        str[j] = c;
+        j = j - 1l;
+    }
+}
+
+fn str_from_int(n: int, buf: char*) -> void {
+    let sign = n;
+    let i = 0;
+
+    if(sign < 0):
+        n = 0 - n;
+
+    do while(n > 0) {
+        buf[i] = (char)(n % 10 + 48);
+        i = i + 1;
+        n = n / 10;
+    }
+
+    if(sign < 0) {
+        buf[i] = '-';
+        i = i + 1;
+    }
+
+    buf[i] = '\0';
+    str_reverse(buf);
+}

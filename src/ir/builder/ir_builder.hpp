@@ -74,6 +74,7 @@ private:
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, IRFunctionContext& ictx);
     static RegisterType getRegisterType(const TypeInfo& type);
     static void upsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx);
+    static void downsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx);
 
     friend class CopyPropagator;
 };

@@ -55,7 +55,7 @@ private:
     static Result<std::shared_ptr<AST::FunctionDefinitionNode>> parseFunctionDefinition(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::ScopeNode>> parseScope(TokenCursor& cursor, ParserContext& ctx, bool allowOneLine = true);
     static Result<std::shared_ptr<AST::Node>> parseInstruction(TokenCursor& cursor, ParserContext& ctx);
-    static Result<std::shared_ptr<AST::VariableDeclarationNode>> parseVariableDeclaration(TokenCursor& cursor, ParserContext& ctx, bool omitLet = false);
+    static Result<std::shared_ptr<AST::VariableDeclarationNode>> parseVariableDeclaration(TokenCursor& cursor, ParserContext& ctx, bool omitLet = false, bool omitType = false);
     static Result<std::shared_ptr<AST::Node>> parseExpression(TokenCursor& cursor, ParserContext& ctx, int minPrecedence = 0);
     static Result<std::shared_ptr<AST::Node>> parseOperand(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::Node>> parsePrimary(TokenCursor& cursor, ParserContext& ctx);

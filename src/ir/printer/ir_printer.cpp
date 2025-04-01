@@ -108,6 +108,9 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
         case Instruction::Divide:
             out << "div ";
             break;
+        case Instruction::Modulo:
+            out << "mod ";
+            break;
         case Instruction::Move:
             out << "move ";
             break;

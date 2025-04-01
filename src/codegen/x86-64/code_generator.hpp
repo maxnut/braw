@@ -42,6 +42,7 @@ private:
     void sub(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);
     void mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);
     void div(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);
+    void mod(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);
     void push(std::shared_ptr<Operand> target, FunctionContext& ctx);
     void pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx);
     void call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx);
@@ -50,8 +51,8 @@ private:
     std::shared_ptr<Operands::Register> memoryValueToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx);
     std::shared_ptr<Operands::Register> memoryAddressToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx);
     std::shared_ptr<Operands::Register> memoryAddressToRegister(std::shared_ptr<Operands::Address> address, std::shared_ptr<Operands::Register> store, FunctionContext& ctx);
-    void compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, InstructionOpcode setOpcode, FunctionContext& ctx);
-    void compareAndJump(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, InstructionOpcode jumpOpcode, FunctionContext& ctx);
+    void compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, FunctionContext& ctx);
+    void compareAndJump(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, Opcode jumpOpcode, FunctionContext& ctx);
     std::shared_ptr<Operands::Address> copyAddressToNew(std::shared_ptr<Operands::Address> address, size_t size, FunctionContext& ctx);
     void copyAddressToAddress(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx);
     void copyAddressToAddressPointer(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx);
@@ -60,6 +61,7 @@ private:
     std::shared_ptr<Operand> convertOperand(::Operand source, FunctionContext& ctx);
 
     bool bothAddress(std::shared_ptr<Operand> o1, std::shared_ptr<Operand> o2) const;
+    bool isUnsigned(std::shared_ptr<Operand> o) const;
     bool isFloat(std::shared_ptr<Operand> o) const;
     bool isDouble(std::shared_ptr<Operand> o) const;
     bool isRegister(std::shared_ptr<Operand> o) const {return o->m_type == Operand::Type::Register;}

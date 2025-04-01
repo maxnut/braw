@@ -124,6 +124,38 @@ Operand IRBuilder::buildUnaryOperator(const AST::UnaryOperatorNode* node, BrawCo
                     upsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
                 }
             }
+            else if(opType.m_name == LONG_T) {
+                if(std::holds_alternative<Value>(op)) {
+                    ret = op;
+                    ret = (int)std::get<long>(std::get<Value>(ret));
+                }
+                else {
+                    ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                    downsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                }
+            }
+        }
+        else if(node->m_data.m_name == CHAR_T) {
+            if(opType.m_name == INT_T) {
+                if(std::holds_alternative<Value>(op)) {
+                    ret = op;
+                    ret = (char)std::get<int>(std::get<Value>(ret));
+                }
+                else {
+                    ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                    downsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                }
+            }
+            else if(opType.m_name == LONG_T) {
+                if(std::holds_alternative<Value>(op)) {
+                    ret = op;
+                    ret = (char)std::get<long>(std::get<Value>(ret));
+                }
+                else {
+                    ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                    downsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                }
+            }
         }
     }
 

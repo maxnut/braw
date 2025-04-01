@@ -28,6 +28,7 @@ namespace Rules {
         {"-", 0},
         {"*", 1},
         {"/", 1},
+        {"%", 1},
     };
 
     inline bool isValidTypeName(TokenCursor& cursor) {
@@ -61,7 +62,7 @@ namespace Rules {
     }
 
     inline bool isAssignment(TokenCursor cursor) {
-        while(cursor.hasNext() && cursor.get().value().m_type != Token::SEMICOLON && cursor.get().value().m_type != Token::LEFT_BRACE && cursor.get().value().m_type != Token::COLON) {
+        while(cursor.hasNext() && cursor.get().value().m_type != Token::KEYWORD && cursor.get().value().m_type != Token::SEMICOLON && cursor.get().value().m_type != Token::LEFT_BRACE && cursor.get().value().m_type != Token::COLON) {
             if(cursor.get().next().value().m_value == "=")
                 return true;
         }
@@ -77,7 +78,7 @@ namespace Rules {
     }
 
     inline bool isWhile(TokenCursor cursor) {
-        return cursor.get().value().m_type == Token::KEYWORD && cursor.get().value().m_value == "while";
+        return cursor.get().value().m_type == Token::KEYWORD && (cursor.get().value().m_value == "while" || cursor.get().value().m_value == "do");
     }
 
     inline bool isFor(TokenCursor cursor) {

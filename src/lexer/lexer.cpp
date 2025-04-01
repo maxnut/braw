@@ -11,12 +11,17 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {DOUBLE_T, Token::KEYWORD},
     {FLOAT_T, Token::KEYWORD},
     {VOID_T, Token::KEYWORD},
+    {BOOL_T, Token::KEYWORD},
+    {LONG_T, Token::KEYWORD},
+    {ULONG_T, Token::KEYWORD},
+    {ULONG_T, Token::KEYWORD},
+    {ULONG_T, Token::KEYWORD},
     {"false", Token::KEYWORD},
     {"true", Token::KEYWORD},
-    {BOOL_T, Token::KEYWORD},
     {"if", Token::KEYWORD},
     {"else", Token::KEYWORD},
     {"while", Token::KEYWORD},
+    {"do", Token::KEYWORD},
     {"for", Token::KEYWORD},
     {"foreach", Token::KEYWORD},
     {"return", Token::KEYWORD},
@@ -136,18 +141,20 @@ Token parseChar(Cursor<std::string::iterator>& cursor, int lineNumber) {
 Token tryParseSingleToken(Cursor<std::string::iterator> cursor, int lineNumber) {
     Token token(Token::COUNT, lineNumber, cursor.getIndex() + 1);
     std::string val = "";
+    char last = 0;
 
     while(cursor.hasNext() && !std::isspace(cursor.get().value())) {
         val += cursor.get().next().value();
 
         if(s_tokenTypes.contains(val)) {
+            last = cursor.value();
             token.m_type = s_tokenTypes.at(val);
             token.m_value = val;
             continue;
         }
     }
 
-    if(token.m_type == Token::COUNT)
+    if(token.m_type == Token::COUNT && )
         return {};
     
     return token;

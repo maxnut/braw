@@ -9,6 +9,7 @@ struct WhileNode : Node {
 
     std::shared_ptr<Node> m_condition;
     std::shared_ptr<ScopeNode> m_then;
+    bool m_do = false;
 };
 
 }

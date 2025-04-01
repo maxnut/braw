@@ -108,3 +108,16 @@ void IRBuilder::upsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo
     to->m_registerType = getRegisterType(to->m_type);
     ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, to, op));
 }
+
+void IRBuilder::downsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx) {
+    if(op.index() == 1 && std::get<1>(op) == to) {
+        auto reg = std::get<1>(op);
+        to = std::make_shared<Register>();
+        to->m_id = reg->m_id;
+        to->m_scale = reg->m_scale;
+    }
+
+    to->m_type = toType;
+    to->m_registerType = getRegisterType(to->m_type);
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Downsize, to, op));
+}

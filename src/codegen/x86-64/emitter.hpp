@@ -8,6 +8,7 @@
 #include "codegen/x86-64/register.hpp"
 #include "file.hpp"
 #include "ir/file.hpp"
+#include "ir/instruction.hpp"
 #include <ostream>
 
 namespace CodeGen::x86_64 {
@@ -18,10 +19,10 @@ public:
 
 private:
     static void emit(const Instruction& instr, std::ostream& out, const BrawContext& ctx);
-    static void emit(const Operands::Register* reg, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx);
-    static void emit(const Operands::Label* label, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx);
-    static void emit(const Operands::Immediate* imm, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx);
-    static void emit(const Operands::Address* addr, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx);
+    static void emit(const Operands::Register* reg, const Instruction& instr, std::ostream& out, const BrawContext& ctx);
+    static void emit(const Operands::Label* label, const Instruction& instr, std::ostream& out, const BrawContext& ctx);
+    static void emit(const Operands::Immediate* imm, const Instruction& instr, std::ostream& out, const BrawContext& ctx);
+    static void emit(const Operands::Address* addr, const Instruction& instr, std::ostream& out, const BrawContext& ctx);
 };
 
 }

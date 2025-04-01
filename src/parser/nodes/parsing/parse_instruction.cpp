@@ -11,7 +11,7 @@ Result<std::shared_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor,
     Result<std::shared_ptr<AST::Node>> instruction;
 
     if(Rules::isVariableDeclaration(cursor))
-        instruction = parseVariableDeclaration(cursor, ctx);
+        instruction = parseVariableDeclaration(cursor, ctx, false, true);
     else if(Rules::isAssignment(cursor))
         instruction = parseAssignment(cursor, ctx);
     else if(Rules::isReturn(cursor))

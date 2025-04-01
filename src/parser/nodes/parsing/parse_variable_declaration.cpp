@@ -1,7 +1,7 @@
 #include "parser/parser.hpp"
 #include "../variable_declaration.hpp"
 
-Result<std::shared_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDeclaration(TokenCursor& cursor, ParserContext& ctx, bool omitLet) {
+Result<std::shared_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDeclaration(TokenCursor& cursor, ParserContext& ctx, bool omitLet, bool omitType) {
     std::shared_ptr<AST::VariableDeclarationNode> variableDeclaration = std::make_shared<AST::VariableDeclarationNode>();
     variableDeclaration->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
@@ -22,14 +22,20 @@ Result<std::shared_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDecla
             return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_BRACE, ctx.m_path);
     }
 
-    if(!expectTokenType(cursor.get().next().value(), Token::COLON))
+    if(!omitType && !expectTokenType(cursor.get().value(), Token::COLON))
         return unexpectedTokenExpectedType(cursor.value(), Token::COLON, ctx.m_path);
 
-    auto typeOpt = parseTypename(cursor, ctx);
-    if(!typeOpt)
-        return std::unexpected{typeOpt.error()};
+    if(!omitType || (cursor.get().value().m_type == Token::COLON)) {
+        cursor.next();
+        auto typeOpt = parseTypename(cursor, ctx);
+        if(!typeOpt)
+            return std::unexpected{typeOpt.error()};
 
-    variableDeclaration->m_type = typeOpt.value();
+        variableDeclaration->m_type = typeOpt.value();
+    }
+    else if(omitType)
+        variableDeclaration->m_type.m_name = "@infer"; // @ so that i dont accidentally make this a struct if it was created with the name infer
+    
     bool assignment = Rules::isAssignment(cursor);
     if(assignment) {
         cursor.next();

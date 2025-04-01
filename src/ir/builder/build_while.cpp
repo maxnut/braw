@@ -11,9 +11,8 @@ void IRBuilder::build(const AST::WhileNode* node, BrawContext& context, IRFuncti
     labelCondition.m_id = "." + std::to_string((uintptr_t)node) + "_condition";
     Label labelBody;
     labelBody.m_id = "." + std::to_string((uintptr_t)node) + "_body";
-    ictx.m_instructions.push_back(
-        std::make_unique<BasicInstruction>(Instruction::Jump, labelCondition)
-    );
+    if(!node->m_do)
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Jump, labelCondition));
     ictx.m_instructions.push_back(std::make_unique<Label>(labelBody));
     build(node->m_then.get(), context, ictx);
     ictx.m_instructions.push_back(std::make_unique<Label>(labelCondition));

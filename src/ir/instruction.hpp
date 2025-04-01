@@ -26,6 +26,7 @@ struct Instruction {
         PartialDereference,
         Upsize,
         Downsize,
+        Modulo,
         Count
     };
 

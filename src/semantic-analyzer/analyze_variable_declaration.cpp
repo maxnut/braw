@@ -3,7 +3,15 @@
 #include "parser/nodes/variable_declaration.hpp"
 #include "utils.hpp"
 
-std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::VariableDeclarationNode* node, BrawContext& ctx) {
+std::optional<SemanticError> SemanticAnalyzer::analyze(AST::VariableDeclarationNode* node, BrawContext& ctx) {
+    if(node->m_type.m_name == "@infer") {
+        if(!node->m_value)
+            return cannotInferType(node, ctx);
+        auto inferOpt = getType(node->m_value.get(), ctx);
+        if(!inferOpt) return cannotInferType(node, ctx);
+        node->m_type = inferOpt.value().m_name;
+    }
+
     auto typeOpt = ctx.getTypeInfo(node->m_type);
     if(!typeOpt)
         return unknownType(node, node->m_type, ctx);

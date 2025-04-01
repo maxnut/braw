@@ -8,22 +8,7 @@
 namespace CodeGen::x86_64 {
 
 void opcodeInstruction(const Instruction& obj, std::ostream& os) {
-    if(!obj.m_opcode.usesPrefix) {
-        auto it = s_prefixes.find(obj.m_opcode.prefix);
-        if (it != s_prefixes.end()) {
-            os << it->second << " ";
-        }
-    }
-
-    InstructionOpcode find = obj.m_opcode;
-    if(!obj.m_opcode.usesPrefix)
-        find.prefix = 0;
-    auto it2 = opcodeMap.find(find);
-    if (it2 != opcodeMap.end()) {
-        os << it2->second;
-    } else {
-        os << "unknown_opcode";
-    }
+    os << prefixToString(obj.m_prefix) << opcodeToString(obj.m_opcode);
 }
 
 void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const BrawContext& ctx) {
@@ -82,7 +67,7 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
 
 void Emitter::emit(const Instruction& instr, std::ostream& out, const BrawContext& ctx) {
     if(instr.m_opcode == LabelOp) {
-        emit((const Operands::Label*)instr.m_operands[0].get(), instr.m_opcode, out, ctx);
+        emit((const Operands::Label*)instr.m_operands[0].get(), instr, out, ctx);
         out << ":";
         return;
     }
@@ -92,10 +77,10 @@ void Emitter::emit(const Instruction& instr, std::ostream& out, const BrawContex
         // instr.m_operands[i]->emit(out, ctx);
         auto op = instr.m_operands[i];
         switch(op->m_type) {
-            case Operand::Type::Register: emit((const Operands::Register*)op.get(), instr.m_opcode, out, ctx); break;
-            case Operand::Type::Label: emit((const Operands::Label*)op.get(), instr.m_opcode, out, ctx); break;
-            case Operand::Type::Immediate: emit((const Operands::Immediate*)op.get(), instr.m_opcode, out, ctx); break;
-            case Operand::Type::Address: emit((const Operands::Address*)op.get(), instr.m_opcode, out, ctx); break;
+            case Operand::Type::Register: emit((const Operands::Register*)op.get(), instr, out, ctx); break;
+            case Operand::Type::Label: emit((const Operands::Label*)op.get(), instr, out, ctx); break;
+            case Operand::Type::Immediate: emit((const Operands::Immediate*)op.get(), instr, out, ctx); break;
+            case Operand::Type::Address: emit((const Operands::Address*)op.get(), instr, out, ctx); break;
             default: break;
         }
         if(i < instr.m_operands.size() - 1)
@@ -103,26 +88,26 @@ void Emitter::emit(const Instruction& instr, std::ostream& out, const BrawContex
     }
 }
 
-void Emitter::emit(const Operands::Register* reg, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
+void Emitter::emit(const Operands::Register* reg, const Instruction& instr, std::ostream& out, const BrawContext& ctx) {
     if(!reg->m_ids.contains(Operand::getSize(reg->m_typeInfo))) {
         out << "!err";
         return;
     }
 
-    Operand::Size size = instr == Lea || instr == Push || instr == Pop ? Operand::Size::Qword : Operand::getSize(reg->m_typeInfo);
+    Operand::Size size = instr.m_opcode == Lea || instr.m_opcode == Push || instr.m_opcode == Pop ? Operand::Size::Qword : Operand::getSize(reg->m_typeInfo);
     out << reg->m_ids.at(size);
 }
 
-void Emitter::emit(const Operands::Label* label, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
+void Emitter::emit(const Operands::Label* label, const Instruction& instr, std::ostream& out, const BrawContext& ctx) {
     out << label->m_id;
 }
 
-void Emitter::emit(const Operands::Immediate* imm, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
+void Emitter::emit(const Operands::Immediate* imm, const Instruction& instr, std::ostream& out, const BrawContext& ctx) {
     out << imm->m_value;
 }
 
-void Emitter::emit(const Operands::Address* addr, const InstructionOpcode& instr, std::ostream& out, const BrawContext& ctx) {
-    Operand::Size size = instr == Lea ? Operand::Size::Qword : Operand::getSize(addr->m_typeInfo);
+void Emitter::emit(const Operands::Address* addr, const Instruction& instr, std::ostream& out, const BrawContext& ctx) {
+    Operand::Size size = instr.m_opcode == Lea ? Operand::Size::Qword : Operand::getSize(addr->m_typeInfo);
     switch(size) {
         case Operand::Size::Byte: out << "BYTE PTR "; break;
         case Operand::Size::Word: out << "WORD PTR "; break;

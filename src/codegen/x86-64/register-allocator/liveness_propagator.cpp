@@ -121,6 +121,7 @@ void Propagator::fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> c
                 copy->m_forceTag = range->m_forceTag;
                 copy->m_id = range->m_id;
                 copy->m_isPointedOrDereferenced = range->m_isPointedOrDereferenced;
+                copy->m_isAssignedFirst = range->m_isAssignedFirst;
                 copy->m_registerType = range->m_registerType;
                 copy->m_typeInfo = range->m_typeInfo;
                 copy->m_scale = range->m_scale;
@@ -142,7 +143,7 @@ void Propagator::fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> c
 }
 
 void Propagator::fillRanges(const Function& function, Block* result) {
-    auto tryRegister = [&](::Operand o, uint32_t i, Operands::Register::RegisterGroup forceRegister = Operands::Register::Count) {
+    auto tryRegister = [&](::Operand o, uint32_t i, bool assignmentIfFirst = false, Operands::Register::RegisterGroup forceRegister = Operands::Register::Count) {
         if(o.index() != 1 && o.index() != 3)
             return;
 
@@ -156,6 +157,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 result->m_ranges[r->m_id] = std::make_shared<Range>();
                 result->m_ranges[r->m_id]->m_range.first = i;
                 result->m_rangeVector.push_back(result->m_ranges[r->m_id]);
+                result->m_ranges[r->m_id]->m_isAssignedFirst = assignmentIfFirst;
             }
 
             if(r->m_registerType != RegisterType::Count)
@@ -185,7 +187,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
         switch(instr->m_type) {
             case Instruction::Point: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
-                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o1, i, true);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
@@ -198,7 +200,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 // force this operand to be a spill register lol
                 std::get<1>(basic->m_o1)->m_type = TypeInfo{LONG_T, 8, true};
                 std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
-                tryRegister(basic->m_o1, i, Operands::Register::R15);
+                tryRegister(basic->m_o1, i, true, Operands::Register::R15);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
@@ -208,7 +210,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
             }
             case Instruction::Dereference: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
-                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o1, i, true);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
@@ -230,7 +232,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
                 // std::get<1>(basic->m_o1)->m_type = TypeInfo{INT_T, 4, true};
                 // std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
-                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o1, i, true);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
@@ -241,7 +243,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 break;
             default: {
                 auto basic = static_cast<const BasicInstruction*>(instr.get());
-                tryRegister(basic->m_o1, i);
+                tryRegister(basic->m_o1, i, true);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);

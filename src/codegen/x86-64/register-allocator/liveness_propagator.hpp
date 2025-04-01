@@ -20,6 +20,7 @@ struct Range {
     RegisterType m_registerType;
     TypeInfo m_typeInfo;
     bool m_isPointedOrDereferenced = false;
+    bool m_isAssignedFirst = false;
     Operands::Register::RegisterGroup m_forceTag = Operands::Register::Count;
     size_t m_scale = 1;
 };

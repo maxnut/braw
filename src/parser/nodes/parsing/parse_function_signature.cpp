@@ -44,8 +44,6 @@ Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& curso
     if(!expectTokenType(cursor.get().next().value(), Token::RIGHT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
 
-    if(!expectTokenType(cursor.get().value(), Token::OPERATOR))
-        return unexpectedTokenExpectedType(cursor.value(), Token::OPERATOR, ctx.m_path);
     if(!expectTokenValue(cursor.get().next().value(), "->"))
         return unexpectedTokenExpectedValue(cursor.value(), "->", ctx.m_path);
 

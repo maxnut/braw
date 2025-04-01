@@ -40,7 +40,7 @@ std::optional<SemanticError> SemanticAnalyzer::fillTypes(const AST::FileNode* fi
     return std::nullopt;
 }
 
-std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::Node* root, BrawContext& context) {
+std::optional<SemanticError> SemanticAnalyzer::analyze(AST::Node* root, BrawContext& context) {
     switch (root->m_type) {
         case AST::Node::File:
             return analyze(static_cast<const AST::FileNode*>(root), context);
@@ -49,7 +49,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::Node* root, Br
         case AST::Node::Scope:
             return analyze(static_cast<const AST::ScopeNode*>(root), context);
         case AST::Node::VariableDeclaration:
-            return analyze(static_cast<const AST::VariableDeclarationNode*>(root), context);
+            return analyze(static_cast<AST::VariableDeclarationNode*>(root), context);
         case AST::Node::VariableAccess:
             return analyze(static_cast<const AST::VariableAccessNode*>(root), context);
         case AST::Node::UnaryOperator:
@@ -255,6 +255,15 @@ SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer
 SemanticError SemanticAnalyzer::invalidInstruction(const AST::Node* causer, const AST::Node* origin, BrawContext& ctx) {
     return SemanticError(
         fmt::format("This instruction cannot be used at {}", Utils::extractRangeWithContext(ctx.m_currentFile, origin->m_rangeBegin.first, origin->m_rangeBegin.second, origin->m_rangeEnd.first, origin->m_rangeEnd.second, 0, false, 0)),
+        ctx.m_currentFile,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}
+
+SemanticError SemanticAnalyzer::cannotInferType(const AST::VariableDeclarationNode* causer, BrawContext& ctx) {
+    return SemanticError(
+        fmt::format("Cannot infer type of variable {}", causer->m_name.m_name),
         ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd

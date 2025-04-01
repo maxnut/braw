@@ -6,12 +6,15 @@
 #include <unordered_set>
 
 constexpr const char* VOID_T = "void";
-constexpr const char* INT_T = "int";
-constexpr const char* LONG_T = "long";
 constexpr const char* FLOAT_T = "float";
 constexpr const char* DOUBLE_T = "double";
+constexpr const char* INT_T = "int";
+constexpr const char* LONG_T = "long";
 constexpr const char* BOOL_T = "bool";
 constexpr const char* CHAR_T = "char";
+constexpr const char* UINT_T = "uint";
+constexpr const char* ULONG_T = "ulong";
+constexpr const char* UCHAR_T = "uchar";
 
 struct MemberInfo {
     std::string m_type;

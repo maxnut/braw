@@ -1,8 +1,6 @@
 import "syscall.braw"
 import "string.braw"
 
-ext fn print_int(num: int) -> void;
-
 fn print_string(str: char*) -> void {
     let len: int = str_len(str);
     syscall(1, (void*)1, (void*)str, (void*)len, (void*)0, (void*)0, (void*)0);

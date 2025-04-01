@@ -29,6 +29,14 @@ namespace Rules {
         {"*", 1},
         {"/", 1},
         {"%", 1},
+        {"==", 2},
+        {"!=", 2},
+        {"<", 2},
+        {">", 2},
+        {"<=", 2},
+        {">=", 2},
+        {"&&", 3},
+        {"||", 4}
     };
 
     inline bool isValidTypeName(TokenCursor& cursor) {

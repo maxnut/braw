@@ -27,7 +27,7 @@ struct Range {
 
 struct Block {
     std::pair<uint32_t, uint32_t> m_instructionRange;
-    std::unordered_map<std::string, std::shared_ptr<Range>> m_ranges;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<Range>>> m_ranges;
     std::vector<std::shared_ptr<Range>> m_rangeVector;
     std::vector<std::shared_ptr<Block>> m_connections;
 };

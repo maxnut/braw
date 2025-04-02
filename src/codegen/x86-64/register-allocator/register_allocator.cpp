@@ -35,7 +35,7 @@ RegisterAllocatorResult RegisterAllocator::build(const Function& function, std::
         for (auto& param : function.m_args) {
             if(!block->m_ranges.contains(param->m_id))
                 continue;
-            switch(block->m_ranges[param->m_id]->m_registerType) {
+            switch(block->m_ranges[param->m_id].back()->m_registerType) { // ?
                 case RegisterType::Single:
                 case RegisterType::Double:
                     if(registerPrecisionIndex >= precisionRegisters.size() || registerPrecisionIndex >= maxParamPReg) {
@@ -56,7 +56,11 @@ RegisterAllocatorResult RegisterAllocator::build(const Function& function, std::
             }
         }
 
+        std::unordered_set<std::string> visited;
         for(auto& range : block->m_rangeVector) {
+            if(visited.contains(range->m_id))
+                continue;
+            visited.insert(range->m_id);
             GraphNode node;
             node.m_registerType = range->m_registerType;
             node.m_id = range->m_id;
@@ -131,7 +135,7 @@ RegisterAllocatorResult RegisterAllocator::build(const Function& function, std::
                 }
             });
 
-            switch(block->m_ranges[popped.m_id]->m_registerType) {
+            switch(block->m_ranges[popped.m_id].back()->m_registerType) {
                 case RegisterType::Single:
                 case RegisterType::Double:
                     tryTag(precisionRegisters);
@@ -154,24 +158,29 @@ RegisterAllocatorResult RegisterAllocator::build(const Function& function, std::
     return res;
 }
 
-std::vector<std::string> RegisterAllocator::getOverlaps(const std::string& id, const std::unordered_map<std::string, std::shared_ptr<Range>>& ranges) {
+std::vector<std::string> RegisterAllocator::getOverlaps(const std::string& id, const std::unordered_map<std::string, std::vector<std::shared_ptr<Range>>>& ranges) {
     std::vector<std::string> ret;
-    const auto my = ranges.at(id);
+    std::unordered_set<std::string> visitedCmp;
+    for(auto& my : ranges.at(id)) {
+        for(auto& r : ranges) {
+            if(r.first == id)
+                continue;
 
-    for(auto& r : ranges) {
-        if(r.first == id)
-            continue;
+            const auto& vec = r.second;
 
-        const auto cmp = r.second;
+            for(auto& cmp : vec) {
+                if((cmp->m_registerType == RegisterType::Single || cmp->m_registerType == RegisterType::Double) && 
+                    (my->m_registerType != RegisterType::Single && my->m_registerType != RegisterType::Double))
+                    continue;
 
-        if((cmp->m_registerType == RegisterType::Single || cmp->m_registerType == RegisterType::Double) && 
-            (my->m_registerType != RegisterType::Single && my->m_registerType != RegisterType::Double))
-            continue;
-
-        if(my->m_range.first >= cmp->m_range.first && my->m_range.first <= cmp->m_range.second
-            || my->m_range.second <= cmp->m_range.second && my->m_range.second >= cmp->m_range.first)
-            ret.push_back(r.first);
+                if(my->m_range.first >= cmp->m_range.first && my->m_range.first <= cmp->m_range.second
+                    || my->m_range.second <= cmp->m_range.second && my->m_range.second >= cmp->m_range.first)
+                    visitedCmp.insert(r.first);
+            }
+        }
     }
+    for(auto& v : visitedCmp)
+        ret.push_back(v);
 
     return ret;
 }

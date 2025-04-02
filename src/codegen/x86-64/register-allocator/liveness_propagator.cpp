@@ -86,7 +86,7 @@ void Propagator::propagate(std::shared_ptr<Block> root, std::unordered_set<std::
                 continue;
 
             range->m_range.second = root->m_instructionRange.second;
-            conn->m_ranges.at(range->m_id)->m_range.first = conn->m_instructionRange.first;
+            conn->m_ranges.at(range->m_id).back()->m_range.first = conn->m_instructionRange.first;
         }
     }
     
@@ -110,7 +110,7 @@ void Propagator::fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> c
 
     if(path.size() > 2) {
         for(std::shared_ptr<Range> range : from->m_rangeVector) {
-            if(!current->m_ranges.contains(range->m_id))
+            if(!current->m_ranges.contains(range->m_id) || current->m_ranges.at(range->m_id).at(0)->m_isAssignedFirst)
                 continue;
 
             for(size_t i = 1; i < path.size() - 1; i++) {
@@ -126,7 +126,7 @@ void Propagator::fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> c
                 copy->m_typeInfo = range->m_typeInfo;
                 copy->m_scale = range->m_scale;
                 copy->m_range = block->m_instructionRange;
-                block->m_ranges[range->m_id] = copy;
+                block->m_ranges[range->m_id].push_back(copy);
                 block->m_rangeVector.push_back(copy);
             }
         }
@@ -148,27 +148,35 @@ void Propagator::fillRanges(const Function& function, Block* result) {
             return;
 
         auto r = o.index() == 3 ? std::get<Address>(o).m_base : std::get<std::shared_ptr<Register>>(o);
+        if(o.index() == 3)
+            assignmentIfFirst = false;
 
         while(r) {
             if(r->m_id == "%return" || r->m_id == "%returnF") // the return register will always be rax/xmm0
                 return;
 
-            if(!result->m_ranges.contains(r->m_id)) {
-                result->m_ranges[r->m_id] = std::make_shared<Range>();
-                result->m_ranges[r->m_id]->m_range.first = i;
-                result->m_rangeVector.push_back(result->m_ranges[r->m_id]);
-                result->m_ranges[r->m_id]->m_isAssignedFirst = assignmentIfFirst;
+            if(!result->m_ranges.contains(r->m_id) || assignmentIfFirst) {
+                bool pod = false;
+                if(!result->m_ranges.contains(r->m_id))
+                    result->m_ranges[r->m_id] = std::vector<std::shared_ptr<Range>>();
+                else
+                    pod = result->m_ranges[r->m_id].back()->m_isPointedOrDereferenced;
+                result->m_ranges[r->m_id].push_back(std::make_shared<Range>());
+                result->m_ranges[r->m_id].back()->m_isPointedOrDereferenced = pod;
+                result->m_ranges[r->m_id].back()->m_range.first = i;
+                result->m_ranges[r->m_id].back()->m_isAssignedFirst = assignmentIfFirst;
+                result->m_rangeVector.push_back(result->m_ranges[r->m_id].back());
             }
 
             if(r->m_registerType != RegisterType::Count)
-                result->m_ranges[r->m_id]->m_registerType = r->m_registerType;
+                result->m_ranges[r->m_id].back()->m_registerType = r->m_registerType;
 
-            result->m_ranges[r->m_id]->m_range.second = i;
-            result->m_ranges[r->m_id]->m_id = r->m_id;
-            result->m_ranges[r->m_id]->m_typeInfo = r->m_type;
-            result->m_ranges[r->m_id]->m_scale = r->m_scale;
+            result->m_ranges[r->m_id].back()->m_range.second = i;
+            result->m_ranges[r->m_id].back()->m_id = r->m_id;
+            result->m_ranges[r->m_id].back()->m_typeInfo = r->m_type;
+            result->m_ranges[r->m_id].back()->m_scale = r->m_scale;
             if(forceRegister != Operands::Register::Count)
-                result->m_ranges[r->m_id]->m_forceTag = forceRegister;
+                result->m_ranges[r->m_id].back()->m_forceTag = forceRegister;
             if(o.index() == 3 && std::get<Address>(o).m_index && r != std::get<Address>(o).m_index)
                 r = std::get<Address>(o).m_index;
             else
@@ -191,8 +199,10 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
-                if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2))
-                    result->m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id]->m_isPointedOrDereferenced = true;
+                if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2)) {
+                    for(auto range : result->m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id])
+                        range->m_isPointedOrDereferenced = true;
+                }
                 break;
             }
             case Instruction::PartialDereference: {
@@ -204,8 +214,10 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
-                if(std::holds_alternative<Address>(basic->m_o2))
-                    result->m_ranges[std::get<Address>(basic->m_o2).m_base->m_id]->m_isPointedOrDereferenced = true;
+                if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2)) {
+                    for(auto range : result->m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id])
+                        range->m_isPointedOrDereferenced = true;
+                }
                 break;
             }
             case Instruction::Dereference: {
@@ -214,8 +226,10 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
-                if(std::holds_alternative<Address>(basic->m_o2))
-                    result->m_ranges[std::get<Address>(basic->m_o2).m_base->m_id]->m_isPointedOrDereferenced = true;
+                if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2)) {
+                    for(auto range : result->m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id])
+                        range->m_isPointedOrDereferenced = true;
+                }
                 break;
             }
             case Instruction::Call: {

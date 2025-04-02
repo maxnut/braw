@@ -899,7 +899,7 @@ void CodeGenerator::initializeRegisters() {
     });
     m_registers.insert({ Operands::Register::RBX,
         std::shared_ptr<Operands::Register>(new Operands::Register(
-            {{Operand::Size::Qword, "rbx"}, {Operand::Size::Dword, "ebx"}, {Operand::Size::Word, "bx"}, {Operand::Size::Byte, "bx"}},
+            {{Operand::Size::Qword, "rbx"}, {Operand::Size::Dword, "ebx"}, {Operand::Size::Word, "bx"}, {Operand::Size::Byte, "bl"}},
             TypeInfo{},
             Operands::Register::General, Operands::Register::RBX)
         )

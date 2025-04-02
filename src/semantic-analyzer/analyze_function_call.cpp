@@ -10,7 +10,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionCallNo
         auto errorOpt = analyze(param.get(), ctx);
         if(errorOpt) return errorOpt;
 
-        parameters.push_back(getType(param.get(), ctx).value());
+        auto typeOr = getType(param.get(), ctx);
+        if(!typeOr) return typeOr.error();
+        parameters.push_back(typeOr.value());
     }
 
     if(!ctx.getFunction(node->m_name, parameters))

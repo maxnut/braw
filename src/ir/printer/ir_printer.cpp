@@ -162,6 +162,18 @@ void IRPrinter::print(std::ostream& out, const BasicInstruction* instr) {
         case Instruction::JumpTrue:
             out << "jmpt ";
             break;
+        case Instruction::And:
+            out << "and ";
+            break;
+        case Instruction::Or:
+            out << "or ";
+            break;
+        case Instruction::Xor:
+            out << "and ";
+            break;
+        case Instruction::LogicalNot:
+            out << "lnot ";
+            break;
         default:
             return;
     }

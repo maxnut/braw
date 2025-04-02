@@ -14,6 +14,9 @@ BrawContext::BrawContext() {
                 {"*", {INT_T} },
                 {"/", {INT_T}},
                 {"%", {INT_T}},
+                {"&", {INT_T}},
+                {"|", {INT_T}},
+                {"^", {INT_T}},
                 {"==", {BOOL_T}},
                 {"!=", {BOOL_T}},
                 {">", {BOOL_T}},
@@ -31,6 +34,9 @@ BrawContext::BrawContext() {
                 {"*", {LONG_T} },
                 {"/", {LONG_T}},
                 {"%", {LONG_T}},
+                {"&", {LONG_T}},
+                {"|", {LONG_T}},
+                {"^", {LONG_T}},
                 {"==", {BOOL_T}},
                 {"!=", {BOOL_T}},
                 {">", {BOOL_T}},
@@ -43,7 +49,9 @@ BrawContext::BrawContext() {
 
         {CHAR_T, TypeInfo{CHAR_T, 1, true,
             {
-                {"%", {CHAR_T}},
+                {"&", {CHAR_T}},
+                {"|", {CHAR_T}},
+                {"^", {CHAR_T}},
                 {"==", {BOOL_T}},
                 {"!=", {BOOL_T}}
             },
@@ -56,6 +64,10 @@ BrawContext::BrawContext() {
                 {"-", {UINT_T}},
                 {"*", {UINT_T} },
                 {"/", {UINT_T}},
+                {"%", {UINT_T}},
+                {"&", {UINT_T}},
+                {"|", {UINT_T}},
+                {"^", {UINT_T}},
                 {"==", {BOOL_T}},
                 {"!=", {BOOL_T}},
                 {">", {BOOL_T}},
@@ -72,6 +84,10 @@ BrawContext::BrawContext() {
                 {"-", {ULONG_T}},
                 {"*", {ULONG_T} },
                 {"/", {ULONG_T}},
+                {"%", {ULONG_T}},
+                {"&", {ULONG_T}},
+                {"|", {ULONG_T}},
+                {"^", {ULONG_T}},
                 {"==", {BOOL_T}},
                 {"!=", {BOOL_T}},
                 {">", {BOOL_T}},
@@ -82,8 +98,11 @@ BrawContext::BrawContext() {
             {UINT_T,BOOL_T,UCHAR_T}
         }},
 
-        {UCHAR_T, TypeInfo{CHAR_T, 1, true,
+        {UCHAR_T, TypeInfo{UCHAR_T, 1, true,
             {
+                {"&", {UCHAR_T}},
+                {"|", {UCHAR_T}},
+                {"^", {UCHAR_T}},
                 {"==", {BOOL_T}},
                 {"!=", {BOOL_T}}
             },
@@ -124,8 +143,13 @@ BrawContext::BrawContext() {
 
         {BOOL_T, TypeInfo{BOOL_T, 1, true,
             {
+                {"&", {BOOL_T}},
+                {"|", {BOOL_T}},
+                {"^", {BOOL_T}},
                 {"==", {BOOL_T}},
-                {"!=", {BOOL_T}}
+                {"!=", {BOOL_T}},
+                {"&&", {BOOL_T}},
+                {"||", {BOOL_T}}
             }
         }}
     };

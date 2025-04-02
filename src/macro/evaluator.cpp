@@ -411,8 +411,13 @@ std::optional<MacroError> Evaluator::processAST(std::shared_ptr<AST::Node> node,
         case AST::Node::Macro:
         case AST::Node::Struct:
         case AST::Node::VariableAccess:
-        case AST::Node::VariableDeclaration:
             break;
+        case AST::Node::VariableDeclaration: {
+            auto decl = std::static_pointer_cast<AST::VariableDeclarationNode>(node);
+            if(decl->m_value)
+                processAST(decl->m_value, (std::shared_ptr<AST::Node>*)&decl->m_value, path, ctx);
+            break;
+        }
         case AST::Node::FunctionDefinition: {
             auto fun = std::static_pointer_cast<AST::FunctionDefinitionNode>(node);
             if(!fun->m_signature.m_external)

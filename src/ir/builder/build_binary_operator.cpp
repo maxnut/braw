@@ -37,38 +37,62 @@ Operand IRBuilder::buildBinaryOperator(const AST::BinaryOperatorNode* node, Braw
     else if(node->m_operator == "==") {
         moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        newTarget->m_type = context.getTypeInfo(getOperandType(left, context, ictx).m_operators["=="].m_returnType).value();
+        newTarget->m_registerType = getRegisterType(newTarget->m_type);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareEquals, target, right, newTarget));
         target = newTarget;
     }
     else if(node->m_operator == "!=") {
         moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        newTarget->m_type = context.getTypeInfo(getOperandType(left, context, ictx).m_operators["!="].m_returnType).value();
+        newTarget->m_registerType = getRegisterType(newTarget->m_type);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareNotEquals, target, right, newTarget));
         target = newTarget;
     }
     else if(node->m_operator == ">") {
         moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        newTarget->m_type = context.getTypeInfo(getOperandType(left, context, ictx).m_operators[">"].m_returnType).value();
+        newTarget->m_registerType = getRegisterType(newTarget->m_type);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareGreater, target, right, newTarget));
         target = newTarget;
     }
     else if(node->m_operator == "<") {
         moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        newTarget->m_type = context.getTypeInfo(getOperandType(left, context, ictx).m_operators["<"].m_returnType).value();
+        newTarget->m_registerType = getRegisterType(newTarget->m_type);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareLess, target, right, newTarget));
         target = newTarget;
     }
     else if(node->m_operator == "<=") {
         moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        newTarget->m_type = context.getTypeInfo(getOperandType(left, context, ictx).m_operators["<="].m_returnType).value();
+        newTarget->m_registerType = getRegisterType(newTarget->m_type);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareLessEquals, target, right, newTarget));
         target = newTarget;
     }
     else if(node->m_operator == ">=") {
         moveToRegister(name, left, context, ictx);
         auto newTarget = makeOrGetRegister(name + "_0", ictx);
+        newTarget->m_type = context.getTypeInfo(getOperandType(left, context, ictx).m_operators[">="].m_returnType).value();
+        newTarget->m_registerType = getRegisterType(newTarget->m_type);
         ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::CompareGreaterEquals, target, right, newTarget));
         target = newTarget;
+    }
+    else if(node->m_operator == "&" || node->m_operator == "&&") {
+        moveToRegister(name, left, context, ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::And, target, right));
+    }
+    else if(node->m_operator == "|" || node->m_operator == "||") {
+        moveToRegister(name, left, context, ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Or, target, right));
+    }
+    else if(node->m_operator == "^") {
+        moveToRegister(name, left, context, ictx);
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Xor, target, right));
     }
     
     return target;

@@ -7,9 +7,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::VariableDeclarationN
     if(node->m_type.m_name == "@infer") {
         if(!node->m_value)
             return cannotInferType(node, ctx);
-        auto inferOpt = getType(node->m_value.get(), ctx);
-        if(!inferOpt) return cannotInferType(node, ctx);
-        node->m_type = inferOpt.value().m_name;
+        auto inferOr = getType(node->m_value.get(), ctx);
+        if(!inferOr) return inferOr.error();
+        node->m_type = inferOr.value().m_name;
     }
 
     auto typeOpt = ctx.getTypeInfo(node->m_type);
@@ -22,7 +22,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::VariableDeclarationN
     if(node->m_value) {
         auto errorOpt = analyze(node->m_value.get(), ctx);
         if(errorOpt) return errorOpt;
-        TypeInfo type = getType(node->m_value.get(), ctx).value();
+        auto typeOr = getType(node->m_value.get(), ctx);
+        if(!typeOr) return typeOr.error();
+        TypeInfo type = typeOr.value();
 
         if(node->m_scale > 1)
             return mismatchedTypes(node, type.m_name, "array", ctx);

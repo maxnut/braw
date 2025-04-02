@@ -13,7 +13,7 @@ Result<std::shared_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor, Par
     std::shared_ptr<AST::UnaryOperatorNode> unary = nullptr;
     std::pair<uint32_t, uint32_t> rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
-    if(cursor.get().value().m_value == "&" || cursor.get().value().m_value == "*") {
+    if(cursor.get().value().m_value == "&" || cursor.get().value().m_value == "*" || cursor.get().value().m_value == "!") {
         unary = std::make_shared<AST::UnaryOperatorNode>();
         unary->m_operator = cursor.get().value().m_value;
         unary->m_rangeBegin = rangeBegin;

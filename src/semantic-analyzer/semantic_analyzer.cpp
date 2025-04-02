@@ -16,6 +16,8 @@
 #include "rules.hpp"
 #include "utils.hpp"
 
+#include <__expected/unexpect.h>
+#include <__expected/unexpected.h>
 #include <optional>
 #include <spdlog/fmt/fmt.h>
 
@@ -85,44 +87,66 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::Node* root, BrawCont
 }
 
 //TODO: add error handling
-std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawContext& ctx) {
+std::expected<TypeInfo, SemanticError> SemanticAnalyzer::getType(const AST::Node* node, BrawContext& ctx) {
     switch (node->m_type) {
         case AST::Node::VariableDeclaration: {
-            return ctx.getTypeInfo(static_cast<const AST::VariableDeclarationNode*>(node)->m_type);
+            auto optType = ctx.getTypeInfo(static_cast<const AST::VariableDeclarationNode*>(node)->m_type);
+            if(!optType) return std::unexpected{unknownType(node, static_cast<const AST::VariableDeclarationNode*>(node)->m_type, ctx)};
+            return optType.value();
         }
         case AST::Node::VariableAccess: {
             const std::string& var = static_cast<const AST::VariableAccessNode*>(node)->m_name;
-            return ctx.getScopeInfo(var).value().m_type;
+            auto optScope = ctx.getScopeInfo(var);
+            if(!optScope) return std::unexpected{unknownVariable(static_cast<const AST::VariableAccessNode*>(node), ctx)};
+            return optScope.value().m_type;
         }
         case AST::Node::UnaryOperator: {
             const AST::UnaryOperatorNode* op = static_cast<const AST::UnaryOperatorNode*>(node);
-            auto typeOpt = getType(op->m_operand.get(), ctx);
-            typeOpt = typeOpt.has_value() && op->m_operator == "->" ? Utils::getRawType(typeOpt.value(), ctx) : typeOpt;
-            if(!typeOpt) return std::nullopt;
+            auto typeOr = getType(op->m_operand.get(), ctx);
+            if(!typeOr) return typeOr;
+            TypeInfo type = typeOr.value();
+            if(op->m_operator == "->") {
+                auto typeOpt = Utils::getRawType(type, ctx);
+                if(!typeOpt) return std::unexpected{unknownType(op->m_operand.get(), type.m_name, ctx)};
+                type = typeOpt.value();
+            }
 
             if(op->m_operator == "&")
-                return Utils::makePointer(typeOpt.value());
-            else if(op->m_operator == "*" || op->m_operator == "[]")
-                return Utils::getRawType(typeOpt.value(), ctx);
-            else if(op->m_operator == "cast")
-                return ctx.getTypeInfo(op->m_data);
-            else if(op->m_operator == "." || op->m_operator == "->") {
-                auto typeOpt2 = ctx.getTypeInfo(typeOpt.value().m_members.at(op->m_data).m_type);
-                if(!typeOpt2) return std::nullopt;
-                return typeOpt2.value();
+                return Utils::makePointer(type);
+            else if(op->m_operator == "*" || op->m_operator == "[]") {
+                auto typeOpt = Utils::getRawType(type, ctx);
+                if(!typeOpt) return std::unexpected{unknownType(op->m_operand.get(), type.m_name, ctx)};
+                return typeOpt.value();
             }
-            return std::nullopt;
+            else if(op->m_operator == "cast") {
+                auto typeOpt = ctx.getTypeInfo(op->m_data);
+                if(!typeOpt) return std::unexpected{unknownType(op->m_operand.get(), type.m_name, ctx)};
+                return typeOpt.value();
+            }
+            else if(op->m_operator == "." || op->m_operator == "->") {
+                auto typeOpt = ctx.getTypeInfo(type.m_members.at(op->m_data).m_type);
+                if(!typeOpt) return std::unexpected{unknownType(op->m_operand.get(), type.m_name, ctx)};
+                return typeOpt.value();
+            }
+            else if(op->m_operator == "!") {
+                return ctx.getTypeInfo(BOOL_T).value();
+            }
+            return std::unexpected{unknownOperator(op, ctx)};
         }
         case AST::Node::BinaryOperator: {
             const AST::BinaryOperatorNode* op = static_cast<const AST::BinaryOperatorNode*>(node);
             auto leftOpt = getType(op->m_left.get(), ctx);
+            if(!leftOpt) return leftOpt;
             auto rightOpt = getType(op->m_right.get(), ctx);
-            if(!leftOpt || !rightOpt || !hasOperator(leftOpt.value(), op->m_operator)) return std::nullopt;
+            if(!rightOpt) return rightOpt;
+            if(!hasOperator(leftOpt.value(), op->m_operator)) return std::unexpected(unknownOperator(op, ctx));
 
             if(Rules::isPtr(leftOpt->m_name))
                 return leftOpt.value();
 
-            return ctx.getTypeInfo(leftOpt->m_operators[op->m_operator].m_returnType);
+            auto typeOpt = ctx.getTypeInfo(leftOpt->m_operators[op->m_operator].m_returnType);
+            if(!typeOpt) return std::unexpected{unknownType(op->m_left.get(), leftOpt.value().m_name, ctx)};
+            return typeOpt.value();
         }
         case AST::Node::FunctionCall: {
             const AST::FunctionCallNode* call = static_cast<const AST::FunctionCallNode*>(node);
@@ -130,10 +154,14 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
             params.reserve(call->m_parameters.size());
             for(auto& param : call->m_parameters) {
                 auto errOpt = analyze(param.get(), ctx);
-                if(errOpt) return std::nullopt;
-                params.push_back(getType(param.get(), ctx).value());
+                if(errOpt) return std::unexpected{errOpt.value()};
+                auto typeOr = getType(param.get(), ctx);
+                if(!typeOr) return std::unexpected{typeOr.error()};
+                params.push_back(typeOr.value());
             }
-            return ctx.getFunction(call->m_name, params)->m_returnType;
+            auto funcOpt = ctx.getFunction(call->m_name, params);
+            if(!funcOpt) return std::unexpected{unknownFunction(call, params, ctx)};
+            return funcOpt->m_returnType;
         }
         case AST::Node::Literal: {
             const AST::LiteralNode* literal = static_cast<const AST::LiteralNode*>(node);
@@ -152,7 +180,7 @@ std::optional<TypeInfo> SemanticAnalyzer::getType(const AST::Node* node, BrawCon
             break;
     }
 
-    return std::nullopt;
+    return std::unexpected{SemanticError("How")};
 }
 
 SemanticError SemanticAnalyzer::unknownType(const AST::Node* causer, const std::string& type, BrawContext& ctx) {

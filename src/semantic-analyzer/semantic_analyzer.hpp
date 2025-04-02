@@ -57,7 +57,7 @@ private:
     static std::optional<SemanticError> analyze(const AST::LiteralNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::ReturnNode*, BrawContext&);
 
-    static std::optional<TypeInfo> getType(const AST::Node* node, BrawContext& ctx);
+    static std::expected<TypeInfo, SemanticError> getType(const AST::Node* node, BrawContext& ctx);
     static bool hasOperator(const TypeInfo& type, const std::string& operatorName);
 
     static SemanticError unknownType(const AST::Node* causer, const std::string& type, BrawContext& ctx);

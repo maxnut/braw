@@ -54,6 +54,10 @@ enum Opcode {
     Rcpps,
     Cqo,
     Cdq,
+    And,
+    Or,
+    Xor,
+    Test,
     LabelOp
 };
 
@@ -110,6 +114,10 @@ inline const char* opcodeToString(Opcode opcode) {
     case Rcpps: return "rcpps";
     case Cqo: return "cqo";
     case Cdq: return "cdq";
+    case And: return "and";
+    case Or: return "or";
+    case Xor: return "xor";
+    case Test: return "test";
     case LabelOp:
       break;
     }

@@ -9,8 +9,10 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::ReturnNode* no
         ctx.m_returned = true;
     }
 
-    if(node->m_value && getType(node->m_value.get(), ctx).value() != ctx.m_currentFunction->m_returnType)
-        return mismatchedTypes(node, getType(node->m_value.get(), ctx).value().m_name, ctx.m_currentFunction->m_returnType.m_name, ctx);
+    auto typeOr = getType(node->m_value.get(), ctx);
+    if(!typeOr) return typeOr.error();
+    if(node->m_value && typeOr.value() != ctx.m_currentFunction->m_returnType)
+        return mismatchedTypes(node, typeOr.value().m_name, ctx.m_currentFunction->m_returnType.m_name, ctx);
 
     return std::nullopt;
 }

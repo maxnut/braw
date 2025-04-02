@@ -210,6 +210,51 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             compareAndJump(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), std::make_shared<Operands::Immediate>(0, ctx.m_brawCtx.getTypeInfo(INT_T).value()), cast<Operands::Label>(convertOperand(bin->m_o2, ctx)), Jne, ctx);
             break;
         }
+        case ::Instruction::And: {
+            auto bin = (const ::BasicInstruction*)instr;
+            Instruction in;
+            in.m_opcode = And;
+            in.addOperand(convertOperand(bin->m_o1, ctx));
+            in.addOperand(convertOperand(bin->m_o2, ctx));
+            addInstruction(in, ctx);
+            break;
+        }
+        case ::Instruction::Or: {
+            auto bin = (const ::BasicInstruction*)instr;
+            Instruction in;
+            in.m_opcode = Or;
+            in.addOperand(convertOperand(bin->m_o1, ctx));
+            in.addOperand(convertOperand(bin->m_o2, ctx));
+            addInstruction(in, ctx);
+            break;
+        }
+        case ::Instruction::Xor: {
+            auto bin = (const ::BasicInstruction*)instr;
+            Instruction in;
+            in.m_opcode = Xor;
+            in.addOperand(convertOperand(bin->m_o1, ctx));
+            in.addOperand(convertOperand(bin->m_o2, ctx));
+            addInstruction(in, ctx);
+            break;
+        }
+        case ::Instruction::LogicalNot: {
+            auto bin = (const ::BasicInstruction*)instr;
+            Instruction in, sete;
+            in.m_opcode = Test;
+            auto op2 = convertOperand(bin->m_o2, ctx);
+            if(op2->m_type == Operand::Type::Immediate) {
+                move(m_registers.at(SPILL1), op2, ctx);
+                op2 = m_registers.at(SPILL1);
+            }
+            op2 = op2->m_type == Operand::Type::Address ? memoryValueToRegister(cast<Operands::Address>(op2), ctx) : op2;
+            in.addOperand(op2);
+            in.addOperand(op2);
+            addInstruction(in, ctx);
+            sete.m_opcode = Sete;
+            sete.addOperand(convertOperand(bin->m_o1, ctx));
+            addInstruction(sete, ctx);
+            break;
+        }
         case ::Instruction::Jump: {
             auto bin = (const ::BasicInstruction*)instr;
             Instruction in;

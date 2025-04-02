@@ -27,6 +27,10 @@ struct Instruction {
         Upsize,
         Downsize,
         Modulo,
+        And,
+        Or,
+        Xor,
+        LogicalNot,
         Count
     };
 

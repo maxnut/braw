@@ -242,16 +242,6 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 }
                 break;
             }
-            case Instruction::Upsize: {
-                auto basic = static_cast<const BasicInstruction*>(instr.get());
-                // std::get<1>(basic->m_o1)->m_type = TypeInfo{INT_T, 4, true};
-                // std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
-                tryRegister(basic->m_o1, i, true);
-                tryRegister(basic->m_o2, i);
-                tryRegister(basic->m_o3, i);
-                tryRegister(basic->m_o4, i);
-                break;
-            }
             case Instruction::Label:
             case Instruction::Return:
                 break;

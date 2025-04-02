@@ -67,6 +67,9 @@ private:
     static Operand dotOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx);
     static Operand dereferenceOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx);
     static Operand addressOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx);
+    static Operand subscriptOperator(const AST::UnaryOperatorNode* node, Operand& op, BrawContext& context, IRFunctionContext& ictx);
+    static Operand castOperator(const AST::UnaryOperatorNode* node, Operand& op, BrawContext& context, IRFunctionContext& ictx);
+    static Operand logicalNotOperator(const AST::UnaryOperatorNode* node, Operand& op, BrawContext& context, IRFunctionContext& ictx);
 
     static TypeInfo getOperandType(Operand op, BrawContext& context, IRFunctionContext& ictx);
 

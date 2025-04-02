@@ -11,14 +11,21 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
     auto errorOpt = analyze(node->m_operand.get(), ctx);
     if(errorOpt) return errorOpt;
 
-    if(node->m_operator != "cast" && node->m_operator != "." && node->m_operator != "->" && node->m_operator != "&" && node->m_operator != "*" && node->m_operator != "[]")
+    if(node->m_operator != "!" && node->m_operator != "cast" && node->m_operator != "." && node->m_operator != "->" && node->m_operator != "&" && node->m_operator != "*" && node->m_operator != "[]")
         return unknownOperator(node, ctx);
 
-    if((node->m_operator == "*" || node->m_operator == "->") && !Rules::isPtr(getType(node->m_operand.get(), ctx).value().m_name))
-        return mismatchedTypes(node, getType(node->m_operand.get(), ctx).value().m_name, "pointer", ctx);
+    auto typeOr = getType(node->m_operand.get(), ctx);
+    if(!typeOr) return typeOr.error();
+    if((node->m_operator == "*" || node->m_operator == "->") && !Rules::isPtr(typeOr.value().m_name))
+        return mismatchedTypes(node, typeOr.value().m_name, "pointer", ctx);
+
+    if(node->m_operator == "!" && typeOr.value().m_name != BOOL_T)
+        return mismatchedTypes(node, typeOr.value().m_name, BOOL_T, ctx);
         
     if(node->m_operator == "->" || node->m_operator == ".") {
-        TypeInfo type = getType(node->m_operand.get(), ctx).value();
+        typeOr = getType(node->m_operand.get(), ctx);
+        if(!typeOr) return typeOr.error();
+        TypeInfo type = typeOr.value();
         if(node->m_operator == "->") {
             auto typeOpt = Utils::getRawType(type, ctx);
             if(!typeOpt) return unknownType(node->m_operand.get(), type.m_name, ctx);
@@ -29,7 +36,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
             return unknownMember(node, type.m_name, node->m_data, ctx);
     }
     else if(node->m_operator == "cast") {
-        TypeInfo type = getType(node->m_operand.get(), ctx).value();
+        typeOr = getType(node->m_operand.get(), ctx);
+        if(!typeOr) return typeOr.error();
+        TypeInfo type = typeOr.value();
 
         if(!Rules::isPtr(node->m_data)) {
             if(!type.m_validCasts.contains(node->m_data))
@@ -41,9 +50,13 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
     else if(node->m_operator == "[]") {
         errorOpt = analyze(node->m_expression.get(), ctx); 
         if(errorOpt) return errorOpt;
-        if(!Rules::isPtr(getType(node->m_operand.get(), ctx).value().m_name))
-            return mismatchedTypes(node, getType(node->m_operand.get(), ctx).value().m_name, "pointer", ctx);
-        TypeInfo type = getType(node->m_expression.get(), ctx).value();
+        typeOr = getType(node->m_operand.get(), ctx);
+        if(!typeOr) return typeOr.error();
+        if(!Rules::isPtr(typeOr.value().m_name))
+            return mismatchedTypes(node, typeOr.value().m_name, "pointer", ctx);
+        typeOr = getType(node->m_expression.get(), ctx);
+        if(!typeOr) return typeOr.error();
+        TypeInfo type = typeOr.value();
         if(type.m_name != INT_T && type.m_name != LONG_T)
             return mismatchedTypes(node, type.m_name, std::string(INT_T) + " or " + std::string(LONG_T), ctx);
     }

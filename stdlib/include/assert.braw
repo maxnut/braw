@@ -1,0 +1,5 @@
+import "core.braw"
+
+define ASSERT(condition) {
+    if(!#condition): exit($EXIT_FAILURE);
+}

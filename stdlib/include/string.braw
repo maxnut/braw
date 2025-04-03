@@ -38,3 +38,51 @@ fn str_from_int(n: int, buf: char*) -> void {
     buf[i] = '\0';
     str_reverse(buf);
 }
+
+fn str_copy(dest: char*, src: char*) -> void {
+    let i = 0;
+    while (src[i] != '\0') {
+        dest[i] = src[i];
+        i = i + 1;
+    }
+    dest[i] = '\0';
+}
+
+fn str_concat(dest: char*, src: char*) -> void {
+    let i = str_len(dest);
+    let j = 0;
+    while (src[j] != '\0') {
+        dest[i] = src[j];
+        i = i + 1;
+        j = j + 1;
+    }
+    dest[i] = '\0';
+}
+
+fn str_compare(s1: char*, s2: char*) -> int {
+    let i = 0;
+    while (s1[i] != '\0' && s2[i] != '\0') {
+        if (s1[i] != s2[i]) {
+            return (int)s1[i] - (int)s2[i];
+        }
+        i = i + 1;
+    }
+    return (int)s1[i] - (int)s2[i];
+}
+
+fn str_to_int(s: char*) -> int {
+    let i = 0;
+    let n = 0;
+    let sign = 1;
+    
+    if (s[0] == '-') {
+        sign = -1;
+        i = 1;
+    }
+    
+    while (s[i] >= '0' && s[i] <= '9') {
+        n = n * 10 + (int)(s[i] - '0');
+        i = i + 1;
+    }
+    return n * sign;
+}

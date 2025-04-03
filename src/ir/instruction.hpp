@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 struct Instruction {
     enum Type {
         Move,
@@ -37,4 +38,5 @@ struct Instruction {
     Instruction(Type type) : m_type(type) {}
 
     Type m_type = Count;
+    size_t m_line;
 };

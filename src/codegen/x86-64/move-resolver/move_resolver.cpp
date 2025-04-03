@@ -85,7 +85,7 @@ std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, st
     
     std::erase_if(from, [from, &indexed, &positions, &ignore](Instruction& instr){
         if(instr.m_opcode != Mov || ignore.contains(positions[&instr])) {
-            indexed.push_back({positions[&instr], instr});
+            indexed.push_back({instr.m_opcode == Push ? 0 : positions[&instr], instr});
             return true;
         }
         return false;
@@ -138,6 +138,7 @@ std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, st
         result.push_back(instr);
     }
 
+    std::sort(indexed.begin(), indexed.end(), [](const auto& a, const auto& b){return a.first < b.first;});
     for(const auto& [idx, instr] : indexed) {
         result.insert(result.begin() + idx, instr);
     }

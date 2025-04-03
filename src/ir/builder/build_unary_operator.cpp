@@ -144,6 +144,17 @@ Operand IRBuilder::castOperator(const AST::UnaryOperatorNode* node, Operand& op,
             }
         }
     }
+    if(ret.index() == 1) {
+        std::shared_ptr<Register> reg = std::get<1>(ret);
+        std::shared_ptr<Register> clone = std::make_shared<Register>(reg->m_id, reg->m_type, reg->m_registerType, reg->m_scale);
+        clone->m_type = context.getTypeInfo(node->m_data).value();
+        clone->m_registerType = getRegisterType(reg->m_type);
+        ret = clone;
+    }
+    else if(ret.index() == 3) {
+        auto add = std::get<3>(ret);
+        add.m_typeInfo = context.getTypeInfo(node->m_data).value();
+    }
     return ret;
 }
 

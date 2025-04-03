@@ -134,9 +134,9 @@ std::shared_ptr<AST::MacroNode> findMacro(const std::string& name, std::shared_p
         res = findMacro(name, import);
 
     if(file->m_macros.contains(name))
-        return file->m_macros.at(name);
+        res = file->m_macros.at(name);
 
-    return nullptr;
+    return res;
 }
 
 std::expected<std::shared_ptr<Node>, MacroError> Evaluator::deepClone(std::shared_ptr<AST::Node> node, EvaluatorContext& ctx) {
@@ -414,23 +414,31 @@ std::optional<MacroError> Evaluator::processAST(std::shared_ptr<AST::Node> node,
             break;
         case AST::Node::VariableDeclaration: {
             auto decl = std::static_pointer_cast<AST::VariableDeclarationNode>(node);
-            if(decl->m_value)
-                processAST(decl->m_value, (std::shared_ptr<AST::Node>*)&decl->m_value, path, ctx);
+            if(decl->m_value) {
+                auto err = processAST(decl->m_value, (std::shared_ptr<AST::Node>*)&decl->m_value, path, ctx);
+                if(err) return err;
+            }
             break;
         }
         case AST::Node::FunctionDefinition: {
             auto fun = std::static_pointer_cast<AST::FunctionDefinitionNode>(node);
-            if(!fun->m_signature.m_external)
-                processAST(fun->m_scope, (std::shared_ptr<AST::Node>*)&fun->m_scope, path, ctx);
+            if(!fun->m_signature.m_external) {
+                auto err = processAST(fun->m_scope, (std::shared_ptr<AST::Node>*)&fun->m_scope, path, ctx);
+                if(err) return err;
+            }
             break;
         }
         case AST::Node::File: {
             auto file = std::static_pointer_cast<AST::FileNode>(node);
-            for(auto& import : file->m_imports)
-                processAST(import, (std::shared_ptr<AST::Node>*)&import, file, ctx);
+            for(auto& import : file->m_imports) {
+                auto err = processAST(import, (std::shared_ptr<AST::Node>*)&import, file, ctx);
+                if(err) return err;
+            }
 
-            for(auto& fun : file->m_functions)
-                processAST(fun, (std::shared_ptr<AST::Node>*)&fun, file, ctx);
+            for(auto& fun : file->m_functions) {
+                auto err = processAST(fun, (std::shared_ptr<AST::Node>*)&fun, file, ctx);
+                if(err) return err;
+            }
 
             for(auto& make : file->m_macroCalls) {
                 std::shared_ptr<AST::Node> tmp;
@@ -452,55 +460,76 @@ std::optional<MacroError> Evaluator::processAST(std::shared_ptr<AST::Node> node,
         }
         case AST::Node::Scope: {
             auto scope = std::static_pointer_cast<AST::ScopeNode>(node);
-            for(auto& in : scope->m_instructions)
-                processAST(in, &in, path, ctx);
+            for(auto& in : scope->m_instructions) {
+                auto err = processAST(in, &in, path, ctx);
+                if(err) return err;
+            }
             break;
         }
         case AST::Node::FunctionCall: {
             auto call = std::static_pointer_cast<AST::FunctionCallNode>(node);
-            for(auto& p : call->m_parameters)
-                processAST(p, &p, path, ctx);
+            for(auto& p : call->m_parameters) {
+                auto err = processAST(p, &p, path, ctx);
+                if(err) return err;
+            }
             break;
         }
         case AST::Node::BinaryOperator: {
             auto op = std::static_pointer_cast<AST::BinaryOperatorNode>(node);
-            processAST(op->m_left, &op->m_left, path, ctx);
-            processAST(op->m_right, &op->m_right, path, ctx);
+            auto err = processAST(op->m_left, &op->m_left, path, ctx);
+            if(err) return err;
+            err = processAST(op->m_right, &op->m_right, path, ctx);
+            if(err) return err;
             break;
         }
         case AST::Node::UnaryOperator: {
             auto op = std::static_pointer_cast<AST::UnaryOperatorNode>(node);
-            if(op->m_expression)
-                processAST(op->m_expression, &op->m_expression, path, ctx);
-            processAST(op->m_operand, &op->m_operand, path, ctx);
+            if(op->m_expression) {
+                auto err = processAST(op->m_expression, &op->m_expression, path, ctx);
+                if(err) return err;
+            }
+            auto err = processAST(op->m_operand, &op->m_operand, path, ctx);
+            if(err) return err;
             break;
         }
         case AST::Node::If: {
             auto ifNode = std::static_pointer_cast<AST::IfNode>(node);
-            processAST(ifNode->m_condition, &ifNode->m_condition, path, ctx);
-            processAST(ifNode->m_then, (std::shared_ptr<AST::Node>*)&ifNode->m_then, path, ctx);
-            if(ifNode->m_else)
-                processAST(ifNode->m_else, &ifNode->m_else, path, ctx);
+            auto err = processAST(ifNode->m_condition, &ifNode->m_condition, path, ctx);
+            if(err) return err;
+            err = processAST(ifNode->m_then, (std::shared_ptr<AST::Node>*)&ifNode->m_then, path, ctx);
+            if(err) return err;
+            if(ifNode->m_else) {
+                err = processAST(ifNode->m_else, &ifNode->m_else, path, ctx);
+                if(err) return err;
+            }
             break;
         }
         case AST::Node::While: {
             auto whileNode = std::static_pointer_cast<AST::WhileNode>(node);
-            processAST(whileNode->m_condition, &whileNode->m_condition, path, ctx);
-            processAST(whileNode->m_then, (std::shared_ptr<AST::Node>*)&whileNode->m_then, path, ctx);
+            auto err = processAST(whileNode->m_condition, &whileNode->m_condition, path, ctx);
+            if(err) return err;
+            err = processAST(whileNode->m_then, (std::shared_ptr<AST::Node>*)&whileNode->m_then, path, ctx);
+            if(err) return err;
             break;
         }
         case AST::Node::For: {
             auto forNode = std::static_pointer_cast<AST::ForNode>(node);
-            processAST(forNode->m_initializer, &forNode->m_initializer, path, ctx);
-            processAST(forNode->m_condition, &forNode->m_condition, path, ctx);
-            processAST(forNode->m_increment, &forNode->m_increment, path, ctx);
-            processAST(forNode->m_body, (std::shared_ptr<AST::Node>*)&forNode->m_body, path, ctx);
+            auto err = processAST(forNode->m_initializer, &forNode->m_initializer, path, ctx);
+            if(err) return err;
+            err = processAST(forNode->m_condition, &forNode->m_condition, path, ctx);
+            if(err) return err;
+            err = processAST(forNode->m_increment, &forNode->m_increment, path, ctx);
+            if(err) return err;
+            err = processAST(forNode->m_body, (std::shared_ptr<AST::Node>*)&forNode->m_body, path, ctx);
+            if(err) return err;
             break;
         }
         case AST::Node::Return: {
             auto returnNode = std::static_pointer_cast<AST::ReturnNode>(node);
-            if(returnNode->m_value)
-                processAST(returnNode->m_value, &returnNode->m_value, path, ctx);
+            if(returnNode->m_value) {
+                auto err = processAST(returnNode->m_value, &returnNode->m_value, path, ctx);
+                if(err) return err;
+            }
             break;
         }
         case AST::Node::MacroCall: {

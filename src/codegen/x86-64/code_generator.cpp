@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace CodeGen::x86_64 {
@@ -76,6 +77,8 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         ctx.m_spills = 0;
         move(m_registers.at(Operands::Register::RBP), m_registers.at(Operands::Register::RSP), ctx);
 
+        std::unordered_set<Operands::Register::RegisterGroup> savedRegisters;
+
         int64_t spills = 0;
         for(auto block : result.m_propagated.blocks) {
             for(auto range : block->m_rangeVector) {
@@ -87,7 +90,7 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
                     ctx.m_virtualRegisters[range->m_id]->m_scaleSize = range->m_scale;
                     Operands::Register::RegisterGroup group = result.m_registers.at(range->m_id);
                     if(group == Operands::Register::RBX || group == Operands::Register::R12 || group == Operands::Register::R13 || group == Operands::Register::R14 || group == Operands::Register::R15)
-                        ctx.m_savedRegisters.push_back(m_registers.at(result.m_registers.at(range->m_id)));
+                        savedRegisters.insert(group);
                 }
                 else {
                     TypeInfo type = range->m_scale > 1 ? Utils::getRawType(range->m_typeInfo, ctx.m_brawCtx).value() : range->m_typeInfo;
@@ -107,6 +110,9 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         }
         spills += spills % 16; // 16 byte alignment
         ctx.m_spills = spills;
+
+        for(auto group : savedRegisters)
+            ctx.m_savedRegisters.push_back(m_registers.at(group));
 
         for(auto reg : ctx.m_savedRegisters)
             push(reg, ctx);
@@ -477,7 +483,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     for(auto& arg : args) {
         auto op = convertOperand(arg, ctx);
         
-        if((isFloat(op) && !floatCursor.hasNext()) || (isDouble(op) && !floatCursor.hasNext()) || ((op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == LONG_T) && !cursor.hasNext())) {
+        if((isFloat(op) && !floatCursor.hasNext()) || (isDouble(op) && !floatCursor.hasNext()) || ((op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == LONG_T || Rules::isPtr(op->m_typeInfo.m_name)) && !cursor.hasNext())) {
             push(op, ctx);
             continue;
         }

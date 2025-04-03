@@ -1,0 +1,77 @@
+import "syscall.braw"
+
+fn memory_set(ptr: void*, value: int, num: long) -> void {
+    let p: char* = (char*)ptr;
+    for(let i = 0l; i < num; i = i + 1l):
+        p[i] = (char)value;
+}
+
+fn memory_copy(dest: void*, src: void*, num: long) -> void {
+    let d: char* = (char*)dest;
+    let s: char* = (char*)src;
+    for(let i = 0l; i < num; i = i + 1l):
+        d[i] = s[i];
+}
+
+struct MemoryBlock {
+    size: long;
+    free: bool;
+    next: MemoryBlock*;
+};
+
+struct Allocator {
+    free_list: MemoryBlock*;
+};
+
+fn memory_map(addr: void*, length: long, prot: int, flags: int, fd: int, offset: long) -> void* {
+    return (void*)syscall(9, addr, (void*)length, (void*)prot, (void*)flags, (void*)fd, (void*)offset);
+}
+
+fn allocator_init() -> Allocator* {
+    let alloc = (Allocator*)memory_map((void*)0, 17l, 3, 34, -1, 0l);
+    alloc->free_list = (MemoryBlock*)0;
+    return alloc;
+}
+
+fn memory_allocate(alloc: Allocator*, size: long) -> void* {
+    if(size <= 0l):
+        return (void*)0;
+    
+    let best_fit = (MemoryBlock*)0;
+    let best_fit_prev = (MemoryBlock*)0;
+    let prev = (MemoryBlock*)0;
+    let current = alloc->free_list;
+
+    while ((long)current != 0l) {
+        if (current->free && current->size >= size) {
+            if ((long)best_fit == 0l || current->size < best_fit->size) {
+                best_fit = current;
+                best_fit_prev = prev;
+            }
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    if ((long)best_fit != 0l) {
+        best_fit->free = false;
+
+        if (best_fit->size > size + 17l) {
+            let new_block = (MemoryBlock*)((long)best_fit + 17l + size);
+            new_block->size = best_fit->size - size - 17l;
+            new_block->free = true;
+            new_block->next = best_fit->next;
+            best_fit->next = new_block;
+            best_fit->size = size;
+        }
+
+        return (void*)((long)best_fit + 1l);
+    }
+
+    let block = (MemoryBlock*)memory_map((void*)0, size + 17l, 3, 34, -1, 0l);
+    block->size = size;
+    block->free = false;
+    block->next = (void*)0;
+
+    return (void*)((long)block + 1l);
+}

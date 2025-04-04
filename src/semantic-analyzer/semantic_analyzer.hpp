@@ -70,6 +70,7 @@ private:
     static SemanticError unknownFunction(const AST::FunctionCallNode* causer, const std::vector<TypeInfo>& types, BrawContext& ctx);
     static SemanticError unknownMember(const AST::Node* causer, const std::string& type, const std::string& member, BrawContext& ctx);
     static SemanticError invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type, BrawContext& ctx);
+    static SemanticError invalidOperator(const AST::UnaryOperatorNode* causer, BrawContext& ctx);
     static SemanticError invalidInstruction(const AST::Node* causer, const AST::Node* origin, BrawContext& ctx);
     static SemanticError cannotInferType(const AST::VariableDeclarationNode* causer, BrawContext& ctx);
 

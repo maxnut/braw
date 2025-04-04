@@ -27,51 +27,73 @@ fn memory_map(addr: void*, length: long, prot: int, flags: int, fd: int, offset:
     return (void*)syscall(9, addr, (void*)length, (void*)prot, (void*)flags, (void*)fd, (void*)offset);
 }
 
+define HEAP_SIZE: 128l * 1024l;
+
 fn allocator_init() -> Allocator* {
-    let alloc = (Allocator*)memory_map((void*)0, 17l, 3, 34, -1, 0l);
-    alloc->free_list = (MemoryBlock*)0;
+    let alloc = (Allocator*)memory_map((void*)0, $HEAP_SIZE, 3, 34, -1, 0l);
+    alloc->free_list = (void*)0;
     return alloc;
 }
 
-fn memory_allocate(alloc: Allocator*, size: long) -> void* {
-    if(size <= 0l):
-        return (void*)0;
-    
-    let best_fit = (MemoryBlock*)0;
-    let best_fit_prev = (MemoryBlock*)0;
-    let prev = (MemoryBlock*)0;
-    let current = alloc->free_list;
+fn split_block(block: MemoryBlock*, size: long) -> void {
+    let overhead = 17l;
+    if (block->size >= size + overhead + 16l) {
+        let new_block = (MemoryBlock*)((long)block + overhead + size);
+        new_block->size = block->size - size - overhead;
+        new_block->free = true;
+        new_block->next = block->next;
 
+        block->size = size;
+        block->next = new_block;
+    }
+}
+
+fn find_free_block(allocator: Allocator*, size: long) -> MemoryBlock* {
+    let current = allocator->free_list;
     while ((long)current != 0l) {
-        if (current->free && current->size >= size) {
-            if ((long)best_fit == 0l || current->size < best_fit->size) {
-                best_fit = current;
-                best_fit_prev = prev;
-            }
-        }
-        prev = current;
+        if (current->free && current->size >= size):
+            return current;
         current = current->next;
     }
+    return (MemoryBlock*)0;
+}
 
-    if ((long)best_fit != 0l) {
-        best_fit->free = false;
-
-        if (best_fit->size > size + 17l) {
-            let new_block = (MemoryBlock*)((long)best_fit + 17l + size);
-            new_block->size = best_fit->size - size - 17l;
-            new_block->free = true;
-            new_block->next = best_fit->next;
-            best_fit->next = new_block;
-            best_fit->size = size;
-        }
-
-        return (void*)((long)best_fit + 1l);
+fn add_to_free_list(allocator: Allocator*, block: MemoryBlock*) -> void {
+    if ((long)allocator->free_list == 0l) {
+        allocator->free_list = block;
+        return;
     }
 
-    let block = (MemoryBlock*)memory_map((void*)0, size + 17l, 3, 34, -1, 0l);
-    block->size = size;
-    block->free = false;
-    block->next = (void*)0;
+    let current = allocator->free_list;
+    while ((long)current->next != 0l) {
+        current = current->next;
+    }
+    current->next = block;
+}
 
-    return (void*)((long)block + 1l);
+fn memory_allocate(allocator: Allocator*, size: long) -> void* {
+    if (size <= 0l):
+        return (void*)0;
+
+    let block = find_free_block(allocator, size);
+    if ((long)block != 0l) {
+        split_block(block, size);
+        block->free = false;
+        return (void*)((long)block + 17l);
+    }
+
+    let total_size = $HEAP_SIZE;
+    let mem = memory_map((void*)0, total_size, 3, 34, -1, 0l);
+    if ((long)mem == -1l) {
+        return (void*)0;
+    }
+
+    let new_block = (MemoryBlock*)mem;
+    new_block->size = total_size - 17l;
+    new_block->free = true;
+    new_block->next = (void*)0;
+
+    add_to_free_list(allocator, new_block);
+
+    return memory_allocate(allocator, size);
 }

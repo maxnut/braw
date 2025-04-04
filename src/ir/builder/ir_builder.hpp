@@ -10,6 +10,7 @@
 #include "parser/nodes/node.hpp"
 #include "braw_context.hpp"
 
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -73,11 +74,11 @@ private:
 
     static TypeInfo getOperandType(Operand op, BrawContext& context, IRFunctionContext& ictx);
 
-    static void moveToRegister(const std::string& name, Operand& op, BrawContext& context, IRFunctionContext& ictx);
+    static void moveToRegister(const std::string& name, Operand& op, std::pair<uint32_t, uint32_t> pos, BrawContext& context, IRFunctionContext& ictx);
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, IRFunctionContext& ictx);
     static RegisterType getRegisterType(const TypeInfo& type);
-    static void upsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx);
-    static void downsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx);
+    static void upsize(Operand& op, std::shared_ptr<Register> to, std::pair<uint32_t, uint32_t> pos, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx);
+    static void downsize(Operand& op, std::shared_ptr<Register> to, std::pair<uint32_t, uint32_t> pos, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx);
 
     friend class CopyPropagator;
 };

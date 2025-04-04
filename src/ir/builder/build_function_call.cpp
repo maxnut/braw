@@ -5,7 +5,7 @@
 #include "rules.hpp"
 
 Operand IRBuilder::buildCall(const AST::FunctionCallNode* node, BrawContext& context, IRFunctionContext& ictx) {
-    CallInstruction call;
+    CallInstruction call{node->m_rangeBegin};
     call.m_id = node->m_name;
 
     std::vector<TypeInfo> tmpTypes;

@@ -22,6 +22,8 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
 
     out << ".section .note.GNU-stack,\"\",@progbits\n";
     out << ".intel_syntax noprefix\n\n";
+    if(ctx.m_debug)
+        out << ".file 1 " << ir.m_path << "\n";
     out << sectionPrefix << " .data\n";
 
     for(const auto& pair : f.m_data.m_labels) {
@@ -55,12 +57,18 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
         out << externPrefix << " " << external.m_id << "\n";
 
     size_t labels = 0;
+    uint32_t prevLine = 0;
     for(uint32_t i = 0; i < f.m_text.m_instructions.size(); i++) {
+        auto irInstr = ir.m_functions[f.m_text.m_instructions[i].m_irFunctionIndex].m_instructions[f.m_text.m_instructions[i].m_irIndex].get();
+        if(ctx.m_debug && prevLine != irInstr->m_pos.first) {
+            out << ".loc 1 " << irInstr->m_pos.first << " " << irInstr->m_pos.second << "\n";
+            prevLine = irInstr->m_pos.first;
+        }
         emit(f.m_text.m_instructions[i], out, ctx);
         out << "\t" << commentPrefix << " ";
         for(auto& op : f.m_text.m_instructions[i].m_operands) 
             out << op->m_typeInfo.m_name << " ";
-        IRPrinter::print(out, ir.m_functions[f.m_text.m_instructions[i].m_irFunctionIndex].m_instructions[f.m_text.m_instructions[i].m_irIndex].get());
+        IRPrinter::print(out, irInstr);
         labels++;
     }
 }

@@ -3,9 +3,10 @@
 #include "instruction.hpp"
 
 #include <string>
+#include <utility>
 
 struct Label : Instruction {
-    Label() : Instruction(Type::Label) {}
+    Label(std::pair<uint32_t, uint32_t> pos) : Instruction(Type::Label, pos) {}
 
     std::string m_id;
 };

@@ -8,7 +8,7 @@
 #include <vector>
 
 struct CallInstruction : Instruction {
-    CallInstruction() : Instruction(Type::Call) {}
+    CallInstruction(std::pair<uint32_t, uint32_t> pos) : Instruction(Type::Call, pos) {}
 
     std::string m_id;
     std::shared_ptr<Register> m_optReturn = nullptr;

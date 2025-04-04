@@ -9,6 +9,7 @@
 #include <variant>
 
 void IRBuilder::buildAssignment(const AST::BinaryOperatorNode* node, BrawContext& context, IRFunctionContext& ictx) {
+    Operand right = buildExpression(node->m_right.get(), context, ictx);
     Operand left = buildExpression(node->m_left.get(), context, ictx);
 
     if(ictx.m_instructions.back()->m_type == Instruction::Dereference) {
@@ -16,17 +17,16 @@ void IRBuilder::buildAssignment(const AST::BinaryOperatorNode* node, BrawContext
         if(!std::holds_alternative<Address>(left))
             left = Address(std::get<1>(left), 0, std::get<1>(left)->m_type);
     }
-    Operand right = buildExpression(node->m_right.get(), context, ictx);
 
     if(std::holds_alternative<Value>(right) && std::holds_alternative<std::string>(std::get<Value>(right))) {
-        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, left, right));
+        ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, node->m_rangeBegin, left, right));
         return;
     }
     if(left.index() == 1) {
-        moveToRegister(std::get<std::shared_ptr<Register>>(left)->m_id, right, context, ictx);
+        moveToRegister(std::get<std::shared_ptr<Register>>(left)->m_id, right, node->m_rangeBegin, context, ictx);
         return;
     }
 
     Address ad = std::get<Address>(left);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(ad.m_typeInfo.m_builtin ? Instruction::Move : Instruction::Copy, left, right));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(ad.m_typeInfo.m_builtin ? Instruction::Move : Instruction::Copy, node->m_rangeBegin, left, right));
 }

@@ -1,9 +1,10 @@
 #include "copy_propagator.hpp"
-#include "ir/builder/ir_builder.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
 #include "ir/operand.hpp"
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
 bool isJump(const Instruction* i) {
@@ -15,10 +16,10 @@ void CopyPropagator::propagate(Function& f) {
     do {
         removed = false;
         auto points = getModificationPoints(f);
-        std::vector<Block> blocks = getBlocks(f);
-        for(Block& block : blocks) {
+        std::vector<std::shared_ptr<Block>> blocks = getBlocks(f);
+        for(auto& block : blocks) {
             //skip last
-            for(size_t i = block.m_instructionRange.first; i < block.m_instructionRange.second; i++) {
+            for(size_t i = block->m_instructionRange.first; i < block->m_instructionRange.second; i++) {
                 if(f.m_instructions[i]->m_type != Instruction::Move)
                     continue;
                 auto basic = (BasicInstruction*)f.m_instructions[i].get();
@@ -28,8 +29,9 @@ void CopyPropagator::propagate(Function& f) {
                 if(basic->m_o2.index() == 3) // TODO: remove this when modification point fetching works with addresses
                     continue;
                     
-                auto reg = std::get<1>(((BasicInstruction*)f.m_instructions[i].get())->m_o1);
-                if(replace(f, points.at(reg->m_id), i + 1, block.m_instructionRange.second, reg->m_id, basic->m_o2)) {
+                auto reg = std::get<1>(basic->m_o1);
+                std::unordered_set<std::shared_ptr<Block>> visited;
+                if(replace(f, points.at(reg->m_id), i + 1, block, reg->m_id, basic->m_o2, visited)) {
                     removed = true;
                     f.m_instructions.erase(f.m_instructions.begin() + i);
                     break;
@@ -41,18 +43,22 @@ void CopyPropagator::propagate(Function& f) {
     } while(removed);
 }
 
-std::vector<Block> CopyPropagator::getBlocks(const Function& f) {
-    std::vector<Block> blocks;
+std::vector<std::shared_ptr<Block>> CopyPropagator::getBlocks(const Function& f) {
+    std::vector<std::shared_ptr<Block>> blocks;
     Block* current = nullptr;
+    std::unordered_map<size_t, size_t> blockForInstruction;
 
     for(size_t i = 0; i < f.m_instructions.size(); i++) {
         if(f.m_instructions.at(i)->m_type == Instruction::Label || (i > 0 && isJump(f.m_instructions.at(i - 1).get()))) {
-            blocks.push_back(Block());
-            current = &blocks.at(blocks.size() - 1);
+            blocks.push_back(std::make_shared<Block>());
+            current = blocks.at(blocks.size() - 1).get();
             current->m_instructionRange.first = i;
         }
         current->m_instructionRange.second = i;
+        blockForInstruction[i] = blocks.size() - 1;
     }
+    std::unordered_set<std::shared_ptr<Block>> visited;
+    buildGraphRecursive(blocks.at(0), blockForInstruction, blocks, visited, f);
     return blocks;
 }
 
@@ -83,7 +89,7 @@ std::unordered_map<std::string, std::unordered_set<size_t>> CopyPropagator::getM
     return result;
 }
 
-bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& points, size_t from, size_t orBreak, const std::string& replaceId, Operand replaceWith) {
+bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& points, size_t from, std::shared_ptr<Block> block, const std::string& replaceId, Operand replaceWith, std::unordered_set<std::shared_ptr<Block>>& visited) {
     bool didReplace = false;
     auto doReplace = [&](Operand* replace) {
         if(replace->index() == 1 && std::get<1>(*replace)->m_id == replaceId) {
@@ -104,11 +110,19 @@ bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& poin
         }
     };
 
-    for(;from < orBreak; from++) {
+    for(;from < block->m_instructionRange.second; from++) {
         if(points.contains(from))
             break;
         switch(f.m_instructions[from]->m_type) {
             default: {
+                BasicInstruction* basic = (BasicInstruction*)f.m_instructions[from].get();
+                doReplace(&basic->m_o1);
+                doReplace(&basic->m_o2);
+                doReplace(&basic->m_o3);
+                doReplace(&basic->m_o4);
+                break;
+            }
+            case Instruction::PartialDereference: {
                 BasicInstruction* basic = (BasicInstruction*)f.m_instructions[from].get();
                 doReplace(&basic->m_o1);
                 doReplace(&basic->m_o2);
@@ -129,5 +143,47 @@ bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& poin
                 break;
         }
     }
+
+    if(visited.contains(block))
+        return false;
+    visited.insert(block);
+
+    for(auto con : block->m_connections) {
+        didReplace |= replace(f, points, con->m_instructionRange.first, con, replaceId, replaceWith, visited);
+    }
+    
     return didReplace;
+}
+
+
+int64_t getJumpTarget(const Instruction* i, const std::vector<std::unique_ptr<Instruction>>& instructions) {
+    BasicInstruction* basic = (BasicInstruction*)i;
+    std::string label = i->m_type == Instruction::Jump ? std::get<Label>(basic->m_o1).m_id : std::get<Label>(basic->m_o2).m_id;
+    for(size_t i = 0; i < instructions.size(); i++) {
+        if(instructions.at(i)->m_type != Instruction::Label) 
+            continue;
+        if(((Label*)instructions.at(i).get())->m_id == label)
+            return i;
+    }
+    return -1;
+}
+
+void CopyPropagator::buildGraphRecursive(std::shared_ptr<Block> root, const std::unordered_map<size_t, size_t>& blockForInstruction, const std::vector<std::shared_ptr<Block>>& blocks, std::unordered_set<std::shared_ptr<Block>>& visited, const Function& f) {
+    if(visited.contains(root))
+        return;
+    visited.insert(root);
+    auto& lastInstruction = f.m_instructions.at(root->m_instructionRange.second);
+    if(lastInstruction->m_type == Instruction::JumpFalse || lastInstruction->m_type == Instruction::JumpTrue || lastInstruction->m_type == Instruction::Jump) {
+        std::shared_ptr<Block> next = blocks.at(blockForInstruction.at(getJumpTarget(lastInstruction.get(), f.m_instructions)));
+        root->m_connections.push_back(next);
+        buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
+        if(lastInstruction->m_type == Instruction::Jump)
+            return;
+    }
+
+    if(blockForInstruction.contains(root->m_instructionRange.second + 1)) {
+        std::shared_ptr<Block> next = blocks.at(blockForInstruction.at(root->m_instructionRange.second + 1));
+        root->m_connections.push_back(next);
+        buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
+    }
 }

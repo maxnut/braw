@@ -210,7 +210,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 // force this operand to be a spill register lol
                 std::get<1>(basic->m_o1)->m_type = TypeInfo{LONG_T, 8, true};
                 std::get<1>(basic->m_o1)->m_registerType = RegisterType::Signed;
-                tryRegister(basic->m_o1, i, true, Operands::Register::R15);
+                tryRegister(basic->m_o1, i, true);
                 tryRegister(basic->m_o2, i);
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);

@@ -33,16 +33,17 @@ Function IRBuilder::build(const AST::FunctionDefinitionNode* node, BrawContext& 
     f.m_name = node->m_signature.m_name;
 
     if(!node->m_signature.m_external) {
-        Label label;
+        Label label{node->m_rangeBegin};
         label.m_id = node->m_signature.m_name;
         ictx.m_instructions.push_back(std::make_unique<Label>(label));
         build(node->m_scope.get(), context, ictx);
         if(ictx.m_instructions.back()->m_type != Instruction::Return)
-            ictx.m_instructions.push_back(std::make_unique<Instruction>(Instruction::Return));
+            ictx.m_instructions.push_back(std::make_unique<Instruction>(Instruction::Return, node->m_rangeEnd));
         f.m_instructions = std::move(ictx.m_instructions);
     }
 
-    CopyPropagator::propagate(f);
+    // if(!f.m_external)
+    //     CopyPropagator::propagate(f);
 
     return f;
 }

@@ -549,7 +549,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
 }
 
 void CodeGenerator::ret(FunctionContext& ctx) {
-    
+    size_t spillP = ctx.m_spills;   
     std::reverse(ctx.m_savedRegisters.begin(), ctx.m_savedRegisters.end());
     for(auto reg : ctx.m_savedRegisters)
         pop(reg, ctx);
@@ -557,11 +557,11 @@ void CodeGenerator::ret(FunctionContext& ctx) {
     if(ctx.m_spills > 0)
         add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(ctx.m_spills, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
     
-    ctx.m_spills += 8;
     pop(m_registers.at(Operands::Register::RBP), ctx);
     Instruction i;
     i.m_opcode = Ret;
     addInstruction(i, ctx);
+    ctx.m_spills = spillP;
 }
 
 void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) {
@@ -685,6 +685,7 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Addres
         push(reg, ctx);
 
     size_t remainder = size % 8;
+    size_t beg = ctx.m_file.m_text.m_instructions.size();
 
     Instruction lea, mov;
     mov.m_opcode = Mov;
@@ -716,6 +717,11 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Addres
         movs.m_opcode = movsb;
         addInstruction(movs, ctx);
     }
+    size_t end = ctx.m_file.m_text.m_instructions.size() - 1;
+    std::vector<Instruction> from(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
+    std::vector<Instruction> result = MoveResolver::resolve(from, {}, *this, ctx);
+    ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
+    ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
     std::reverse(save.begin(), save.end());
     for(auto reg : save)
@@ -736,6 +742,7 @@ void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operands::Address> targ
         push(reg, ctx);
 
     size_t remainder = size % 8;
+    size_t beg = ctx.m_file.m_text.m_instructions.size();
 
     Instruction lea;
     lea.m_opcode = Lea;
@@ -767,6 +774,12 @@ void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operands::Address> targ
         movs.m_prefix = Rep;
         addInstruction(movs, ctx);
     }
+    size_t end = ctx.m_file.m_text.m_instructions.size() - 1;
+    std::vector<Instruction> from(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
+    std::vector<Instruction> result = MoveResolver::resolve(from, {}, *this, ctx);
+    ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
+    ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
+
 
     std::reverse(save.begin(), save.end());
     for(auto reg : save)

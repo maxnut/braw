@@ -84,7 +84,7 @@ std::vector<Instruction> MoveResolver::resolve(std::vector<Instruction> from, st
     std::vector<std::pair<size_t, Instruction>> indexed;
     
     std::erase_if(from, [from, &indexed, &positions, &ignore](Instruction& instr){
-        if(instr.m_opcode != Mov || ignore.contains(positions[&instr])) {
+        if((instr.m_opcode != Mov && instr.m_opcode != Lea) || ignore.contains(positions[&instr])) {
             indexed.push_back({instr.m_opcode == Push ? 0 : positions[&instr], instr});
             return true;
         }

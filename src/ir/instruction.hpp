@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <utility>
 struct Instruction {
     enum Type {
         Move,
@@ -35,8 +36,8 @@ struct Instruction {
         Count
     };
 
-    Instruction(Type type) : m_type(type) {}
+    Instruction(Type type, std::pair<uint32_t, uint32_t> pos) : m_type(type), m_pos(pos) {}
 
     Type m_type = Count;
-    size_t m_line;
+    std::pair<uint32_t, uint32_t> m_pos;
 };

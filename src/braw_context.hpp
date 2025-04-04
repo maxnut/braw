@@ -39,6 +39,7 @@ struct BrawContext {
     std::shared_ptr<FunctionSignature> m_currentFunction = nullptr;
     std::filesystem::path m_currentFile;
     bool m_returned = false;
+    bool m_debug = false;
     
     size_t m_stackSize = 0;
 };

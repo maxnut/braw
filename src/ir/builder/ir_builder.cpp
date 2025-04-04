@@ -10,6 +10,7 @@
 #include "utils.hpp"
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
 void IRBuilder::build(const AST::Node* node, BrawContext& context, IRFunctionContext& ictx) {
@@ -77,14 +78,14 @@ RegisterType IRBuilder::getRegisterType(const TypeInfo& type) {
     return RegisterType::Struct;
 }
 
-void IRBuilder::moveToRegister(const std::string& name, Operand& op, BrawContext& context, IRFunctionContext& ictx) {
+void IRBuilder::moveToRegister(const std::string& name, Operand& op, std::pair<uint32_t, uint32_t> pos, BrawContext& context, IRFunctionContext& ictx) {
     std::shared_ptr<Register> reg = makeOrGetRegister(name, ictx);
 
     if(reg->m_type.m_name == "")
         reg->m_type = getOperandType(op, context, ictx);
     reg->m_registerType = getRegisterType(reg->m_type);
     Instruction::Type instrType = reg->m_registerType == RegisterType::Struct ? Instruction::Copy : Instruction::Move;
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(instrType, reg, op));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(instrType, pos, reg, op));
 }
 
 std::shared_ptr<Register> IRBuilder::makeOrGetRegister(const std::string& name, IRFunctionContext& ictx) {
@@ -96,7 +97,7 @@ std::shared_ptr<Register> IRBuilder::makeOrGetRegister(const std::string& name, 
     return reg;
 }
 
-void IRBuilder::upsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx) {
+void IRBuilder::upsize(Operand& op, std::shared_ptr<Register> to, std::pair<uint32_t, uint32_t> pos, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx) {
     if(op.index() == 1 && std::get<1>(op) == to) {
         auto reg = std::get<1>(op);
         to = std::make_shared<Register>();
@@ -106,10 +107,10 @@ void IRBuilder::upsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo
 
     to->m_type = toType;
     to->m_registerType = getRegisterType(to->m_type);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, to, op));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Upsize, pos, to, op));
 }
 
-void IRBuilder::downsize(Operand& op, std::shared_ptr<Register> to, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx) {
+void IRBuilder::downsize(Operand& op, std::shared_ptr<Register> to, std::pair<uint32_t, uint32_t> pos, const TypeInfo& toType, BrawContext& context, IRFunctionContext& ictx) {
     if(op.index() == 1 && std::get<1>(op) == to) {
         auto reg = std::get<1>(op);
         to = std::make_shared<Register>();
@@ -119,5 +120,5 @@ void IRBuilder::downsize(Operand& op, std::shared_ptr<Register> to, const TypeIn
 
     to->m_type = toType;
     to->m_registerType = getRegisterType(to->m_type);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Downsize, to, op));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Downsize, pos, to, op));
 }

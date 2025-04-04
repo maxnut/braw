@@ -33,7 +33,7 @@ Operand IRBuilder::dereferenceOperator(const AST::UnaryOperatorNode* node, const
     auto tmp = op;
     Operand ret;
     ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Dereference, ret, tmp));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Dereference, node->m_rangeBegin, ret, tmp));
     auto retReg = std::get<std::shared_ptr<Register>>(ret);
     retReg->m_type = Utils::getRawType(getOperandType(op, context, ictx), context).value();
     retReg->m_registerType = getRegisterType(retReg->m_type);
@@ -43,7 +43,7 @@ Operand IRBuilder::dereferenceOperator(const AST::UnaryOperatorNode* node, const
 Operand IRBuilder::addressOperator(const AST::UnaryOperatorNode* node, const Operand& op, BrawContext& context, IRFunctionContext& ictx) {
     Operand ret;
     ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, ret, op));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, node->m_rangeBegin, ret, op));
     auto retReg = std::get<std::shared_ptr<Register>>(ret);
     retReg->m_type = Utils::makePointer(getOperandType(op, context, ictx));
     retReg->m_registerType = getRegisterType(retReg->m_type);
@@ -56,7 +56,7 @@ Operand IRBuilder::subscriptOperator(const AST::UnaryOperatorNode* node, Operand
         auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_0", ictx);
         tmp->m_type = getOperandType(index, context, ictx);
         tmp->m_registerType = getRegisterType(tmp->m_type);
-        moveToRegister(tmp->m_id, index, context, ictx);
+        moveToRegister(tmp->m_id, index, node->m_rangeBegin, context, ictx);
         index = tmp;
     }
     if(op.index() != 1) {
@@ -64,15 +64,15 @@ Operand IRBuilder::subscriptOperator(const AST::UnaryOperatorNode* node, Operand
         tmp->m_type = getOperandType(op, context, ictx);
         tmp->m_registerType = getRegisterType(tmp->m_type);
         if(std::holds_alternative<Address>(op) && std::get<Address>(op).m_scaleSize > 1)
-            ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, tmp, op));
+            ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::Point, node->m_rangeBegin, tmp, op));
         else
-            moveToRegister(tmp->m_id, op, context, ictx);
+            moveToRegister(tmp->m_id, op, node->m_rangeBegin, context, ictx);
         op = tmp;
     }
 
     if(std::get<1>(index)->m_type.m_name == INT_T) {
         auto tmp = makeOrGetRegister(std::get<1>(index)->m_id + "_0", ictx);
-        upsize(index, tmp, context.getTypeInfo(LONG_T).value(), context, ictx);
+        upsize(index, tmp, node->m_expression->m_rangeBegin, context.getTypeInfo(LONG_T).value(), context, ictx);
         index = tmp;
     }
     
@@ -96,7 +96,7 @@ Operand IRBuilder::castOperator(const AST::UnaryOperatorNode* node, Operand& op,
             }
             else {
                 ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-                upsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                upsize(op, std::get<1>(ret), node->m_rangeBegin, context.getTypeInfo(node->m_data).value(), context, ictx);
             }
         }
     }
@@ -108,7 +108,7 @@ Operand IRBuilder::castOperator(const AST::UnaryOperatorNode* node, Operand& op,
             }
             else {
                 ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-                upsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                upsize(op, std::get<1>(ret), node->m_rangeBegin, context.getTypeInfo(node->m_data).value(), context, ictx);
             }
         }
         else if(opType.m_name == LONG_T) {
@@ -118,7 +118,7 @@ Operand IRBuilder::castOperator(const AST::UnaryOperatorNode* node, Operand& op,
             }
             else {
                 ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-                downsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                downsize(op, std::get<1>(ret), node->m_rangeBegin, context.getTypeInfo(node->m_data).value(), context, ictx);
             }
         }
     }
@@ -130,7 +130,7 @@ Operand IRBuilder::castOperator(const AST::UnaryOperatorNode* node, Operand& op,
             }
             else {
                 ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-                downsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                downsize(op, std::get<1>(ret), node->m_rangeBegin, context.getTypeInfo(node->m_data).value(), context, ictx);
             }
         }
         else if(opType.m_name == LONG_T) {
@@ -140,7 +140,7 @@ Operand IRBuilder::castOperator(const AST::UnaryOperatorNode* node, Operand& op,
             }
             else {
                 ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-                downsize(op, std::get<1>(ret), context.getTypeInfo(node->m_data).value(), context, ictx);
+                downsize(op, std::get<1>(ret), node->m_rangeBegin, context.getTypeInfo(node->m_data).value(), context, ictx);
             }
         }
     }
@@ -154,13 +154,14 @@ Operand IRBuilder::castOperator(const AST::UnaryOperatorNode* node, Operand& op,
     else if(ret.index() == 3) {
         auto add = std::get<3>(ret);
         add.m_typeInfo = context.getTypeInfo(node->m_data).value();
+        ret = add;
     }
     return ret;
 }
 
 Operand IRBuilder::logicalNotOperator(const AST::UnaryOperatorNode* node, Operand& op, BrawContext& context, IRFunctionContext& ictx) {
     Operand ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
-    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::LogicalNot, ret, op));
+    ictx.m_instructions.push_back(std::make_unique<BasicInstruction>(Instruction::LogicalNot, node->m_rangeBegin, ret, op));
     auto retReg = std::get<std::shared_ptr<Register>>(ret);
     retReg->m_type = context.getTypeInfo(BOOL_T).value();
     retReg->m_registerType = getRegisterType(retReg->m_type);

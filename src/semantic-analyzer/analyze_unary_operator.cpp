@@ -31,6 +31,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
             if(!typeOpt) return unknownType(node->m_operand.get(), type.m_name, ctx);
             type = typeOpt.value();
         }
+        else if(Rules::isPtr(type.m_name))
+            return invalidOperator(node, ctx);
 
         if(!type.m_members.contains(node->m_data))
             return unknownMember(node, type.m_name, node->m_data, ctx);

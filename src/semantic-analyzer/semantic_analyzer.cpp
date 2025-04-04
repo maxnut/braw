@@ -283,6 +283,15 @@ SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer
     );
 }
 
+SemanticError SemanticAnalyzer::invalidOperator(const AST::UnaryOperatorNode* causer, BrawContext& ctx) {
+    return SemanticError(
+        fmt::format("Invalid operator {}", causer->m_operator),
+        ctx.m_currentFile,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}
+
 
 SemanticError SemanticAnalyzer::invalidInstruction(const AST::Node* causer, const AST::Node* origin, BrawContext& ctx) {
     return SemanticError(

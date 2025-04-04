@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> outputDirectory(parser, "output", "The directory to output to", {'o', "output"}, "out.asm");
     args::Flag assemble(parser, "assemble", "Assemble the output file", {"assemble"});
     args::Flag link(parser, "link", "Link the output file", {'l', "link"});
+    args::Flag debug(parser, "debug", "Add debug information", {'d', "debug"});
 
     try {
         parser.ParseCLI(argc, argv);
@@ -84,6 +85,7 @@ int main(int argc, char** argv) {
     }
 
     BrawContext ctx = ctxOr.value();
+    ctx.m_debug = debug;
 
     std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
 

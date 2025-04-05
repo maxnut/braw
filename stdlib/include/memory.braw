@@ -97,3 +97,20 @@ fn memory_allocate(allocator: Allocator*, size: long) -> void* {
 
     return memory_allocate(allocator, size);
 }
+
+fn memory_free(allocator: Allocator*, ptr: void*) -> void {
+    if ((long)ptr == 0l): return;
+
+    let block = (MemoryBlock*)((long)ptr - 17l);
+    block->free = true;
+
+    let current = allocator->free_list;
+    while ((long)current != 0l && (long)current->next != 0l) {
+        if (current->free && current->next->free) {
+            current->size = current->size + 17l + current->next->size;
+            current->next = current->next->next;
+        } else {
+            current = current->next;
+        }
+    }
+}

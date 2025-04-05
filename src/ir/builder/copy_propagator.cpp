@@ -30,8 +30,17 @@ void CopyPropagator::propagate(Function& f) {
                     continue;
                     
                 auto reg = std::get<1>(basic->m_o1);
+                auto reg2 = std::get<1>(basic->m_o2);
                 std::unordered_set<std::shared_ptr<Block>> visited;
-                if(replace(f, points.at(reg->m_id), i + 1, block, reg->m_id, basic->m_o2, visited)) {
+                auto pointsMerged = points.at(reg->m_id);
+                if(points.contains(reg2->m_id))
+                    pointsMerged.insert(points.at(reg2->m_id).begin(), points.at(reg2->m_id).end());
+                
+                if(checkReassign(f, pointsMerged, i + 1, block, visited))
+                    continue;
+                visited.clear();
+                
+                if(replace(f, i + 1, block, reg->m_id, basic->m_o2, visited)) {
                     removed = true;
                     f.m_instructions.erase(f.m_instructions.begin() + i);
                     break;
@@ -89,7 +98,10 @@ std::unordered_map<std::string, std::unordered_set<size_t>> CopyPropagator::getM
     return result;
 }
 
-bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& points, size_t from, std::shared_ptr<Block> block, const std::string& replaceId, Operand replaceWith, std::unordered_set<std::shared_ptr<Block>>& visited) {
+bool CopyPropagator::replace(Function& f, size_t from, std::shared_ptr<Block> block, const std::string& replaceId, Operand replaceWith, std::unordered_set<std::shared_ptr<Block>>& visited) {
+    if(visited.contains(block))
+        return false;
+    visited.insert(block);
     bool didReplace = false;
     auto doReplace = [&](Operand* replace) {
         if(replace->index() == 1 && std::get<1>(*replace)->m_id == replaceId) {
@@ -111,8 +123,6 @@ bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& poin
     };
 
     for(;from < block->m_instructionRange.second; from++) {
-        if(points.contains(from))
-            break;
         switch(f.m_instructions[from]->m_type) {
             default: {
                 BasicInstruction* basic = (BasicInstruction*)f.m_instructions[from].get();
@@ -144,13 +154,8 @@ bool CopyPropagator::replace(Function& f, const std::unordered_set<size_t>& poin
         }
     }
 
-    if(visited.contains(block))
-        return false;
-    visited.insert(block);
-
-    for(auto con : block->m_connections) {
-        didReplace |= replace(f, points, con->m_instructionRange.first, con, replaceId, replaceWith, visited);
-    }
+    for(auto con : block->m_connections)
+        didReplace |= replace(f, con->m_instructionRange.first, con, replaceId, replaceWith, visited);
     
     return didReplace;
 }
@@ -186,4 +191,20 @@ void CopyPropagator::buildGraphRecursive(std::shared_ptr<Block> root, const std:
         root->m_connections.push_back(next);
         buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
     }
+}
+
+bool CopyPropagator::checkReassign(Function& f, const std::unordered_set<size_t>& points, size_t from, std::shared_ptr<Block> block, std::unordered_set<std::shared_ptr<Block>>& visited) {
+    for(; from < block->m_instructionRange.second; from++) {
+        if(points.contains(from)) {
+            return true;
+        }
+    }
+    if(visited.contains(block))
+        return false;
+    visited.insert(block);
+    for(auto con : block->m_connections) {
+        if(checkReassign(f, points, con->m_instructionRange.first, con, visited))
+            return true;
+    }
+    return false;
 }

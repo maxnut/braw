@@ -87,10 +87,12 @@ private:
     static std::unexpected<ParseError> unexpectedTokenExpectedType(Token& token, Token::Type expectedType, const std::filesystem::path& path);
     static std::unexpected<ParseError> unexpectedTokenExpectedTypes(Token& token, std::vector<Token::Type> expectedTypes, const std::filesystem::path& path);
     static std::unexpected<ParseError> unexpectedTokenExpectedValue(Token& token, const std::string& expectedValue, const std::filesystem::path& path);
+    static std::unexpected<ParseError> unexpectedTokenExpectedValues(Token& token, const std::vector<std::string>& expectedValues, const std::filesystem::path& path);
     static std::unexpected<ParseError> notMacro(Token& token, const std::filesystem::path& path);
 
     static bool expectTokenType(const Token& token, Token::Type type) { return token.m_type == type; }
     static bool expectTokenTypes(const Token& token, std::vector<Token::Type> types) { return std::find(types.begin(), types.end(), token.m_type) != types.end(); }
     static bool expectTokenValue(const Token& token, const std::string& value) { return token.m_value == value; }
+    static bool expectTokenValues(const Token& token, const std::vector<std::string>& values) { return std::find(values.begin(), values.end(), token.m_value) != values.end(); }
     
 };

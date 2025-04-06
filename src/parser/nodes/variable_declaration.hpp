@@ -15,6 +15,7 @@ struct VariableDeclarationNode : Node {
     Identifier m_name;
     std::shared_ptr<Node> m_value = nullptr;
     size_t m_scale = 1;
+    bool m_retain = false;
 };
 
 }

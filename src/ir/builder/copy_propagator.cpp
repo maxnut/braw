@@ -36,7 +36,7 @@ void CopyPropagator::propagate(Function& f) {
                 if(points.contains(reg2->m_id))
                     pointsMerged.insert(points.at(reg2->m_id).begin(), points.at(reg2->m_id).end());
                 
-                if(checkReassign(f, pointsMerged, i + 1, block, visited))
+                if(f.m_retains.contains(reg->m_id) || checkReassign(f, pointsMerged, i + 1, block, visited))
                     continue;
                 visited.clear();
                 

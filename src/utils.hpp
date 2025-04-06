@@ -27,6 +27,33 @@ namespace Utils {
         return funcString;
     }
 
+    inline std::string sanitizeLabel(const std::string& input) {
+        std::string output;
+        for (size_t i = 0; i < input.size(); ++i) {
+            switch (input[i]) {
+                case '*': output += "_star"; break;
+                case '(': output += "_"; break;
+                case ')': output += "_"; break;
+                case '.': output += "_dot"; break;
+                default: output += input[i]; break;
+            }
+        }
+        return output;
+    } 
+
+    inline std::string functionSignatureString(const FunctionSignature& signature) {
+        std::string funcString = signature.m_name + "_";
+        for(int i = 0; i < signature.m_parameters.size(); i++) {
+            auto& parameter = signature.m_parameters[i];
+            funcString + parameter.m_name;
+            
+            if(i < signature.m_parameters.size() - 1)
+                funcString += "_";
+        }
+        funcString += "_" + signature.m_returnType.m_name;
+        return sanitizeLabel(funcString);
+    }
+
     inline TypeInfo makePointer(const TypeInfo& base) {
         return TypeInfo{base.m_name + "*", 8, true};
     }

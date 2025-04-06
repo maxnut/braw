@@ -8,8 +8,9 @@ Result<std::shared_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDecla
     if(!omitLet) {
         if(!expectTokenType(cursor.get().value(), Token::KEYWORD))
             return unexpectedTokenExpectedType(cursor.value(), Token::KEYWORD, ctx.m_path);
-        if(!expectTokenValue(cursor.get().next().value(), "let"))
-            return unexpectedTokenExpectedValue(cursor.value(), "let", ctx.m_path);
+        variableDeclaration->m_retain = cursor.get().value().m_value == "retain";
+        if(!expectTokenValues(cursor.get().next().value(), {"let", "retain"}))
+            return unexpectedTokenExpectedValues(cursor.value(), {"let", "retain"}, ctx.m_path);
     }
 
     variableDeclaration->m_name = cursor.get().next().value().m_value;

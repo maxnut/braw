@@ -29,9 +29,12 @@ fn memory_map(addr: void*, length: long, prot: int, flags: int, fd: int, offset:
 
 define HEAP_SIZE: 128l * 1024l;
 
-fn allocator_init() -> Allocator* {
-    let alloc = (Allocator*)memory_map((void*)0, $HEAP_SIZE, 3, 34, -1, 0l);
-    alloc->free_list = (MemoryBlock*)0;
+fn allocator_get() -> Allocator* {
+    retain alloc = (Allocator*)0l;
+    if((long)alloc == 0l) {
+        alloc = (Allocator*)memory_map((void*)0, $HEAP_SIZE, 3, 34, -1, 0l);
+        alloc->free_list = (MemoryBlock*)0;
+    }
     return alloc;
 }
 
@@ -48,7 +51,8 @@ fn split_block(block: MemoryBlock*, size: long) -> void {
     }
 }
 
-fn find_free_block(allocator: Allocator*, size: long) -> MemoryBlock* {
+fn find_free_block(size: long) -> MemoryBlock* {
+    let allocator = allocator_get();
     let current = allocator->free_list;
     while ((long)current != 0l) {
         if (current->free && current->size >= size):
@@ -58,7 +62,8 @@ fn find_free_block(allocator: Allocator*, size: long) -> MemoryBlock* {
     return (MemoryBlock*)0;
 }
 
-fn add_to_free_list(allocator: Allocator*, block: MemoryBlock*) -> void {
+fn add_to_free_list(block: MemoryBlock*) -> void {
+    let allocator = allocator_get();
     if ((long)allocator->free_list == 0l) {
         allocator->free_list = block;
         return;
@@ -71,11 +76,11 @@ fn add_to_free_list(allocator: Allocator*, block: MemoryBlock*) -> void {
     current->next = block;
 }
 
-fn memory_allocate(allocator: Allocator*, size: long) -> void* {
+fn memory_allocate(size: long) -> void* {
     if (size <= 0l):
         return (void*)0;
 
-    let block = find_free_block(allocator, size);
+    let block = find_free_block(size);
     if ((long)block != 0l) {
         split_block(block, size);
         block->free = false;
@@ -93,17 +98,18 @@ fn memory_allocate(allocator: Allocator*, size: long) -> void* {
     new_block->free = true;
     new_block->next = (MemoryBlock*)0;
 
-    add_to_free_list(allocator, new_block);
+    add_to_free_list(new_block);
 
-    return memory_allocate(allocator, size);
+    return memory_allocate(size);
 }
 
-fn memory_free(allocator: Allocator*, ptr: void*) -> void {
+fn memory_free(ptr: void*) -> void {
     if ((long)ptr == 0l): return;
 
     let block = (MemoryBlock*)((long)ptr - 17l);
     block->free = true;
 
+    let allocator = allocator_get();
     let current = allocator->free_list;
     while ((long)current != 0l && (long)current->next != 0l) {
         if (current->free && current->next->free) {

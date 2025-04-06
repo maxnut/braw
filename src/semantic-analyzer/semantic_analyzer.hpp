@@ -46,7 +46,7 @@ private:
     static std::optional<SemanticError> analyze(const AST::FunctionDefinitionNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::ScopeNode*, BrawContext&);
     static std::optional<SemanticError> analyze(AST::VariableDeclarationNode*, BrawContext&);
-    static std::optional<SemanticError> analyze(const AST::VariableAccessNode*, BrawContext&);
+    static std::optional<SemanticError> analyze(AST::VariableAccessNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::UnaryOperatorNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::BinaryOperatorNode*, BrawContext&);
     static std::optional<SemanticError> analyze(const AST::StructNode*, BrawContext&);

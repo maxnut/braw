@@ -48,6 +48,11 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
         }
     }
 
+    for(const auto& pair : f.m_data.m_retains) {
+        out << pair.first << ":\n";
+        out << ".space " << pair.second.m_size << "\n";
+    }
+
     out << "\n" << sectionPrefix << " .text\n";
 
     for(auto& global : f.m_text.m_globals)

@@ -97,7 +97,7 @@ namespace Rules {
     }
 
     inline bool isVariableDeclaration(TokenCursor cursor) {
-        if(cursor.get().value().m_type != Token::KEYWORD || cursor.get().value().m_value != "let")
+        if(cursor.get().value().m_type != Token::KEYWORD || (cursor.get().value().m_value != "let" && cursor.get().value().m_value != "retain"))
             return false;
         return true;
     }

@@ -71,6 +71,11 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         ctx.m_virtualRegisters["%returnF"] = m_registers.at(Operands::Register::XMM0);
         ctx.m_functionIndex = idx++;
 
+        for(auto& retains : f.m_retains) {
+            file.m_data.m_retains.push_back({retains.first.substr(1), retains.second->m_type});
+            ctx.m_virtualRegisters[retains.first] = std::make_shared<Operands::Address>(std::make_shared<Operands::Label>(retains.first.substr(1)), retains.second->m_type);
+        }
+
         generate(f.m_instructions.at(0).get(), ctx); //label
 
         push(m_registers.at(Operands::Register::RBP), ctx);

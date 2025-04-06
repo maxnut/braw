@@ -33,6 +33,7 @@ static std::unordered_map<std::string, Token::Type> s_tokenTypes = {
     {"bind", Token::KEYWORD},
     {"nullptr", Token::KEYWORD},
     {"let", Token::KEYWORD},
+    {"retain", Token::KEYWORD},
     {"fn", Token::KEYWORD},
     {"ext", Token::KEYWORD},
     {"define", Token::KEYWORD},
@@ -149,7 +150,7 @@ Token tryParseSingleToken(Cursor<std::string::iterator> cursor, int lineNumber) 
 
         if(s_tokenTypes.contains(val)) {
             token.m_type = s_tokenTypes.at(val);
-            if(token.m_type == Token::KEYWORD && std::isalnum(cursor.get().value()) && !std::isspace(cursor.get().value()))
+            if(token.m_type == Token::KEYWORD && ((std::isalnum(cursor.get().value()) && !std::isspace(cursor.get().value())) || cursor.get().value() == '_'))
                 token.m_type = Token::COUNT;
             token.m_value = val;
             continue;

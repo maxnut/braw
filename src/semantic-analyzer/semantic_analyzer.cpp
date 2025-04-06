@@ -53,7 +53,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::Node* root, BrawCont
         case AST::Node::VariableDeclaration:
             return analyze(static_cast<AST::VariableDeclarationNode*>(root), context);
         case AST::Node::VariableAccess:
-            return analyze(static_cast<const AST::VariableAccessNode*>(root), context);
+            return analyze(static_cast<AST::VariableAccessNode*>(root), context);
         case AST::Node::UnaryOperator:
             return analyze(static_cast<const AST::UnaryOperatorNode*>(root), context);
         case AST::Node::BinaryOperator:

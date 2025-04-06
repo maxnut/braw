@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include "nodes/file.hpp"
 
+#include <__expected/unexpected.h>
 #include <spdlog/fmt/fmt.h>
 
 Result<std::shared_ptr<AST::FileNode>> Parser::parse(std::vector<Token> tokens, std::filesystem::path path) {
@@ -46,6 +47,20 @@ std::unexpected<ParseError> Parser::unexpectedTokenExpectedTypes(Token& token, s
 std::unexpected<ParseError> Parser::unexpectedTokenExpectedValue(Token& token, const std::string& expectedValue, const std::filesystem::path& path) {
     ParseError error {
         fmt::format("Unexpected token {} \"{}\" expected value {}", Token::typeString(token.m_type), token.m_value, expectedValue),
+        path,
+        token.m_line,
+        token.m_column
+    };
+    return std::unexpected{error};
+}
+
+std::unexpected<ParseError> Parser::unexpectedTokenExpectedValues(Token& token, const std::vector<std::string>& expectedValues, const std::filesystem::path& path) {
+    std::string expectedValuesString;
+    for(std::string value : expectedValues) {
+        expectedValuesString += value + " ";
+    }
+    ParseError error {
+        fmt::format("Unexpected token {} \"{}\" expected values {}", Token::typeString(token.m_type), token.m_value, expectedValuesString),
         path,
         token.m_line,
         token.m_column

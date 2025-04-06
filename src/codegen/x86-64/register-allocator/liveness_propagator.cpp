@@ -152,7 +152,7 @@ void Propagator::fillRanges(const Function& function, Block* result) {
             assignmentIfFirst = false;
 
         while(r) {
-            if(r->m_id == "%return" || r->m_id == "%returnF") // the return register will always be rax/xmm0
+            if(r->m_id == "%return" || r->m_id == "%returnF" || function.m_retains.contains(r->m_id)) // the return register will always be rax/xmm0
                 return;
 
             if(!result->m_ranges.contains(r->m_id) || assignmentIfFirst) {

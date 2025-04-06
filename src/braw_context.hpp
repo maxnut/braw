@@ -14,6 +14,7 @@ struct ScopeInfo {
     TypeInfo m_type;
     size_t m_stackOffset;
     size_t m_arraySize;
+    bool m_retain = false;
 };
 
 struct FunctionSignature {

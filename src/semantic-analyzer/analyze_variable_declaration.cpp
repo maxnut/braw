@@ -35,9 +35,20 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::VariableDeclarationN
     ctx.m_scopes.back()[node->m_name] = ScopeInfo{
         ctx.getTypeInfo(node->m_type).value(),
         ctx.m_stackSize,
-        0
+        0,
+        node->m_retain
     };
     ctx.m_stackSize += node->m_scale <= 1 ? typeOpt->m_size : Utils::getRawType(typeOpt.value(), ctx)->m_size * typeOpt->m_size;
+
+    if(node->m_retain) {
+        node->m_name.m_name += "_" + Utils::functionSignatureString(*ctx.m_currentFunction);
+        ctx.m_scopes.back()[node->m_name] = ScopeInfo{
+        ctx.getTypeInfo(node->m_type).value(),
+        ctx.m_stackSize,
+        0,
+        node->m_retain
+    };
+    }
     
     return std::nullopt;
 }

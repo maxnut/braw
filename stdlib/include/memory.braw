@@ -31,7 +31,7 @@ define HEAP_SIZE: 128l * 1024l;
 
 fn allocator_init() -> Allocator* {
     let alloc = (Allocator*)memory_map((void*)0, $HEAP_SIZE, 3, 34, -1, 0l);
-    alloc->free_list = (void*)0;
+    alloc->free_list = (MemoryBlock*)0;
     return alloc;
 }
 
@@ -91,7 +91,7 @@ fn memory_allocate(allocator: Allocator*, size: long) -> void* {
     let new_block = (MemoryBlock*)mem;
     new_block->size = total_size - 17l;
     new_block->free = true;
-    new_block->next = (void*)0;
+    new_block->next = (MemoryBlock*)0;
 
     add_to_free_list(allocator, new_block);
 

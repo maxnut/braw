@@ -89,8 +89,14 @@ std::unordered_map<std::string, std::unordered_set<size_t>> CopyPropagator::getM
                 }
                 break;
             }
+            case Instruction::Call: {
+                auto call = (CallInstruction*)inst.get();
+                if(call->m_optReturn) {
+                    result[call->m_optReturn->m_id].insert(i);
+                }
+                break;
+            }
             case Instruction::Label:
-            case Instruction::Call:
             case Instruction::Return:
                 break;
         }
@@ -122,7 +128,7 @@ bool CopyPropagator::replace(Function& f, size_t from, std::shared_ptr<Block> bl
         }
     };
 
-    for(;from < block->m_instructionRange.second; from++) {
+    for(;from <= block->m_instructionRange.second; from++) {
         switch(f.m_instructions[from]->m_type) {
             default: {
                 BasicInstruction* basic = (BasicInstruction*)f.m_instructions[from].get();

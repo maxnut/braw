@@ -8,6 +8,9 @@
 #include "semantic-analyzer/semantic_analyzer.hpp"
 #include "ir/builder/ir_builder.hpp"
 #include "ir/printer/ir_printer.hpp"
+#include "ssa/builder.hpp"
+#include "ssa/file.hpp"
+#include "ssa/printer.hpp"
 #include "utils.hpp"
 
 #include <spdlog/spdlog.h>
@@ -86,6 +89,14 @@ int main(int argc, char** argv) {
 
     BrawContext ctx = ctxOr.value();
     ctx.m_debug = debug;
+
+    std::vector<SSA::File> ssaFiles = SSA::Builder::build(ast.value().get(), ctx);
+    for(const SSA::File& file : ssaFiles) {
+        auto ssaOutputPath = outputPath / (file.m_path.stem().string() + ".ssa");
+        std::ofstream fs(ssaOutputPath);
+        SSA::Printer::print(fs, file);
+        fs.close();
+    }
 
     std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
 

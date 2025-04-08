@@ -11,9 +11,12 @@
 #include "parser/nodes/unary_operator.hpp"
 #include "parser/nodes/while.hpp"
 #include "ssa/file.hpp"
+#include "ssa/instruction.hpp"
 #include "ssa/operand.hpp"
 #include "ssa/operation.hpp"
 #include <memory>
+#include <unordered_map>
+#include <unordered_set>
 namespace SSA {
 
 struct FunctionContext {
@@ -22,6 +25,14 @@ struct FunctionContext {
     uint32_t m_scopeDepth = 0;
     std::shared_ptr<Register> m_returnRegister;
     Function* m_function;
+};
+
+struct Block {
+    std::pair<uint32_t, uint32_t> m_instructionRange;
+    std::vector<std::shared_ptr<Block>> m_connections;
+    std::vector<std::shared_ptr<Block>> m_dominators;
+    std::vector<std::shared_ptr<Block>> m_dominanceFrontiers;
+    std::unordered_map<std::string, std::shared_ptr<Phi>> m_phiForVariable;
 };
 
 class Builder {
@@ -51,6 +62,14 @@ public:
     static void assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> operation, std::pair<uint32_t, uint32_t> pos, FunctionContext& ctx);
     static std::shared_ptr<Operation> point(std::shared_ptr<Operand> op);
     static std::shared_ptr<Operation> load(std::shared_ptr<Operand> op);
+
+    static std::vector<std::shared_ptr<Block>> buildCFG(Function& f);
+    static std::vector<std::shared_ptr<Block>> getBlocks(const Function& f);
+    static void buildGraphRecursive(std::shared_ptr<Block> root, const std::unordered_map<size_t, size_t>& blockForInstruction, const std::vector<std::shared_ptr<Block>>& blocks, std::unordered_set<std::shared_ptr<Block>>& visited, const Function& f);
+    static void getAllPaths(std::shared_ptr<Block> root, std::unordered_set<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths);
+    static void placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::shared_ptr<Block>> blocks, const std::vector<std::shared_ptr<Block>>& allBlocks, Function& f);
+
+    static std::string operandString(std::shared_ptr<Operand> op);
 };
 
 }

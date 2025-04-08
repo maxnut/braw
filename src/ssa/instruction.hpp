@@ -19,6 +19,7 @@ struct Instruction {
         JumpTrue,
         Jump,
         Label,
+        Phi
     };
 
     Instruction(Type t, std::pair<uint32_t, uint32_t> range) : m_type(t), m_range(range) {}
@@ -62,6 +63,13 @@ struct Jump : Instruction {
 
     std::shared_ptr<SSA::Label> m_to;
     std::shared_ptr<Operand> m_check = nullptr;
+};
+
+struct Phi : Instruction {
+    Phi(std::shared_ptr<Operand> to) : Instruction(Type::Phi, {}), m_to(to) {}
+
+    std::shared_ptr<Operand> m_to;
+    std::vector<std::shared_ptr<Operand>> m_operands;
 };
 
 }

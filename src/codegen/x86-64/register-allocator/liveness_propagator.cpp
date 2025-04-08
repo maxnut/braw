@@ -59,6 +59,12 @@ void Propagator::buildGraphRecursive(std::shared_ptr<Block> root, const std::uno
     if(visited.contains(root))
         return;
     visited.insert(root);
+
+    for(size_t i = root->m_instructionRange.first; i <= root->m_instructionRange.second; i++) {
+        if(f.m_instructions.at(i)->m_type == Instruction::Return)
+            return;
+    }
+    
     auto& lastInstruction = f.m_instructions.at(root->m_instructionRange.second);
     if(lastInstruction->m_type == Instruction::JumpFalse || lastInstruction->m_type == Instruction::JumpTrue || lastInstruction->m_type == Instruction::Jump) {
         std::shared_ptr<Block> next = blocks.at(blockForInstruction.at(getJumpTarget(lastInstruction.get(), f.m_instructions)));

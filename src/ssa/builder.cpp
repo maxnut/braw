@@ -4,17 +4,35 @@
 #include "parser/nodes/unary_operator.hpp"
 #include "parser/nodes/variable_access.hpp"
 #include "rules.hpp"
+#include "ssa/file.hpp"
 #include "ssa/instruction.hpp"
 #include "ssa/operand.hpp"
 #include "ssa/operation.hpp"
 #include "utils.hpp"
 #include <memory>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace SSA {
 
 template <typename T>
 std::shared_ptr<T> cast(const std::shared_ptr<void>& ptr) {
     return std::static_pointer_cast<T>(ptr);
+}
+
+int64_t getJumpTarget(const std::string label, const std::vector<std::shared_ptr<Instruction>>& instructions) {
+    for(size_t i = 0; i < instructions.size(); i++) {
+        if(instructions.at(i)->m_type != Instruction::Label) 
+            continue;
+        if(((Label*)instructions.at(i).get())->m_id == label)
+            return i;
+    }
+    return -1;
+}
+
+bool isJump(const Instruction* i) {
+    return i->m_type == Instruction::Jump || i->m_type == Instruction::JumpFalse || i->m_type == Instruction::JumpTrue;
 }
 
 std::shared_ptr<Operation> operation(Operation::Type t, const TypeInfo& ti, std::shared_ptr<Operand> o1, std::shared_ptr<Operand> o2 = nullptr) { return std::make_shared<Operation>(t, ti, o1, o2); }
@@ -82,6 +100,9 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
             ctx.m_instructions.push_back(std::make_shared<Instruction>(Instruction::Return, node->m_rangeEnd));
         f.m_instructions = std::move(ctx.m_instructions);
     }
+
+    if(!f.m_external)
+        auto blocks = buildCFG(f);
 
     return f;
 }
@@ -161,7 +182,7 @@ void Builder::build(AST::WhileNode* node, BrawContext& context, FunctionContext&
         ictx.m_instructions.push_back(std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, label));
     ictx.m_instructions.push_back(label);
     build(node->m_then.get(), context, ictx);
-    ictx.m_instructions.push_back(label);
+    ictx.m_instructions.push_back(labelBody);
     auto condition = buildExpression(node->m_condition.get(), context, ictx);
     ictx.m_instructions.push_back(
         std::make_shared<Jump>(Instruction::JumpTrue, node->m_rangeEnd, labelBody, condition)
@@ -357,7 +378,7 @@ std::shared_ptr<Operand> Builder::subscriptOperator(AST::UnaryOperatorNode* node
     auto index = buildExpression(node->m_expression.get(), context, ictx);
     if(index->m_type != Operand::Register) {
         auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_0", ictx);
-        tmp->m_typeInfo = op->m_typeInfo;
+        tmp->m_typeInfo = index->m_typeInfo;
         assign(tmp, load(index), node->m_rangeBegin, ictx);
         index = tmp;
     }
@@ -371,7 +392,7 @@ std::shared_ptr<Operand> Builder::subscriptOperator(AST::UnaryOperatorNode* node
         op = tmp;
     }
 
-    if(op->m_typeInfo.m_name == INT_T) {
+    if(index->m_typeInfo.m_name == INT_T) {
         auto tmp = makeOrGetRegister(cast<Register>(index)->m_id + "_0", ictx);
         assign(tmp, operation(Operation::Upsize, context.getTypeInfo(LONG_T).value(), index), node->m_rangeBegin, ictx);
         index = tmp;
@@ -555,6 +576,179 @@ std::shared_ptr<Operation> Builder::load(std::shared_ptr<Operand> op) {
 
 std::shared_ptr<Operation> Builder::point(std::shared_ptr<Operand> op) {
     return operation(Operation::Point, Utils::makePointer(op->m_typeInfo), op);
+}
+
+
+std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
+    std::vector<std::shared_ptr<Block>> blocks = getBlocks(f);
+
+    std::unordered_set<std::shared_ptr<Block>> currentPath;
+    std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>> paths;
+    //compute paths
+    getAllPaths(blocks.at(0), currentPath, paths);
+    //compute dominators
+    for(auto& pair : paths) {
+        std::unordered_map<std::shared_ptr<Block>, size_t> appearence;
+        for(auto& blocks : pair.second) {
+            for(auto& block : blocks) {
+                if(!appearence.contains(block)) appearence.insert({block, 1});
+                else appearence[block]++;
+            }
+        }
+        for(auto& pair2 : appearence) {
+            if(pair2.second != pair.second.size())
+                continue;
+            pair.first->m_dominators.push_back(pair.first);
+        }
+    }
+    //compute dominance frontiers
+    for(auto& block : blocks) {
+        for(auto& successor : block->m_connections) {
+            if(successor->m_dominators.back() == block)
+                continue;
+            successor->m_dominanceFrontiers.push_back(block);
+        }
+    }
+
+    std::unordered_map<std::string, std::pair<std::shared_ptr<Operand>, std::vector<std::shared_ptr<Block>>>> blocksThatAssignVariable;
+    for(auto& block : blocks) {
+        for(size_t i = block->m_instructionRange.first; i <= block->m_instructionRange.second; i++) {
+            if(f.m_instructions.at(i)->m_type == Instruction::Assign) {
+                const Assignment* a = static_cast<const Assignment*>(f.m_instructions.at(i).get());
+                auto& pair = blocksThatAssignVariable[operandString(a->m_to)];
+                pair.first = a->m_to;
+                pair.second.push_back(block);
+            }
+        }
+    }
+
+    for(auto& pair : blocksThatAssignVariable)
+        placePhiBlocks(pair.second.first, pair.second.second, blocks, f);
+    
+    return blocks;
+}
+
+std::vector<std::shared_ptr<Block>> Builder::getBlocks(const Function& f) {
+    std::vector<std::shared_ptr<Block>> blocks;
+    Block* current = nullptr;
+    std::unordered_map<size_t, size_t> blockForInstruction;
+
+    for(size_t i = 0; i < f.m_instructions.size(); i++) {
+        if(f.m_instructions.at(i)->m_type == Instruction::Label || (i > 0 && isJump(f.m_instructions.at(i - 1).get()))) {
+            blocks.push_back(std::make_shared<Block>());
+            current = blocks.at(blocks.size() - 1).get();
+            current->m_instructionRange.first = i;
+        }
+        current->m_instructionRange.second = i;
+        blockForInstruction[i] = blocks.size() - 1;
+    }
+    std::unordered_set<std::shared_ptr<Block>> visited;
+    buildGraphRecursive(blocks.at(0), blockForInstruction, blocks, visited, f);
+    return blocks;
+}
+
+void Builder::buildGraphRecursive(std::shared_ptr<Block> root, const std::unordered_map<size_t, size_t>& blockForInstruction, const std::vector<std::shared_ptr<Block>>& blocks, std::unordered_set<std::shared_ptr<Block>>& visited, const Function& f) {
+    if(visited.contains(root))
+        return;
+    visited.insert(root);
+
+    for(size_t i = root->m_instructionRange.first; i <= root->m_instructionRange.second; i++) {
+        if(f.m_instructions.at(i)->m_type == Instruction::Return)
+            return;
+    }
+    
+    auto& lastInstruction = f.m_instructions.at(root->m_instructionRange.second);
+    if(lastInstruction->m_type == Instruction::JumpFalse || lastInstruction->m_type == Instruction::JumpTrue || lastInstruction->m_type == Instruction::Jump) {
+        auto jump = cast<Jump>(lastInstruction);
+        std::shared_ptr<Block> next = blocks.at(blockForInstruction.at(getJumpTarget(jump->m_to->m_id, f.m_instructions)));
+        root->m_connections.push_back(next);
+        buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
+        if(lastInstruction->m_type == Instruction::Jump)
+            return;
+    }
+
+    if(blockForInstruction.contains(root->m_instructionRange.second + 1)) {
+        std::shared_ptr<Block> next = blocks.at(blockForInstruction.at(root->m_instructionRange.second + 1));
+        root->m_connections.push_back(next);
+        buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
+    }
+}
+
+void Builder::getAllPaths(std::shared_ptr<Block> root, std::unordered_set<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths) {
+    if(currentPath.contains(root))
+        return;
+    std::vector<std::shared_ptr<Block>> pathVec; pathVec.reserve(currentPath.size());
+    for(auto& b : currentPath)
+        pathVec.push_back(b);
+    if(pathVec.size() > 0)
+        paths[root].push_back(std::move(pathVec));
+    currentPath.insert(root);
+
+    for(auto& con : root->m_connections)
+        getAllPaths(con, currentPath, paths);
+
+    currentPath.erase(root);
+}
+
+std::string Builder::operandString(std::shared_ptr<Operand> op) {
+    switch(op->m_type) {
+        case Operand::Register: {
+            const Register* reg = static_cast<const Register*>(op.get());
+            return reg->m_id;
+        }
+        case Operand::Immediate: {
+            const Immediate* imm = static_cast<const Immediate*>(op.get());
+            switch(imm->m_value.index()) {
+            case 0:
+                return std::to_string(std::get<int>(imm->m_value));
+            case 1:
+                return std::to_string(std::get<long>(imm->m_value));
+            case 2:
+                return std::to_string(std::get<float>(imm->m_value));
+            case 3:
+                return std::to_string(std::get<double>(imm->m_value));
+            case 4:
+                return std::to_string(std::get<bool>(imm->m_value));
+            case 5:
+                return std::get<std::string>(imm->m_value);
+            case 6:
+                return "NULL";
+            default:
+                return "";
+            }
+            break;
+        }
+        case Operand::Address: {
+            const Address* add = static_cast<const Address*>(op.get());
+            if(add->m_index)
+                return "[" + add->m_base->m_id + "+" + std::to_string(add->m_scale) + "*" + add->m_index->m_id + "+" + std::to_string(add->m_offset) + "]";
+            else
+                return "[" + add->m_base->m_id + "+" + std::to_string(add->m_offset) + "]";
+            break;
+        }
+    }
+}
+
+void Builder::placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::shared_ptr<Block>> blocks, const std::vector<std::shared_ptr<Block>>& allBlocks, Function& f) {
+    while(blocks.size() > 0) {
+        std::shared_ptr<Block> block = blocks.back();
+        blocks.pop_back();
+        for(auto& frontier : block->m_dominanceFrontiers) {
+            if(frontier->m_phiForVariable.contains(operandString(op)))
+                continue;
+            auto phi = std::make_shared<Phi>(op);
+            frontier->m_phiForVariable[operandString(op)] = phi;
+            f.m_instructions.insert(f.m_instructions.begin() + frontier->m_instructionRange.second, phi);
+            blocks.push_back(frontier);
+            for(auto& b : allBlocks) {
+                if(b->m_instructionRange.first > frontier->m_instructionRange.second)
+                    b->m_instructionRange.first++;
+                if(b->m_instructionRange.second > frontier->m_instructionRange.second)
+                    b->m_instructionRange.second++;
+            }
+            frontier->m_instructionRange.second++;
+        }
+    }
 }
 
 }

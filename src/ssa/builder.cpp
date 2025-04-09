@@ -760,6 +760,7 @@ std::string Builder::operandString(std::shared_ptr<Operand> op) {
 }
 
 void Builder::placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::shared_ptr<Block>> blocks, const std::vector<std::shared_ptr<Block>>& allBlocks, Function& f) {
+    std::unordered_set<std::shared_ptr<Block>> visited;
     while(blocks.size() > 0) {
         std::shared_ptr<Block> block = blocks.back();
         blocks.pop_back();
@@ -769,7 +770,9 @@ void Builder::placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::share
             auto phi = std::make_shared<Phi>(op);
             frontier->m_phiForVariable[operandString(op)] = phi;
             f.m_instructions.insert(f.m_instructions.begin() + frontier->m_instructionRange.second, phi);
-            blocks.push_back(frontier);
+            if (visited.insert(frontier).second) {
+                blocks.push_back(frontier);
+            }
             for(auto& b : allBlocks) {
                 if(b->m_instructionRange.first > frontier->m_instructionRange.second)
                     b->m_instructionRange.first++;

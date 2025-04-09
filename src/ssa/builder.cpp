@@ -582,31 +582,59 @@ std::shared_ptr<Operation> Builder::point(std::shared_ptr<Operand> op) {
 std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
     std::vector<std::shared_ptr<Block>> blocks = getBlocks(f);
 
-    std::unordered_set<std::shared_ptr<Block>> currentPath;
+    std::vector<std::shared_ptr<Block>> currentPath;
     std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>> paths;
     //compute paths
     getAllPaths(blocks.at(0), currentPath, paths);
     //compute dominators
-    for(auto& pair : paths) {
-        std::unordered_map<std::shared_ptr<Block>, size_t> appearence;
-        for(auto& blocks : pair.second) {
-            for(auto& block : blocks) {
-                if(!appearence.contains(block)) appearence.insert({block, 1});
-                else appearence[block]++;
+    for(auto& block : blocks)
+        block->m_dominators.insert(block->m_dominators.begin(), blocks.begin(), blocks.end());
+    blocks.at(0)->m_dominators.clear(); blocks.at(0)->m_dominators.push_back(blocks.at(0));
+    bool changed = false;
+    do {
+        changed = false;
+        for(size_t i = 1; i < blocks.size(); i++) {
+            std::shared_ptr<Block> b = blocks.at(i);
+            std::unordered_map<std::shared_ptr<Block>, size_t> appearence;
+            std::vector<std::shared_ptr<Block>> newDominators;
+
+            for(auto& predecessor : b->m_predecessors) {
+                for(auto d : predecessor->m_dominators) {
+                    if(!appearence.contains(d))
+                        appearence.insert({d, 0});
+                    appearence[d]++;
+                }
+            }
+
+            for(auto& pair : appearence) {
+                if(pair.second != b->m_predecessors.size())
+                    continue;
+                newDominators.push_back(pair.first);
+            }
+            newDominators.push_back(b);
+
+            if(newDominators != b->m_dominators) {
+                b->m_dominators = std::move(newDominators);
+                changed = true;
             }
         }
-        for(auto& pair2 : appearence) {
-            if(pair2.second != pair.second.size())
-                continue;
-            pair.first->m_dominators.push_back(pair.first);
+    }
+    while(changed);
+
+    for(auto block : blocks) {
+        for(auto dominator : block->m_dominators) {
+            dominator->m_dominated.push_back(block);
         }
     }
+
     //compute dominance frontiers
-    for(auto& block : blocks) {
-        for(auto& successor : block->m_connections) {
-            if(successor->m_dominators.back() == block)
-                continue;
-            successor->m_dominanceFrontiers.push_back(block);
+    for(auto block : blocks) {
+        for(auto dominated : block->m_dominated) {
+            for(auto successor : dominated->m_connections) {
+                if(std::find(block->m_dominated.begin(), block->m_dominated.end(), successor) != block->m_dominated.end())
+                    continue;
+                block->m_dominanceFrontiers.insert(successor);
+            }
         }
     }
 
@@ -662,6 +690,7 @@ void Builder::buildGraphRecursive(std::shared_ptr<Block> root, const std::unorde
         auto jump = cast<Jump>(lastInstruction);
         std::shared_ptr<Block> next = blocks.at(blockForInstruction.at(getJumpTarget(jump->m_to->m_id, f.m_instructions)));
         root->m_connections.push_back(next);
+        next->m_predecessors.push_back(root);
         buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
         if(lastInstruction->m_type == Instruction::Jump)
             return;
@@ -670,24 +699,25 @@ void Builder::buildGraphRecursive(std::shared_ptr<Block> root, const std::unorde
     if(blockForInstruction.contains(root->m_instructionRange.second + 1)) {
         std::shared_ptr<Block> next = blocks.at(blockForInstruction.at(root->m_instructionRange.second + 1));
         root->m_connections.push_back(next);
+        next->m_predecessors.push_back(root);
         buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
     }
 }
 
-void Builder::getAllPaths(std::shared_ptr<Block> root, std::unordered_set<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths) {
-    if(currentPath.contains(root))
+void Builder::getAllPaths(std::shared_ptr<Block> root, std::vector<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths) {
+    if(std::find(currentPath.begin(), currentPath.end(), root) != currentPath.end())
         return;
+    currentPath.push_back(root);
     std::vector<std::shared_ptr<Block>> pathVec; pathVec.reserve(currentPath.size());
     for(auto& b : currentPath)
         pathVec.push_back(b);
     if(pathVec.size() > 0)
         paths[root].push_back(std::move(pathVec));
-    currentPath.insert(root);
 
     for(auto& con : root->m_connections)
         getAllPaths(con, currentPath, paths);
 
-    currentPath.erase(root);
+    currentPath.pop_back();
 }
 
 std::string Builder::operandString(std::shared_ptr<Operand> op) {

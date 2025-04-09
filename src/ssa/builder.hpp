@@ -30,9 +30,20 @@ struct FunctionContext {
 struct Block {
     std::pair<uint32_t, uint32_t> m_instructionRange;
     std::vector<std::shared_ptr<Block>> m_connections;
+    std::vector<std::shared_ptr<Block>> m_predecessors;
     std::vector<std::shared_ptr<Block>> m_dominators;
-    std::vector<std::shared_ptr<Block>> m_dominanceFrontiers;
+    std::vector<std::shared_ptr<Block>> m_dominated;
+    std::unordered_set<std::shared_ptr<Block>> m_dominanceFrontiers;
     std::unordered_map<std::string, std::shared_ptr<Phi>> m_phiForVariable;
+
+    std::shared_ptr<Block> getImmediateDomiator() {
+        for(int i = m_dominators.size() - 1; i >= 0; i--) {
+            if(m_dominators.at(i).get() == this)
+                continue;
+            return m_dominators.at(i);
+        }
+        return nullptr;
+    }
 };
 
 class Builder {
@@ -66,7 +77,7 @@ public:
     static std::vector<std::shared_ptr<Block>> buildCFG(Function& f);
     static std::vector<std::shared_ptr<Block>> getBlocks(const Function& f);
     static void buildGraphRecursive(std::shared_ptr<Block> root, const std::unordered_map<size_t, size_t>& blockForInstruction, const std::vector<std::shared_ptr<Block>>& blocks, std::unordered_set<std::shared_ptr<Block>>& visited, const Function& f);
-    static void getAllPaths(std::shared_ptr<Block> root, std::unordered_set<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths);
+    static void getAllPaths(std::shared_ptr<Block> root, std::vector<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths);
     static void placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::shared_ptr<Block>> blocks, const std::vector<std::shared_ptr<Block>>& allBlocks, Function& f);
 
     static std::string operandString(std::shared_ptr<Operand> op);

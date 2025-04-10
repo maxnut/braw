@@ -709,6 +709,9 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
         return reg;
     };
 
+    for(auto arg : f.m_args)
+        assigned(arg);
+
     for(size_t i = block->m_instructionRange.first; i <= block->m_instructionRange.second; i++) {
         auto instr = f.m_instructions.at(i);
         switch(instr->m_type) {

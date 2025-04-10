@@ -26,10 +26,11 @@ struct Operand {
 
 struct Register : Operand {
     Register() : Operand(Type::Register) {}
-    Register(const std::string& id) : Operand(Type::Register), m_id(id) {}
-    Register(const std::string& id, const TypeInfo& t) : Operand(Type::Register, t), m_id(id) {}
+    Register(const std::string& id) : Operand(Type::Register), m_id(id), m_originalId(id) {}
+    Register(const std::string& id, const TypeInfo& t) : Operand(Type::Register, t), m_id(id), m_originalId(id) {}
 
     std::string m_id;
+    std::string m_originalId;
 };
 
 struct Immediate : Operand {

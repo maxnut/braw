@@ -19,7 +19,8 @@ struct Instruction {
         JumpTrue,
         Jump,
         Label,
-        Phi
+        Phi,
+        WriteMem
     };
 
     Instruction(Type t, std::pair<uint32_t, uint32_t> range) : m_type(t), m_range(range) {}
@@ -70,6 +71,13 @@ struct Phi : Instruction {
 
     std::shared_ptr<Operand> m_to;
     std::vector<std::shared_ptr<Operand>> m_operands;
+};
+
+struct WriteMem : Instruction {
+    WriteMem(std::pair<uint32_t, uint32_t> range, std::shared_ptr<Operand> to, std::shared_ptr<Operand> value) : Instruction(Type::WriteMem, range), m_to(to), m_value(value) {}
+
+    std::shared_ptr<Operand> m_to;
+    std::shared_ptr<Operand> m_value;
 };
 
 }

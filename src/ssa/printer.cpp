@@ -111,6 +111,14 @@ void Printer::print(std::ostream& out, const Instruction* instr) {
             out << label->m_id << ":";
             break;
         }
+        case Instruction::WriteMem: {
+            const WriteMem* write = static_cast<const WriteMem*>(instr);
+            out << "wmem ";
+            print(out, write->m_to.get());
+            out << ", ";
+            print(out, write->m_value.get());
+            break;
+        }
         }
     }
     void Printer::print(std::ostream& out, const Operation* oper) {

@@ -553,12 +553,23 @@ std::shared_ptr<Operand> Builder::buildCall(AST::FunctionCallNode* node, BrawCon
 
 
 void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> operation, std::pair<uint32_t, uint32_t> range, FunctionContext& ctx) {
-    if(to->m_typeInfo.m_name == "")
-        to->m_typeInfo = operation->m_typeInfo;
     auto instr = std::make_shared<Assignment>(range);
-    instr->m_to = to;
+    if(to->m_type == Operand::Address) {
+        instr->m_to = makeOrGetRegister("%" + std::to_string((uintptr_t)to.get()) + "_tmp", ctx);
+        assign(makeOrGetRegister("%" + std::to_string((uintptr_t)to.get()), ctx), point(to), range, ctx);
+    }
+    else
+        instr->m_to = to;
+
+    if(instr->m_to->m_typeInfo.m_name == "")
+        instr->m_to->m_typeInfo = operation->m_typeInfo;
     instr->m_operation = operation;
     ctx.m_instructions.push_back(instr);
+
+    if(to->m_type == Operand::Address) {
+        auto writeMem = std::make_shared<WriteMem>(range, makeOrGetRegister("%" + std::to_string((uintptr_t)to.get()), ctx), instr->m_to);
+        ctx.m_instructions.push_back(writeMem);
+    }
 }
 
 std::shared_ptr<Register> Builder::makeOrGetRegister(const std::string& name, FunctionContext& ctx) {
@@ -652,8 +663,113 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
 
     for(auto& pair : blocksThatAssignVariable)
         placePhiBlocks(pair.second.first, pair.second.second, blocks, f);
+
+    std::unordered_map<std::string, size_t> counters;
+    std::unordered_map<std::string, std::vector<std::string>> nameStack;
+    std::unordered_set<std::shared_ptr<Block>> visited;
+    rename(blocks.at(0), f, counters, nameStack, visited);
     
     return blocks;
+}
+
+std::shared_ptr<Register> cloneRegister(std::shared_ptr<Register> reg) {
+    return std::make_shared<Register>(reg->m_id, reg->m_typeInfo);
+}
+
+void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited) {
+    if(visited.contains(block))
+        return;
+    visited.insert(block);
+    std::unordered_map<std::string, std::shared_ptr<Operand>> nameForOperand;
+    std::unordered_set<std::string> assignedVariables;
+
+    auto replace = [&](std::shared_ptr<Operand> op) -> std::shared_ptr<Operand> {
+        if(op->m_type != Operand::Register)
+            return op;
+        auto reg = cloneRegister(cast<Register>(op));
+        std::string opStr = reg->m_originalId;
+        const std::string& name = nameStack.at(opStr).back();
+        reg->m_id = name;
+        nameForOperand[opStr] = reg;
+        return reg;
+    };
+
+    auto assigned = [&](std::shared_ptr<Operand> op) -> std::shared_ptr<Operand> {
+        if(op->m_type != Operand::Register)
+            return op;
+        auto reg = cloneRegister(cast<Register>(op));
+        std::string opStr = reg->m_originalId;
+        if(!counters.contains(opStr))
+            counters.insert({opStr, 0});
+        counters[opStr]++;
+        nameStack[opStr].push_back(opStr + ":" + std::to_string(counters[opStr]));
+        reg->m_id = nameStack[opStr].back();
+        nameForOperand[opStr] = reg;
+        assignedVariables.insert(opStr);
+        return reg;
+    };
+
+    for(size_t i = block->m_instructionRange.first; i <= block->m_instructionRange.second; i++) {
+        auto instr = f.m_instructions.at(i);
+        switch(instr->m_type) {
+            case Instruction::Assign: {
+                Assignment* a = static_cast<Assignment*>(instr.get());
+                a->m_to = assigned(a->m_to);
+                if(a->m_operation->m_o1)
+                    a->m_operation->m_o1 = replace(a->m_operation->m_o1);
+                if(a->m_operation->m_o2)
+                    a->m_operation->m_o2 = replace(a->m_operation->m_o2);
+                break;
+            }
+            case Instruction::Allocate: {
+                Allocate* a = static_cast<Allocate*>(instr.get());
+                a->m_to = assigned(a->m_to);
+                break;
+            }
+            case Instruction::Call: {
+                Call* c = static_cast<Call*>(instr.get());
+                for(auto& argument : c->m_parameters) {
+                    argument = replace(argument);
+                }
+                if(c->m_optReturn)
+                    c->m_optReturn = cast<Register>(assigned(c->m_optReturn));
+                break;
+            }
+            case Instruction::JumpFalse:
+            case Instruction::JumpTrue: {
+                Jump* j = static_cast<Jump*>(instr.get());
+                if(j->m_check)
+                    j->m_check = replace(j->m_check);
+                break;
+            }
+            case Instruction::WriteMem: {
+                WriteMem* w = static_cast<WriteMem*>(instr.get());
+                w->m_to = assigned(w->m_to);
+                w->m_value = replace(w->m_value);
+            }
+            case Instruction::Phi: {
+                Phi* p = static_cast<Phi*>(instr.get());
+                p->m_to = assigned(p->m_to);
+            }
+            case Instruction::Return:
+            case Instruction::Label:
+            case Instruction::Jump:
+                break;
+        }
+    }
+
+    for(auto s : block->m_connections) {
+        for(auto& phiPair : s->m_phiForVariable) {
+            phiPair.second->m_operands.push_back(nameForOperand.at(phiPair.first));
+        }
+    }
+
+    for(auto d : block->m_dominated)
+        rename(d, f, counters, nameStack, visited);
+
+    for(const std::string& variable : assignedVariables) {
+        nameStack[variable].pop_back();
+    }
 }
 
 std::vector<std::shared_ptr<Block>> Builder::getBlocks(const Function& f) {
@@ -769,14 +885,16 @@ void Builder::placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::share
                 continue;
             auto phi = std::make_shared<Phi>(op);
             frontier->m_phiForVariable[operandString(op)] = phi;
-            f.m_instructions.insert(f.m_instructions.begin() + frontier->m_instructionRange.second, phi);
+            f.m_instructions.insert(f.m_instructions.begin() + frontier->m_instructionRange.first + 1, phi);
             if (visited.insert(frontier).second) {
                 blocks.push_back(frontier);
             }
             for(auto& b : allBlocks) {
-                if(b->m_instructionRange.first > frontier->m_instructionRange.second)
+                if(b == frontier)
+                    continue;
+                if(b->m_instructionRange.first > frontier->m_instructionRange.first + 1)
                     b->m_instructionRange.first++;
-                if(b->m_instructionRange.second > frontier->m_instructionRange.second)
+                if(b->m_instructionRange.second > frontier->m_instructionRange.first + 1)
                     b->m_instructionRange.second++;
             }
             frontier->m_instructionRange.second++;

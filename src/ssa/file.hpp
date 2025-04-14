@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ssa/instruction.hpp"
+#include "ssa/block.hpp"
 #include "ssa/operand.hpp"
 #include <filesystem>
 #include <vector>
@@ -14,6 +14,7 @@ struct Function {
     std::vector<std::shared_ptr<Instruction>> m_instructions;
     bool m_external = false;
     std::unordered_map<std::string, std::shared_ptr<Register>> m_retains;
+    std::vector<std::shared_ptr<Block>> m_blocks;
 };
 
 struct File {

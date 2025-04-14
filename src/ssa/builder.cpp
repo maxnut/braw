@@ -4,10 +4,6 @@
 #include "parser/nodes/unary_operator.hpp"
 #include "parser/nodes/variable_access.hpp"
 #include "rules.hpp"
-#include "ssa/file.hpp"
-#include "ssa/instruction.hpp"
-#include "ssa/operand.hpp"
-#include "ssa/operation.hpp"
 #include "utils.hpp"
 #include <memory>
 #include <unordered_map>
@@ -102,7 +98,7 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
     }
 
     if(!f.m_external)
-        auto blocks = buildCFG(f);
+        f.m_blocks = std::move(buildCFG(f));
 
     return f;
 }
@@ -143,7 +139,7 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
     reg->m_scale = node->m_scale;
     reg->m_typeInfo.m_builtin = reg->m_scale <= 1 && reg->m_typeInfo.m_builtin;
 
-    auto label = std::make_shared<Label>(node->m_rangeEnd, "." + std::to_string((uintptr_t)node));
+    auto label = std::make_shared<Label>(node->m_rangeEnd, Utils::uniqueLabelName());
 
     if(node->m_retain)
         ictx.m_function->m_retains.insert({reg->m_id, reg});
@@ -176,8 +172,8 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
 }
 
 void Builder::build(AST::WhileNode* node, BrawContext& context, FunctionContext& ictx) {
-    auto label = std::make_shared<Label>(node->m_condition->m_rangeBegin, "." + std::to_string((uintptr_t)node) + "_condition");
-    auto labelBody = std::make_shared<Label>(node->m_then->m_rangeBegin, "." + std::to_string((uintptr_t)node) + "_body");
+    auto label = std::make_shared<Label>(node->m_condition->m_rangeBegin, Utils::uniqueLabelName() + "_condition");
+    auto labelBody = std::make_shared<Label>(node->m_then->m_rangeBegin, Utils::uniqueLabelName() + "_body");
     if(!node->m_do)
         ictx.m_instructions.push_back(std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, label));
     ictx.m_instructions.push_back(label);
@@ -191,8 +187,8 @@ void Builder::build(AST::WhileNode* node, BrawContext& context, FunctionContext&
 
 void Builder::build(AST::ForNode* node, BrawContext& context, FunctionContext& ictx) {
     build(node->m_initializer.get(), context, ictx);
-    auto labelCondition = std::make_shared<Label>(node->m_condition->m_rangeBegin, "." + std::to_string((uintptr_t)node) + "_condition");
-    auto labelBody = std::make_shared<Label>(node->m_body->m_rangeBegin, "." + std::to_string((uintptr_t)node) + "_body");
+    auto labelCondition = std::make_shared<Label>(node->m_condition->m_rangeBegin, Utils::uniqueLabelName() + "_condition");
+    auto labelBody = std::make_shared<Label>(node->m_body->m_rangeBegin, Utils::uniqueLabelName() + "_body");
     ictx.m_instructions.push_back(
         std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, labelCondition)
     );
@@ -209,13 +205,13 @@ void Builder::build(AST::ForNode* node, BrawContext& context, FunctionContext& i
 
 void Builder::build(AST::IfNode* node, BrawContext& context, FunctionContext& ictx) {
     auto condition = buildExpression(node->m_condition.get(), context, ictx);
-    auto label = std::make_shared<Label>(node->m_rangeBegin, "." + std::to_string((uintptr_t)node));
+    auto label = std::make_shared<Label>(node->m_rangeBegin, Utils::uniqueLabelName());
     ictx.m_instructions.push_back(
         std::make_shared<Jump>(Instruction::JumpFalse, node->m_condition->m_rangeBegin, label, condition)
     );
     build(node->m_then.get(), context, ictx);
     if(node->m_else) {
-        auto elseLabel = std::make_shared<Label>(node->m_else->m_rangeBegin, "." + std::to_string((uintptr_t)node) + "_else");
+        auto elseLabel = std::make_shared<Label>(node->m_else->m_rangeBegin, Utils::uniqueLabelName() + "_else");
         ictx.m_instructions.push_back(
             std::make_shared<Jump>(Instruction::Jump, node->m_condition->m_rangeBegin, label)
         );
@@ -293,9 +289,9 @@ std::shared_ptr<Operand> Builder::buildExpression(AST::Node* node, BrawContext& 
 
 std::shared_ptr<Operand> Builder::buildBinaryOperator(AST::BinaryOperatorNode* node, BrawContext& context, FunctionContext& ictx) {
     if(node->m_operator == "||") {
-        std::string name = "%" + std::to_string((uintptr_t)node);
+        std::string name = Utils::uniqueRegisterName();
         std::shared_ptr<Register> target = makeOrGetRegister(name, ictx);
-        auto label = std::make_shared<Label>(node->m_right->m_rangeEnd, "." + std::to_string((uintptr_t)node));
+        auto label = std::make_shared<Label>(node->m_right->m_rangeEnd, Utils::uniqueLabelName());
         auto left = buildExpression(node->m_left.get(), context, ictx);
         assign(target, load(left), node->m_left->m_rangeEnd, ictx);
         ictx.m_instructions.push_back(std::make_shared<Jump>(Instruction::JumpTrue, node->m_right->m_rangeEnd, label, target));
@@ -309,7 +305,7 @@ std::shared_ptr<Operand> Builder::buildBinaryOperator(AST::BinaryOperatorNode* n
     auto left = buildExpression(node->m_left.get(), context, ictx);
     auto right = buildExpression(node->m_right.get(), context, ictx);
 
-    std::string name = "%" + std::to_string((uintptr_t)node);
+    std::string name = Utils::uniqueRegisterName();
     std::shared_ptr<Register> target = makeOrGetRegister(name, ictx);
 
     if(node->m_operator == "+")
@@ -360,7 +356,7 @@ std::shared_ptr<Operand> Builder::dotOperator(AST::UnaryOperatorNode* node, std:
 
 std::shared_ptr<Operand> Builder::dereferenceOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
     auto tmp = op;
-    auto ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+    auto ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
     ret->m_typeInfo = Utils::getRawType(op->m_typeInfo, context).value();
     assign(ret, operation(Operation::Dereference, ret->m_typeInfo, op), node->m_rangeBegin, ictx);
     return ret;
@@ -368,7 +364,7 @@ std::shared_ptr<Operand> Builder::dereferenceOperator(AST::UnaryOperatorNode* no
 
 std::shared_ptr<Operand> Builder::addressOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
     auto tmp = op;
-    auto ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+    auto ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
     ret->m_typeInfo = Utils::makePointer(op->m_typeInfo);
     assign(ret, point(op), node->m_rangeBegin, ictx);
     return ret;
@@ -377,13 +373,13 @@ std::shared_ptr<Operand> Builder::addressOperator(AST::UnaryOperatorNode* node, 
 std::shared_ptr<Operand> Builder::subscriptOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
     auto index = buildExpression(node->m_expression.get(), context, ictx);
     if(index->m_type != Operand::Register) {
-        auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_0", ictx);
+        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName() + "_0", ictx);
         tmp->m_typeInfo = index->m_typeInfo;
         assign(tmp, load(index), node->m_rangeBegin, ictx);
         index = tmp;
     }
     if(op->m_type != Operand::Register) {
-        auto tmp = makeOrGetRegister("%" + std::to_string((uintptr_t)node) + "_1", ictx);
+        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName() + "_1", ictx);
         tmp->m_typeInfo = op->m_typeInfo;
         if(op->m_type == Operand::Address && cast<Address>(op)->m_scaleSize > 1)
             assign(tmp, point(op), node->m_rangeBegin, ictx);
@@ -419,7 +415,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
                 ret = imm;
             }
             else {
-                ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
                 assign(ret, operation(Operation::Upsize, context.getTypeInfo(node->m_data).value(), op), node->m_rangeBegin, ictx);
             }
         }
@@ -432,7 +428,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
                 ret = imm;
             }
             else {
-                ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
                 assign(ret, operation(Operation::Upsize, context.getTypeInfo(node->m_data).value(), op), node->m_rangeBegin, ictx);
             }
         }
@@ -443,7 +439,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
                 ret = imm;
             }
             else {
-                ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
                 assign(ret, operation(Operation::Downsize, context.getTypeInfo(node->m_data).value(), op), node->m_rangeBegin, ictx);
             }
         }
@@ -456,7 +452,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
                 ret = imm;
             }
             else {
-                ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
                 assign(ret, operation(Operation::Downsize, context.getTypeInfo(node->m_data).value(), op), node->m_rangeBegin, ictx);
             }
         }
@@ -467,7 +463,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
                 ret = imm;
             }
             else {
-                ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+                ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
                 assign(ret, operation(Operation::Downsize, context.getTypeInfo(node->m_data).value(), op), node->m_rangeBegin, ictx);
             }
         }
@@ -488,7 +484,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
 }
 
 std::shared_ptr<Operand> Builder::logicalNotOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
-    auto ret = makeOrGetRegister("%" + std::to_string((uintptr_t)node), ictx);
+    auto ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
     assign(ret, operation(Operation::LogicalNot, context.getTypeInfo(BOOL_T).value(), op), node->m_rangeBegin, ictx);
     return ret;
 }
@@ -538,7 +534,7 @@ std::shared_ptr<Operand> Builder::buildCall(AST::FunctionCallNode* node, BrawCon
         tmpTypes.push_back(t);
     }
 
-    std::string name = "%" + std::to_string((uintptr_t)node);
+    std::string name = Utils::uniqueRegisterName();
 
     auto fun = context.getFunction(node->m_name, tmpTypes);
     call->m_returnType = fun->m_returnType;
@@ -553,10 +549,11 @@ std::shared_ptr<Operand> Builder::buildCall(AST::FunctionCallNode* node, BrawCon
 
 
 void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> operation, std::pair<uint32_t, uint32_t> range, FunctionContext& ctx) {
+    std::string potentialName = Utils::uniqueRegisterName();
     auto instr = std::make_shared<Assignment>(range);
     if(to->m_type == Operand::Address) {
-        instr->m_to = makeOrGetRegister("%" + std::to_string((uintptr_t)to.get()) + "_tmp", ctx);
-        assign(makeOrGetRegister("%" + std::to_string((uintptr_t)to.get()), ctx), point(to), range, ctx);
+        instr->m_to = makeOrGetRegister(Utils::uniqueRegisterName(), ctx);
+        assign(makeOrGetRegister(potentialName, ctx), point(to), range, ctx);
     }
     else
         instr->m_to = to;
@@ -567,7 +564,7 @@ void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> ope
     ctx.m_instructions.push_back(instr);
 
     if(to->m_type == Operand::Address) {
-        auto writeMem = std::make_shared<WriteMem>(range, makeOrGetRegister("%" + std::to_string((uintptr_t)to.get()), ctx), instr->m_to);
+        auto writeMem = std::make_shared<WriteMem>(range, makeOrGetRegister(potentialName, ctx), instr->m_to);
         ctx.m_instructions.push_back(writeMem);
     }
 }
@@ -661,8 +658,11 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
         }
     }
 
-    for(auto& pair : blocksThatAssignVariable)
+    for(auto& pair : blocksThatAssignVariable) {
+        if(pair.second.second.size() <= 1)
+            continue;
         placePhiBlocks(pair.second.first, pair.second.second, blocks, f);
+    }
 
     std::unordered_map<std::string, size_t> counters;
     std::unordered_map<std::string, std::vector<std::string>> nameStack;
@@ -711,6 +711,9 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
 
     for(auto arg : f.m_args)
         assigned(arg);
+    
+    for(auto& ret : f.m_retains)
+        assigned(ret.second);
 
     for(size_t i = block->m_instructionRange.first; i <= block->m_instructionRange.second; i++) {
         auto instr = f.m_instructions.at(i);
@@ -749,10 +752,12 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
                 WriteMem* w = static_cast<WriteMem*>(instr.get());
                 w->m_to = assigned(w->m_to);
                 w->m_value = replace(w->m_value);
+                break;
             }
             case Instruction::Phi: {
                 Phi* p = static_cast<Phi*>(instr.get());
                 p->m_to = assigned(p->m_to);
+                break;
             }
             case Instruction::Return:
             case Instruction::Label:
@@ -764,6 +769,7 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
     for(auto s : block->m_connections) {
         for(auto& phiPair : s->m_phiForVariable) {
             phiPair.second->m_operands.push_back(nameForOperand.at(phiPair.first));
+            phiPair.second->m_placeOpAt.push_back(block->m_instructionRange.second);
         }
     }
 
@@ -904,5 +910,6 @@ void Builder::placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::share
         }
     }
 }
+
 
 }

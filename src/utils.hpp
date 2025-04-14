@@ -157,4 +157,14 @@ namespace Utils {
 
         return std::string(tabs, '\t') + trim(extractedText.str());
     }
+
+    inline std::string uniqueLabelName() {
+        static size_t counter = 0;
+        return "." + std::to_string(counter++);
+    }
+
+    inline std::string uniqueRegisterName() {
+        static size_t counter = 0;
+        return "%" + std::to_string(counter++);
+    }
 }

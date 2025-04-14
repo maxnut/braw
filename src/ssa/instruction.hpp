@@ -71,6 +71,7 @@ struct Phi : Instruction {
 
     std::shared_ptr<Operand> m_to;
     std::vector<std::shared_ptr<Operand>> m_operands;
+    std::vector<size_t> m_placeOpAt;
 };
 
 struct WriteMem : Instruction {

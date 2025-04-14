@@ -14,6 +14,7 @@
 #include "ssa/instruction.hpp"
 #include "ssa/operand.hpp"
 #include "ssa/operation.hpp"
+#include "block.hpp"
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -27,24 +28,6 @@ struct FunctionContext {
     Function* m_function;
 };
 
-struct Block {
-    std::pair<uint32_t, uint32_t> m_instructionRange;
-    std::vector<std::shared_ptr<Block>> m_connections;
-    std::vector<std::shared_ptr<Block>> m_predecessors;
-    std::vector<std::shared_ptr<Block>> m_dominators;
-    std::vector<std::shared_ptr<Block>> m_dominated;
-    std::unordered_set<std::shared_ptr<Block>> m_dominanceFrontiers;
-    std::unordered_map<std::string, std::shared_ptr<Phi>> m_phiForVariable;
-
-    std::shared_ptr<Block> getImmediateDomiator() {
-        for(int i = m_dominators.size() - 1; i >= 0; i--) {
-            if(m_dominators.at(i).get() == this)
-                continue;
-            return m_dominators.at(i);
-        }
-        return nullptr;
-    }
-};
 
 class Builder {
 public:

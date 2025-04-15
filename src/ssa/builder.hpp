@@ -54,8 +54,8 @@ public:
 
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, FunctionContext& ctx);
     static void assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> operation, std::pair<uint32_t, uint32_t> pos, FunctionContext& ctx);
-    static std::shared_ptr<Operation> point(std::shared_ptr<Operand> op);
-    static std::shared_ptr<Operation> load(std::shared_ptr<Operand> op);
+    static std::shared_ptr<Operation> point(std::shared_ptr<Operand> op, FunctionContext& ictx);
+    static std::shared_ptr<Operation> load(std::shared_ptr<Operand> op, FunctionContext& ictx);
 
     static std::vector<std::shared_ptr<Block>> buildCFG(Function& f);
     static std::vector<std::shared_ptr<Block>> getBlocks(const Function& f);
@@ -65,6 +65,7 @@ public:
     static void rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand);
 
     static std::string operandString(std::shared_ptr<Operand> op);
+    static std::shared_ptr<Operation> operation(Operation::Type t, const TypeInfo& ti, FunctionContext& ictx, std::shared_ptr<Operand> o1, std::shared_ptr<Operand> o2 = nullptr);
 };
 
 }

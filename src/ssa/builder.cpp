@@ -158,7 +158,7 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
             );
             auto v = std::make_shared<Immediate>();
             v->m_value = true;
-            assign(v, load(v), node->m_rangeBegin, ictx);
+            assign(guard, load(v), node->m_rangeBegin, ictx);
         }
         auto op = buildExpression(node->m_value.get(), context, ictx);
         if(op->m_type == Operand::Type::Immediate && std::holds_alternative<std::string>(std::static_pointer_cast<Immediate>(op)->m_value)) {
@@ -176,9 +176,9 @@ void Builder::build(AST::WhileNode* node, BrawContext& context, FunctionContext&
     auto labelBody = std::make_shared<Label>(node->m_then->m_rangeBegin, Utils::uniqueLabelName() + "_body");
     if(!node->m_do)
         ictx.m_instructions.push_back(std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, label));
-    ictx.m_instructions.push_back(label);
-    build(node->m_then.get(), context, ictx);
     ictx.m_instructions.push_back(labelBody);
+    build(node->m_then.get(), context, ictx);
+    ictx.m_instructions.push_back(label);
     auto condition = buildExpression(node->m_condition.get(), context, ictx);
     ictx.m_instructions.push_back(
         std::make_shared<Jump>(Instruction::JumpTrue, node->m_rangeEnd, labelBody, condition)
@@ -213,7 +213,7 @@ void Builder::build(AST::IfNode* node, BrawContext& context, FunctionContext& ic
     if(node->m_else) {
         auto elseLabel = std::make_shared<Label>(node->m_else->m_rangeBegin, Utils::uniqueLabelName() + "_else");
         ictx.m_instructions.push_back(
-            std::make_shared<Jump>(Instruction::Jump, node->m_condition->m_rangeBegin, label)
+            std::make_shared<Jump>(Instruction::Jump, node->m_condition->m_rangeBegin, elseLabel)
         );
         ictx.m_instructions.push_back(label);
         build(node->m_else.get(), context, ictx);
@@ -548,19 +548,19 @@ std::shared_ptr<Operand> Builder::buildCall(AST::FunctionCallNode* node, BrawCon
 }
 
 
-void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> operation, std::pair<uint32_t, uint32_t> range, FunctionContext& ctx) {
+void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> oper, std::pair<uint32_t, uint32_t> range, FunctionContext& ctx) {
     std::string potentialName = Utils::uniqueRegisterName();
     auto instr = std::make_shared<Assignment>(range);
     if(to->m_type == Operand::Address) {
         instr->m_to = makeOrGetRegister(Utils::uniqueRegisterName(), ctx);
-        assign(makeOrGetRegister(potentialName, ctx), point(to), range, ctx);
+        assign(makeOrGetRegister(potentialName, ctx), operation(Operation::Reference, to->m_typeInfo, to), range, ctx);
     }
     else
         instr->m_to = to;
 
     if(instr->m_to->m_typeInfo.m_name == "")
-        instr->m_to->m_typeInfo = operation->m_typeInfo;
-    instr->m_operation = operation;
+        instr->m_to->m_typeInfo = oper->m_typeInfo;
+    instr->m_operation = oper;
     ctx.m_instructions.push_back(instr);
 
     if(to->m_type == Operand::Address) {
@@ -667,7 +667,8 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
     std::unordered_map<std::string, size_t> counters;
     std::unordered_map<std::string, std::vector<std::string>> nameStack;
     std::unordered_set<std::shared_ptr<Block>> visited;
-    rename(blocks.at(0), f, counters, nameStack, visited);
+    std::unordered_map<std::string, std::shared_ptr<Operand>> nameForOperand;
+    rename(blocks.at(0), f, counters, nameStack, visited, nameForOperand);
     
     return blocks;
 }
@@ -676,11 +677,10 @@ std::shared_ptr<Register> cloneRegister(std::shared_ptr<Register> reg) {
     return std::make_shared<Register>(reg->m_id, reg->m_typeInfo);
 }
 
-void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited) {
+void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand) {
     if(visited.contains(block))
         return;
     visited.insert(block);
-    std::unordered_map<std::string, std::shared_ptr<Operand>> nameForOperand;
     std::unordered_set<std::string> assignedVariables;
 
     auto replace = [&](std::shared_ptr<Operand> op) -> std::shared_ptr<Operand> {
@@ -766,15 +766,17 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
         }
     }
 
+    for(auto d : block->m_dominated)
+        rename(d, f, counters, nameStack, visited, nameForOperand);
+
     for(auto s : block->m_connections) {
         for(auto& phiPair : s->m_phiForVariable) {
             phiPair.second->m_operands.push_back(nameForOperand.at(phiPair.first));
-            phiPair.second->m_placeOpAt.push_back(block->m_instructionRange.second);
+            Instruction::Type t = f.m_instructions.at(block->m_instructionRange.second)->m_type;
+            size_t idx = t == Instruction::Jump || t == Instruction::JumpFalse || t == Instruction::JumpTrue ? block->m_instructionRange.second - 1 : block->m_instructionRange.second;
+            phiPair.second->m_placeOpAt.push_back(idx);
         }
     }
-
-    for(auto d : block->m_dominated)
-        rename(d, f, counters, nameStack, visited);
 
     for(const std::string& variable : assignedVariables) {
         nameStack[variable].pop_back();

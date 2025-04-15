@@ -27,7 +27,8 @@ struct Operation {
         Or,
         Xor,
         LogicalNot,
-        Load
+        Load,
+        Reference
     };
 
     Operation(Type t, TypeInfo ti, std::shared_ptr<Operand> o1 = nullptr, std::shared_ptr<Operand> o2 = nullptr) : m_type(t), m_typeInfo(ti), m_o1(o1), m_o2(o2) {}

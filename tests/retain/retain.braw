@@ -1,0 +1,5 @@
+fn counter() -> int {
+    retain ctr = 0;
+    ctr = ctr + 1;
+    return ctr;
+}

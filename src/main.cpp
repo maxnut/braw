@@ -2,11 +2,11 @@
 #include "codegen/x86-64/emitter.hpp"
 #include "codegen/x86-64/file.hpp"
 #include "ir/file.hpp"
+#include "ir/from_ssa/builder_ssa.hpp"
 #include "lexer/lexer.hpp"
 #include "macro/evaluator.hpp"
 #include "parser/parser.hpp"
 #include "semantic-analyzer/semantic_analyzer.hpp"
-#include "ir/builder/ir_builder.hpp"
 #include "ir/printer/ir_printer.hpp"
 #include "ssa/builder.hpp"
 #include "ssa/file.hpp"
@@ -92,15 +92,6 @@ int main(int argc, char** argv) {
 
     std::vector<SSA::File> ssaFiles = SSA::Builder::build(ast.value().get(), ctx);
     for(const SSA::File& file : ssaFiles) {
-        auto ssaOutputPath = outputPath / (file.m_path.stem().string() + ".ssa");
-        std::ofstream fs(ssaOutputPath);
-        SSA::Printer::print(fs, file);
-        fs.close();
-    }
-
-    std::vector<File> res = IRBuilder::build(ast.value().get(), ctx);
-
-    for(File& file : res) {
         bool allExt = true;
         for(auto& f : file.m_functions) {
             if(!f.m_external) {
@@ -109,22 +100,28 @@ int main(int argc, char** argv) {
             }
         }
         if(allExt) continue;
+        auto ssaOutputPath = outputPath / (file.m_path.stem().string() + ".ssa");
+        std::ofstream fs(ssaOutputPath);
+        SSA::Printer::print(fs, file);
+        fs.close();
+
+        File irFile = IRBuilderSSA::build(file, ctx);
         auto irOutputPath = outputPath / (file.m_path.stem().string() + ".ir");
-        std::ofstream fs(irOutputPath);
-        IRPrinter::print(fs, file);
+        fs = std::ofstream(irOutputPath);
+        IRPrinter::print(fs, irFile);
         fs.close();
 
         CodeGen::x86_64::CodeGenerator generator;
-        CodeGen::x86_64::File asmFile = generator.generate(file, ctx);
+        CodeGen::x86_64::File asmFile = generator.generate(irFile, ctx);
 
-        auto codegenOutputPath = outputPath / (file.m_path.stem().string() + ".asm");
+        auto codegenOutputPath = outputPath / (irFile.m_path.stem().string() + ".asm");
         fs = std::ofstream(codegenOutputPath);
-        CodeGen::x86_64::Emitter::emit(asmFile, file, fs, ctx);
+        CodeGen::x86_64::Emitter::emit(asmFile, irFile, fs, ctx);
         fs.close();
     }
 
     if(assemble) {
-        for(File& file : res) {
+        for(SSA::File& file : ssaFiles) {
             bool allExt = true;
             for(auto& f : file.m_functions) {
                 if(!f.m_external) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "braw_context.hpp"
+#include "ir/address.hpp"
 #include "ir/file.hpp"
 #include "ir/operand.hpp"
 #include "ssa/block.hpp"
@@ -15,7 +16,8 @@
 struct IRFunctionContextSSA {
     BrawContext& ctx;
     std::unordered_map<std::string, std::shared_ptr<Register>> m_registers;
-    std::unordered_map<size_t, std::shared_ptr<Block>> m_blockEnds;
+    std::unordered_map<std::string, Address> m_refs;
+    std::unordered_map<size_t, size_t> m_ssaToIrIdx;
     Function* m_function;
 };
 
@@ -40,4 +42,5 @@ private:
     static void moveToRegister(const std::string& name, Operand& op, std::pair<uint32_t, uint32_t> pos, IRFunctionContextSSA& ictx);
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, IRFunctionContextSSA& ictx);
     static void buildAssignment(const SSA::Assignment* assignment, Instruction::Type type, IRFunctionContextSSA& ictx);
+    static void buildCompare(const SSA::Assignment* assignment, Instruction::Type type, IRFunctionContextSSA& ictx);
 };

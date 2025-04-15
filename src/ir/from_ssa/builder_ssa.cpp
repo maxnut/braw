@@ -1,4 +1,5 @@
 #include "builder_ssa.hpp"
+#include "ir/copy_propagator.hpp"
 #include "ir/instruction.hpp"
 #include "ir/instructions/basic.hpp"
 #include "ir/instructions/call.hpp"
@@ -14,9 +15,15 @@
 
 File IRBuilderSSA::build(const SSA::File& file, BrawContext& context) {
     File fRet;
+    fRet.m_path = file.m_path;
 
     for(auto& function : file.m_functions)
         fRet.m_functions.push_back(build(function, context));
+
+    for(auto& function : fRet.m_functions) {
+        if(function.m_external)
+            fRet.m_externals.push_back(&function);
+    }
 
     return fRet;
 }
@@ -26,24 +33,48 @@ Function IRBuilderSSA::build(const SSA::Function& function, BrawContext& context
     IRFunctionContextSSA ictx{context};
     ictx.m_function = &fRet;
 
-    for(auto b : function.m_blocks)
-        ictx.m_blockEnds.insert({b->m_instructionRange.second, b});
+    fRet.m_name = function.m_name;
+    fRet.m_external = function.m_external;
+    if(function.m_optReturn)
+        fRet.m_optReturn = std::get<std::shared_ptr<Register>>(convertOperand(function.m_optReturn.get(), ictx));
+    for(auto arg : function.m_args)
+        fRet.m_args.push_back(std::get<std::shared_ptr<Register>>(convertOperand(arg.get(), ictx)));
+    for(auto ret : function.m_retains)
+        fRet.m_retains.insert({ret.first, std::get<std::shared_ptr<Register>>(convertOperand(ret.second.get(), ictx))});
 
     for(size_t i = 0; i < function.m_instructions.size(); i++) {
         auto& instruction = function.m_instructions.at(i);
         build(instruction.get(), ictx);
+        ictx.m_ssaToIrIdx.insert({i, fRet.m_instructions.size() - 1});
     }
+
+    for(auto block : function.m_blocks) {
+        for(auto& pair : block->m_phiForVariable)
+            build(pair.second.get(), ictx);
+    }
+
+    if(!fRet.m_external)
+        CopyPropagator::propagate(fRet);
 
     return fRet;
 }
 
 void IRBuilderSSA::buildAssignment(const SSA::Assignment* assignment, Instruction::Type type, IRFunctionContextSSA& ictx) {
     auto left = convertOperand(assignment->m_operation->m_o1.get(), ictx);
+    auto target = std::get<std::shared_ptr<Register>>(convertOperand(assignment->m_to.get(), ictx));
+    if(assignment->m_operation->m_o2) {
+        auto right = convertOperand(assignment->m_operation->m_o2.get(), ictx);
+        moveToRegister(target->m_id, left, assignment->m_range, ictx);
+        left = right;
+    }
+    ictx.m_function->m_instructions.push_back(std::make_unique<BasicInstruction>(type, assignment->m_range, target, left));
+}
+
+void IRBuilderSSA::buildCompare(const SSA::Assignment* assignment, Instruction::Type type, IRFunctionContextSSA& ictx) {
+    auto left = convertOperand(assignment->m_operation->m_o1.get(), ictx);
     auto right = convertOperand(assignment->m_operation->m_o2.get(), ictx);
     auto target = std::get<std::shared_ptr<Register>>(convertOperand(assignment->m_to.get(), ictx));
-
-    moveToRegister(target->m_id, left, assignment->m_range, ictx);
-    ictx.m_function->m_instructions.push_back(std::make_unique<BasicInstruction>(type, assignment->m_range, target, right));
+    ictx.m_function->m_instructions.push_back(std::make_unique<BasicInstruction>(type, assignment->m_range, left, right, target));
 }
 
 void IRBuilderSSA::build(const SSA::Instruction* instruction, IRFunctionContextSSA& ictx) {
@@ -69,7 +100,7 @@ void IRBuilderSSA::build(const SSA::Instruction* instruction, IRFunctionContextS
             build(static_cast<const SSA::Label*>(instruction), ictx);
             break;
         case SSA::Instruction::Phi:
-            build(static_cast<const SSA::Phi*>(instruction), ictx);
+            // build(static_cast<const SSA::Phi*>(instruction), ictx);
             break;
         case SSA::Instruction::WriteMem:
             build(static_cast<const SSA::WriteMem*>(instruction), ictx);
@@ -109,22 +140,22 @@ void IRBuilderSSA::build(const SSA::Assignment* assignment, IRFunctionContextSSA
             buildAssignment(assignment, Instruction::Type::Downsize, context);
             break;
         case SSA::Operation::CompareEquals:
-            buildAssignment(assignment, Instruction::Type::CompareEquals, context);
+            buildCompare(assignment, Instruction::Type::CompareEquals, context);
             break;
         case SSA::Operation::CompareNotEquals:
-            buildAssignment(assignment, Instruction::Type::CompareNotEquals, context);
+            buildCompare(assignment, Instruction::Type::CompareNotEquals, context);
             break;
         case SSA::Operation::CompareGreaterEquals:
-            buildAssignment(assignment, Instruction::Type::CompareGreaterEquals, context);
+            buildCompare(assignment, Instruction::Type::CompareGreaterEquals, context);
             break;
         case SSA::Operation::CompareLessEquals:
-            buildAssignment(assignment, Instruction::Type::CompareLessEquals, context);
+            buildCompare(assignment, Instruction::Type::CompareLessEquals, context);
             break;
         case SSA::Operation::CompareGreater:
-            buildAssignment(assignment, Instruction::Type::CompareGreater, context);
+            buildCompare(assignment, Instruction::Type::CompareGreater, context);
             break;
         case SSA::Operation::CompareLess:
-            buildAssignment(assignment, Instruction::Type::CompareLess, context);
+            buildCompare(assignment, Instruction::Type::CompareLess, context);
             break;
         case SSA::Operation::Modulo:
             buildAssignment(assignment, Instruction::Type::Modulo, context);
@@ -141,6 +172,10 @@ void IRBuilderSSA::build(const SSA::Assignment* assignment, IRFunctionContextSSA
         case SSA::Operation::LogicalNot:
             buildAssignment(assignment, Instruction::Type::LogicalNot, context);
             break;
+        case SSA::Operation::Reference: {
+            context.m_refs.insert({std::static_pointer_cast<SSA::Register>(assignment->m_to)->m_originalId, std::get<Address>(convertOperand(assignment->m_operation->m_o1.get(), context))});
+            break;
+        }
         case SSA::Operation::Load: {
             auto left = convertOperand(assignment->m_operation->m_o1.get(), context);
             auto target = std::get<std::shared_ptr<Register>>(convertOperand(assignment->m_to.get(), context));
@@ -175,9 +210,11 @@ void IRBuilderSSA::build(const SSA::Jump* jump, IRFunctionContextSSA& context) {
     if(type == Instruction::JumpFalse || type == Instruction::JumpTrue) {
         basic->m_o1 = convertOperand(jump->m_check.get(), context);
         basic->m_o2 = l;
+        context.m_function->m_instructions.push_back(std::move(basic));
         return;
     }
     basic->m_o1 = l;
+    context.m_function->m_instructions.push_back(std::move(basic));
 }
 void IRBuilderSSA::build(const SSA::Label* label, IRFunctionContextSSA& context) {
     auto l = std::make_unique<Label>(label->m_range);
@@ -186,23 +223,30 @@ void IRBuilderSSA::build(const SSA::Label* label, IRFunctionContextSSA& context)
 }
 
 void IRBuilderSSA::build(const SSA::Phi* phi, IRFunctionContextSSA& context) {
+    auto to = std::get<std::shared_ptr<Register>>(convertOperand(phi->m_to.get(), context));
     for(size_t i = 0; i < phi->m_operands.size(); i++) {
         auto op = convertOperand(phi->m_operands.at(i).get(), context);
+
+        if(to->m_type.m_name == "")
+            to->m_type = getOperandType(op, context);
+        to->m_registerType = getRegisterType(to->m_type);
+        Instruction::Type instrType = to->m_registerType == RegisterType::Struct ? Instruction::Copy : Instruction::Move;
+        auto instr = std::make_unique<BasicInstruction>(instrType, phi->m_range, to, op);
+        size_t idx = context.m_ssaToIrIdx.at(phi->m_placeOpAt.at(i)) + 1;
+        context.m_function->m_instructions.insert(context.m_function->m_instructions.begin() + idx, std::move(instr));
+
+        for(auto& pair : context.m_ssaToIrIdx) {
+            if(pair.second > idx)
+                pair.second++;
+        }
     }
 }
 
 void IRBuilderSSA::build(const SSA::WriteMem* writeMem, IRFunctionContextSSA& context) {
-    auto left = convertOperand(writeMem->m_to.get(), context);
+    auto reg = std::static_pointer_cast<SSA::Register>(writeMem->m_to);
+    Address left = context.m_refs.at(reg->m_originalId);
     auto right = convertOperand(writeMem->m_value.get(), context);
-    Address ad;
-    if(writeMem->m_to->m_type == SSA::Operand::Address) {
-        ad = std::get<Address>(left);
-    }
-    else {
-        ad.m_base = std::get<std::shared_ptr<Register>>(left);
-        ad.m_offset = 0;
-    }
-    context.m_function->m_instructions.push_back(std::make_unique<BasicInstruction>(ad.m_typeInfo.m_builtin ? Instruction::Move : Instruction::Copy, writeMem->m_range, left, right));
+    context.m_function->m_instructions.push_back(std::make_unique<BasicInstruction>(left.m_typeInfo.m_builtin ? Instruction::Move : Instruction::Copy, writeMem->m_range, left, right));
 }
 
 
@@ -210,7 +254,14 @@ Operand IRBuilderSSA::convertOperand(const SSA::Operand* operand, IRFunctionCont
     switch (operand->m_type) {
         case SSA::Operand::Register: {
             const SSA::Register* reg = static_cast<const SSA::Register*>(operand);
-            return std::make_shared<Register>(reg->m_id, reg->m_typeInfo, getRegisterType(reg->m_typeInfo), reg->m_scale);
+            std::string id = reg->m_id;
+            if(id.contains(":"))
+                id = id.substr(0, id.find(":"));
+            std::shared_ptr<Register> rReg = makeOrGetRegister(id, context);    
+            rReg->m_type = reg->m_typeInfo;
+            rReg->m_registerType = getRegisterType(reg->m_typeInfo);
+            rReg->m_scale = reg->m_scale;
+            return rReg;
         }
         case SSA::Operand::Immediate:
             return static_cast<const SSA::Immediate*>(operand)->m_value;

@@ -144,6 +144,7 @@ void Printer::print(std::ostream& out, const Instruction* instr) {
         case Operation::Xor: out << "xor "; break;
         case Operation::LogicalNot: out << "not "; break;
         case Operation::Load: out << "load "; break;
+        case Operation::Reference: out << "ref "; break;
         break;
         }
         if(oper->m_o1)

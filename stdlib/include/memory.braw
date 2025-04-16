@@ -120,3 +120,22 @@ fn memory_free(ptr: void*) -> void {
         }
     }
 }
+
+fn memory_reallocate(ptr: void*, size: long) -> void* {
+    if((long)ptr == 0l): return memory_allocate(size);
+
+    if(size == 0l) {
+        memory_free(ptr);
+        return (void*)0l;
+    }
+
+    let block = (MemoryBlock*)((long)ptr - 1l);
+    if(block->size >= size): return ptr;
+
+    let new_ptr = memory_allocate(size);
+    if((long)new_ptr == 0l): return new_ptr;
+
+    memory_copy(new_ptr, ptr, block->size);
+    memory_free(ptr);
+    return new_ptr;
+}

@@ -4,6 +4,7 @@
 #include "parser/nodes/unary_operator.hpp"
 #include "parser/nodes/variable_access.hpp"
 #include "rules.hpp"
+#include "ssa/copy_propagator.hpp"
 #include "utils.hpp"
 #include <memory>
 #include <unordered_map>
@@ -114,6 +115,8 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
     if(!f.m_external)
         f.m_blocks = std::move(buildCFG(f));
 
+    CopyPropagator::propagate(f);
+
     return f;
 }
 
@@ -156,7 +159,7 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
     auto label = std::make_shared<Label>(node->m_rangeEnd, Utils::uniqueLabelName());
 
     if(node->m_retain)
-        ictx.m_function->m_retains.insert({reg->m_id, reg});
+        ictx.m_function->m_retains.insert({reg->m_originalId, reg});
     else if(!reg->m_typeInfo.m_builtin)
         ictx.m_instructions.push_back(std::make_shared<Allocate>(node->m_rangeBegin, reg, reg->m_typeInfo.m_size));
 
@@ -166,7 +169,7 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
             guard->m_typeInfo = context.getTypeInfo(BOOL_T).value();
             guard->m_scale = 1;
             guard->m_typeInfo.m_builtin = true;
-            ictx.m_function->m_retains.insert({guard->m_id, guard});
+            ictx.m_function->m_retains.insert({guard->m_originalId, guard});
             ictx.m_instructions.push_back(
                 std::make_shared<Jump>(Instruction::JumpTrue, node->m_rangeBegin, label, guard)
             );
@@ -369,7 +372,6 @@ std::shared_ptr<Operand> Builder::dotOperator(AST::UnaryOperatorNode* node, std:
 }
 
 std::shared_ptr<Operand> Builder::dereferenceOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
-    auto tmp = op;
     auto ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
     ret->m_typeInfo = Utils::getRawType(op->m_typeInfo, context).value();
     assign(ret, operation(Operation::Dereference, ret->m_typeInfo, ictx, op), node->m_rangeBegin, ictx);
@@ -377,7 +379,6 @@ std::shared_ptr<Operand> Builder::dereferenceOperator(AST::UnaryOperatorNode* no
 }
 
 std::shared_ptr<Operand> Builder::addressOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
-    auto tmp = op;
     auto ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
     ret->m_typeInfo = Utils::makePointer(op->m_typeInfo);
     assign(ret, point(op, ictx), node->m_rangeBegin, ictx);
@@ -577,6 +578,13 @@ void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> ope
     instr->m_operation = oper;
     ctx.m_instructions.push_back(instr);
 
+    if(oper->m_type == Operation::Reference) {
+        cast<Register>(instr->m_to)->m_referenceChain = cast<Address>(oper->m_o1)->m_base;
+    }
+    else if(oper->m_o1->m_type == Operand::Register && (oper->m_type == Operation::Point || oper->m_type == Operation::Load || oper->m_type == Operation::Dereference || oper->m_type == Operation::PartialDereference)) {
+        cast<Register>(instr->m_to)->m_referenceChain = cast<Register>(oper->m_o1);
+    }
+
     if(to->m_type == Operand::Address) {
         auto writeMem = std::make_shared<WriteMem>(range, makeOrGetRegister(potentialName, ctx), instr->m_to);
         ctx.m_instructions.push_back(writeMem);
@@ -651,11 +659,14 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
 
     //compute dominance frontiers
     for(auto block : blocks) {
-        for(auto dominated : block->m_dominated) {
-            for(auto successor : dominated->m_connections) {
-                if(std::find(block->m_dominated.begin(), block->m_dominated.end(), successor) != block->m_dominated.end())
-                    continue;
-                block->m_dominanceFrontiers.insert(successor);
+        if(block->m_predecessors.size() < 2)
+            continue;
+        for(auto predecessor : block->m_predecessors) {
+            auto runner = predecessor;
+            auto idom = block->getImmediateDomiator();
+            while(runner && runner != idom) {
+                runner->m_dominanceFrontiers.insert(block);
+                runner = runner->getImmediateDomiator();
             }
         }
     }
@@ -688,7 +699,10 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
 }
 
 std::shared_ptr<Register> cloneRegister(std::shared_ptr<Register> reg) {
-    return std::make_shared<Register>(reg->m_id, reg->m_typeInfo);
+    auto ret = std::make_shared<Register>(reg->m_id, reg->m_typeInfo);
+    ret->m_referenceChain = reg->m_referenceChain;
+    ret->m_memoryVersion = reg->m_memoryVersion;
+    return ret;
 }
 
 void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand) {
@@ -766,6 +780,16 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
                 WriteMem* w = static_cast<WriteMem*>(instr.get());
                 w->m_to = assigned(w->m_to);
                 w->m_value = replace(w->m_value);
+
+                if(w->m_to->m_type != Operand::Register)
+                    break;
+
+                auto chain = cast<Register>(w->m_to)->m_referenceChain;
+                while(chain != nullptr){
+                    chain->m_memoryVersion++;
+                    chain = chain->m_referenceChain;
+                }
+
                 break;
             }
             case Instruction::Phi: {
@@ -780,9 +804,6 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
         }
     }
 
-    for(auto d : block->m_dominated)
-        rename(d, f, counters, nameStack, visited, nameForOperand);
-
     for(auto s : block->m_connections) {
         for(auto& phiPair : s->m_phiForVariable) {
             phiPair.second->m_operands.push_back(nameForOperand.at(phiPair.first));
@@ -791,6 +812,10 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
             phiPair.second->m_placeOpAt.push_back(idx);
         }
     }
+
+    for(auto d : block->m_connections)
+        rename(d, f, counters, nameStack, visited, nameForOperand);
+
 
     for(const std::string& variable : assignedVariables) {
         nameStack[variable].pop_back();
@@ -926,6 +951,5 @@ void Builder::placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::share
         }
     }
 }
-
 
 }

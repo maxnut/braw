@@ -336,6 +336,10 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
                     auto maybeReg = m_registers.at(SPILL1)->clone();
                     maybeReg->m_typeInfo = o1->m_typeInfo;
                     in.addOperand(o1->m_type != Operand::Type::Address ? o1 : maybeReg);
+                    if(o2->m_type == Operand::Type::Immediate) {
+                        move(m_registers.at(SPILL2), o2, ctx);
+                        o2 = m_registers.at(SPILL2);
+                    }
                     in.addOperand(o2);
                     addInstruction(in, ctx);
                     if(o1->m_type == Operand::Type::Address)
@@ -349,6 +353,10 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             auto o1 = convertOperand(bin->m_o1, ctx);
             auto o2 = convertOperand(bin->m_o2, ctx);
             if(Rules::isPtr(o2->m_typeInfo.m_name) || o2->m_typeInfo.m_name == LONG_T || o2->m_typeInfo.m_name == INT_T) {
+                if(o2->m_type == Operand::Type::Immediate) {
+                    move(m_registers.at(SPILL2), o2, ctx);
+                    o2 = m_registers.at(SPILL2);
+                }
                 std::shared_ptr<Register> intermediate = o2->m_type == Operand::Type::Register ? cast<Operands::Register>(o2->clone()) : memoryValueToRegister(cast<Operands::Address>(o2), ctx);
                 intermediate->m_typeInfo = o1->m_typeInfo;
                 move(o1, intermediate, ctx);
@@ -644,10 +652,14 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::
     return reg;
 }
 
-void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, FunctionContext& ctx) {
+void CodeGenerator::compareAndStore(std::shared_ptr<Operand> opp, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, FunctionContext& ctx) {
+    if(opp->m_type == Operand::Type::Immediate) {
+        move(m_registers.at(SPILL1), opp, ctx);
+        opp = m_registers.at(SPILL1);
+    }
     Instruction cmp, set;
     cmp.m_opcode = isFloat(op) ? Ucomiss : isDouble(op) ? Ucomisd : Cmp;
-    cmp.addOperand(reg);
+    cmp.addOperand(opp);
     cmp.addOperand(op);
     addInstruction(cmp, ctx);
     set.m_opcode = setOpcode;
@@ -657,10 +669,14 @@ void CodeGenerator::compareAndStore(std::shared_ptr<Operands::Register> reg, std
     move(store, m_registers.at(Operands::Register::RAX), ctx);
 }
 
-void CodeGenerator::compareAndJump(std::shared_ptr<Operands::Register> reg, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, Opcode jumpOpcode, FunctionContext& ctx) {
+void CodeGenerator::compareAndJump(std::shared_ptr<Operand> opp, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, Opcode jumpOpcode, FunctionContext& ctx) {
+    if(opp->m_type == Operand::Type::Immediate) {
+        move(m_registers.at(SPILL1), opp, ctx);
+        opp = m_registers.at(SPILL1);
+    }
     Instruction cmp, jmp;
     cmp.m_opcode = Cmp;
-    cmp.addOperand(reg);
+    cmp.addOperand(opp);
     cmp.addOperand(op);
     addInstruction(cmp, ctx);
     jmp.m_opcode = jumpOpcode;

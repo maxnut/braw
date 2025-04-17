@@ -254,6 +254,8 @@ Operand IRBuilderSSA::convertOperand(const SSA::Operand* operand, IRFunctionCont
     switch (operand->m_type) {
         case SSA::Operand::Register: {
             const SSA::Register* reg = static_cast<const SSA::Register*>(operand);
+            if(context.m_refs.contains(reg->m_originalId))
+                return context.m_refs.at(reg->m_originalId);
             std::string id = reg->m_id;
             if(id.contains(":"))
                 id = id.substr(0, id.find(":"));

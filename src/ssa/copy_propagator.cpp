@@ -7,9 +7,11 @@
 
 namespace SSA {
 
-void CopyPropagator::propagate(Function& function) {
+bool CopyPropagator::propagate(Function& function) {
     bool changed = false;
+    size_t runs = 0;
     do {
+        runs++;
         changed = false;
         for(auto block : function.m_blocks) {
             for(size_t i = block->m_instructionRange.first; i <= block->m_instructionRange.second; i++) {
@@ -37,6 +39,8 @@ void CopyPropagator::propagate(Function& function) {
             if(changed) break;
         }
     } while(changed);
+
+    return runs > 1;
 }
 
 bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> repl, std::shared_ptr<Operand> with, std::unordered_set<std::shared_ptr<Block>>& visited, bool& doErase) {
@@ -93,11 +97,18 @@ bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t s
                 write->m_value = tryReplace(write->m_value, doErase);
                 break;
             }
+            case Instruction::Phi: {
+                Phi* phi = (Phi*)ins;
+                for(auto& op : phi->m_operands) {
+                    if(op->m_type == Operand::Register && std::static_pointer_cast<Register>(op)->m_id == repl->m_id)
+                        doErase = false;
+                }
+                break;
+            }
             case Instruction::Return:
             case Instruction::Allocate:
             case Instruction::Jump:
             case Instruction::Label:
-            case Instruction::Phi:
                 break;
         }
     }

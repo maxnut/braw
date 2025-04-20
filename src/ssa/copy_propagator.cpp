@@ -24,12 +24,18 @@ bool CopyPropagator::propagate(Function& function) {
 
                 std::unordered_set<std::shared_ptr<Block>> visited;
                 bool doErase = true;
-                if(replace(block, function, i + 1, std::static_pointer_cast<Register>(ass->m_to), ass->m_operation->m_o1, visited, doErase)) {
+                if(replace(block, function, i + 1, std::static_pointer_cast<Register>(ass->m_to), ass->m_operation->m_o1, ass->m_operation->m_memory, visited, doErase)) {
                     function.m_instructions.erase(function.m_instructions.begin() + i);
 
                     for(auto block2 : function.m_blocks) {
                         if(block2->m_instructionRange.first > i) block2->m_instructionRange.first--;
                         if(block2->m_instructionRange.second > i) block2->m_instructionRange.second--;
+
+                        for(auto& pair : block2->m_phiForVariable) {
+                            for(auto& placeAt : pair.second->m_placeOpAt) {
+                                if(placeAt > i) placeAt--;
+                            }
+                        }
                     }
                     
                     changed = true;
@@ -43,18 +49,18 @@ bool CopyPropagator::propagate(Function& function) {
     return runs > 1;
 }
 
-bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> repl, std::shared_ptr<Operand> with, std::unordered_set<std::shared_ptr<Block>>& visited, bool& doErase) {
+bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> repl, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion,  std::unordered_set<std::shared_ptr<Block>>& visited, bool& doErase) {
     if(visited.contains(block))
         return false;
     visited.insert(block);
 
     bool replaced = false;
 
-    auto tryReplace = [&](std::shared_ptr<Operand> op, bool& doErase) -> std::shared_ptr<Operand> {
+    auto tryReplace = [&](std::shared_ptr<Operand> op, bool& doErase, std::shared_ptr<Register> memoryCmp = nullptr) -> std::shared_ptr<Operand> {
         if(op->m_type != Operand::Register || std::static_pointer_cast<Register>(op)->m_id != repl->m_id)
             return op;
 
-        if(std::static_pointer_cast<Register>(op)->m_memoryVersion != repl->m_memoryVersion) {
+        if(memoryCmp != nullptr && memoryCmp->m_id != memoryVersion->m_id) {
             doErase = false;
             return op;
         }
@@ -75,9 +81,9 @@ bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t s
                     break;
                 }
 
-                oper->m_o1 = tryReplace(oper->m_o1, doErase);
+                oper->m_o1 = tryReplace(oper->m_o1, doErase, oper->m_memoryDependant ? oper->m_memory : nullptr);
                 if(oper->m_o2)
-                    oper->m_o2 = tryReplace(oper->m_o2, doErase);
+                    oper->m_o2 = tryReplace(oper->m_o2, doErase, oper->m_memoryDependant ? oper->m_memory : nullptr);
                 break;
             }
             case Instruction::Call: {
@@ -114,7 +120,7 @@ bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t s
     }
 
     for(auto con : block->m_dominated)
-        replaced |= replace(con, f, con->m_instructionRange.first, repl, with, visited, doErase);
+        replaced |= replace(con, f, con->m_instructionRange.first, repl, with, memoryVersion, visited, doErase);
 
     return replaced && doErase;
 }

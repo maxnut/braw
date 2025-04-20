@@ -48,7 +48,8 @@ std::shared_ptr<Operation> Builder::operation(Operation::Type t, const TypeInfo&
             o2 = reg;
         }
     }
-    return std::make_shared<Operation>(t, ti, o1, o2);
+    
+    return std::make_shared<Operation>(t, ti, o1, o2, makeOrGetRegister("mem", ictx));
 }
 
 std::vector<File> Builder::build(AST::FileNode* root, BrawContext& context) {
@@ -116,7 +117,7 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
     }
 
     if(!f.m_external) {
-        f.m_blocks = std::move(buildCFG(f));
+        f.m_blocks = std::move(buildCFG(f, ctx));
         CopyPropagator::propagate(f);
         CSE::run(f);
     }
@@ -595,15 +596,22 @@ void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> ope
     instr->m_operation = oper;
     ctx.m_instructions.push_back(instr);
 
-    if(oper->m_type == Operation::Reference) {
-        cast<Register>(instr->m_to)->m_referenceChain = cast<Address>(oper->m_o1)->m_base;
+    if(oper->m_type == Operation::Point) {
+        cast<Register>(oper->m_o1)->m_memoryDependant = true;
     }
-    else if(oper->m_o1->m_type == Operand::Register && (oper->m_type == Operation::Point || oper->m_type == Operation::Load || oper->m_type == Operation::Dereference || oper->m_type == Operation::PartialDereference)) {
-        cast<Register>(instr->m_to)->m_referenceChain = cast<Register>(oper->m_o1);
+    if(oper->m_type == Operation::Reference) {
+        cast<Register>(instr->m_to)->m_memoryDependant = true;
+    }
+    else if(oper->m_type == Operation::Point || oper->m_type == Operation::Load || oper->m_type == Operation::Dereference || oper->m_type == Operation::PartialDereference) {
+        if(cast<Register>(oper->m_o1)->m_type == Operand::Register)
+            cast<Register>(instr->m_to)->m_memoryDependant = cast<Register>(oper->m_o1)->m_memoryDependant;
+        if(oper->m_o2 && cast<Register>(oper->m_o2)->m_type == Operand::Register)
+            cast<Register>(instr->m_to)->m_memoryDependant |= cast<Register>(oper->m_o2)->m_memoryDependant;
     }
 
     if(to->m_type == Operand::Address) {
         auto writeMem = std::make_shared<WriteMem>(range, makeOrGetRegister(potentialName, ctx), instr->m_to);
+        writeMem->m_memory = makeOrGetRegister("mem", ctx);
         ctx.m_instructions.push_back(writeMem);
     }
 }
@@ -626,7 +634,7 @@ std::shared_ptr<Operation> Builder::point(std::shared_ptr<Operand> op, FunctionC
 }
 
 
-std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
+std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f, FunctionContext& context) {
     std::vector<std::shared_ptr<Block>> blocks = getBlocks(f);
 
     std::vector<std::shared_ptr<Block>> currentPath;
@@ -704,6 +712,20 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
                 pair.first = a->m_to;
                 pair.second.push_back(block);
             }
+            else if(f.m_instructions.at(i)->m_type == Instruction::Call) {
+                const Call* c = static_cast<const Call*>(f.m_instructions.at(i).get());
+                if(!c->m_optReturn)
+                    continue;
+                auto& pair = blocksThatAssignVariable[operandString(c->m_optReturn)];
+                pair.first = c->m_optReturn;
+                pair.second.push_back(block);
+            }
+            else if(f.m_instructions.at(i)->m_type == Instruction::WriteMem) {
+                const WriteMem* w = static_cast<const WriteMem*>(f.m_instructions.at(i).get());
+                auto& pair = blocksThatAssignVariable[operandString(w->m_memory)];
+                pair.first = w->m_memory;
+                pair.second.push_back(block);
+            }
         }
     }
 
@@ -717,19 +739,18 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f) {
     std::unordered_map<std::string, std::vector<std::string>> nameStack;
     std::unordered_set<std::shared_ptr<Block>> visited;
     std::unordered_map<std::string, std::shared_ptr<Operand>> nameForOperand;
-    rename(blocks.at(0), f, counters, nameStack, visited, nameForOperand);
+    rename(blocks.at(0), f, counters, nameStack, visited, nameForOperand, context);
     
     return blocks;
 }
 
 std::shared_ptr<Register> cloneRegister(std::shared_ptr<Register> reg) {
     auto ret = std::make_shared<Register>(reg->m_id, reg->m_typeInfo);
-    ret->m_referenceChain = reg->m_referenceChain;
-    ret->m_memoryVersion = reg->m_memoryVersion;
+    ret->m_memoryDependant = reg->m_memoryDependant;
     return ret;
 }
 
-void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand) {
+void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand, FunctionContext& context) {
     if(visited.contains(block))
         return;
     visited.insert(block);
@@ -761,6 +782,9 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
         return reg;
     };
 
+    if(!nameStack.contains("mem"))
+        assigned(makeOrGetRegister("mem", context));
+
     for(auto arg : f.m_args)
         assigned(arg);
     
@@ -777,6 +801,16 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
                     a->m_operation->m_o1 = replace(a->m_operation->m_o1);
                 if(a->m_operation->m_o2)
                     a->m_operation->m_o2 = replace(a->m_operation->m_o2);
+                a->m_operation->m_memory = cast<Register>(replace(a->m_operation->m_memory));
+
+                bool mem = false;
+                if(a->m_operation->m_o1->m_type == Operand::Register)
+                    mem = cast<Register>(a->m_operation->m_o1)->m_memoryDependant;
+                if(a->m_operation->m_o2 && a->m_operation->m_o2->m_type == Operand::Register)
+                    mem |= cast<Register>(a->m_operation->m_o2)->m_memoryDependant;
+                if(mem) {
+                    a->m_operation->m_memoryDependant = true;
+                }
                 break;
             }
             case Instruction::Allocate: {
@@ -803,17 +837,8 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
             case Instruction::WriteMem: {
                 WriteMem* w = static_cast<WriteMem*>(instr.get());
                 w->m_to = assigned(w->m_to);
+                w->m_memory = cast<Register>(assigned(w->m_memory));
                 w->m_value = replace(w->m_value);
-
-                if(w->m_to->m_type != Operand::Register)
-                    break;
-
-                auto chain = cast<Register>(w->m_to)->m_referenceChain;
-                while(chain != nullptr){
-                    chain->m_memoryVersion++;
-                    chain = chain->m_referenceChain;
-                }
-
                 break;
             }
             case Instruction::Phi: {
@@ -838,7 +863,7 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
     }
 
     for(auto d : block->m_connections)
-        rename(d, f, counters, nameStack, visited, nameForOperand);
+        rename(d, f, counters, nameStack, visited, nameForOperand, context);
 
 
     for(const std::string& variable : assignedVariables) {

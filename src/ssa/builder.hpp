@@ -57,12 +57,12 @@ public:
     static std::shared_ptr<Operation> point(std::shared_ptr<Operand> op, FunctionContext& ictx);
     static std::shared_ptr<Operation> load(std::shared_ptr<Operand> op, FunctionContext& ictx);
 
-    static std::vector<std::shared_ptr<Block>> buildCFG(Function& f);
+    static std::vector<std::shared_ptr<Block>> buildCFG(Function& f, FunctionContext& context);
     static std::vector<std::shared_ptr<Block>> getBlocks(const Function& f);
     static void buildGraphRecursive(std::shared_ptr<Block> root, const std::unordered_map<size_t, size_t>& blockForInstruction, const std::vector<std::shared_ptr<Block>>& blocks, std::unordered_set<std::shared_ptr<Block>>& visited, const Function& f);
     static void getAllPaths(std::shared_ptr<Block> root, std::vector<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths);
     static void placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::shared_ptr<Block>> blocks, const std::vector<std::shared_ptr<Block>>& allBlocks, Function& f);
-    static void rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand);
+    static void rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand, FunctionContext& context);
 
     static std::string operandString(std::shared_ptr<Operand> op);
     static std::shared_ptr<Operation> operation(Operation::Type t, const TypeInfo& ti, FunctionContext& ictx, std::shared_ptr<Operand> o1, std::shared_ptr<Operand> o2 = nullptr);

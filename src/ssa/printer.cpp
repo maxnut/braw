@@ -113,18 +113,10 @@ void Printer::print(std::ostream& out, const Instruction* instr) {
         }
         case Instruction::WriteMem: {
             const WriteMem* write = static_cast<const WriteMem*>(instr);
-            out << "wmem ";
+            out << write->m_memory->m_id << " = wmem ";
             print(out, write->m_to.get());
             out << ", ";
             print(out, write->m_value.get());
-
-            auto chain = std::static_pointer_cast<Register>(write->m_to)->m_referenceChain;
-
-            while(chain) {
-                out << " -> ";
-                out << chain->m_id;
-                chain = chain->m_referenceChain;
-            }
             break;
         }
         }
@@ -161,15 +153,17 @@ void Printer::print(std::ostream& out, const Instruction* instr) {
             out << ", ";
             print(out, oper->m_o2.get());
         }
+
+        if(oper->m_memory) {
+            out << ", ";
+            print(out, oper->m_memory.get());
+        }
     }
     void Printer::print(std::ostream& out, const Operand* op) {
         switch(op->m_type) {
         case Operand::Register: {
             const Register* reg = static_cast<const Register*>(op);
             out << reg->m_id;
-            if(reg->m_memoryVersion > 0)
-                out << "(" << reg->m_memoryVersion << ")";
-
             break;
         }
         case Operand::Immediate: {

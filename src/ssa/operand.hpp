@@ -31,8 +31,7 @@ struct Register : Operand {
 
     std::string m_id;
     std::string m_originalId;
-    std::shared_ptr<SSA::Register> m_referenceChain = nullptr;
-    size_t m_memoryVersion = 0;
+    bool m_memoryDependant = false;
 };
 
 struct Immediate : Operand {

@@ -55,11 +55,9 @@ bool CSE::run(Function& f, std::shared_ptr<Block> block, std::unordered_set<std:
                 }
                 auto newOp = expressions.at(hash);
                 auto upToDate = originalToVersioned.at(newOp->m_originalId);
-                if(f.m_name == "memory_free")
-                    break;
                 if(hashOperand(upToDate.get()) != hashOperand(newOp.get()))
                     break;
-                auto newOper = std::make_shared<Operation>(Operation::Load, newOp->m_typeInfo, newOp);
+                auto newOper = std::make_shared<Operation>(Operation::Load, newOp->m_typeInfo, newOp, ass->m_operation->m_memory);
                 ass->m_operation = newOper;
                 change = true; //16 26 50 
                 break;
@@ -95,6 +93,11 @@ size_t CSE::hashOperation(const Operation* op) {
     h ^= h1 + 0x9e3779b9 + (h << 6) + (h >> 2);
     h ^= h2 + 0x9e3779b9 + (h << 6) + (h >> 2);
 
+    if(op->m_memory) {
+        size_t h3 = hashOperand(op->m_memory.get());
+        h ^= h3 + 0x9e3779b9 + (h << 6) + (h >> 2);
+    }
+
     return h;
 }
 
@@ -107,7 +110,6 @@ size_t CSE::hashOperand(const Operand* op) {
     if (op->m_type == Operand::Register) {
         auto* reg = static_cast<const Register*>(op);
         h ^= std::hash<std::string>{}(reg->m_id) + 0x9e3779b9 + (h << 6) + (h >> 2);
-        h ^= std::hash<size_t>{}(reg->m_memoryVersion);
     } else if (op->m_type == Operand::Immediate) {
         auto* imm = static_cast<const Immediate*>(op);
         h ^= std::visit([](auto&& v) {

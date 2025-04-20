@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+
 namespace SSA {
 
 struct Instruction {
@@ -79,6 +80,7 @@ struct WriteMem : Instruction {
 
     std::shared_ptr<Operand> m_to;
     std::shared_ptr<Operand> m_value;
+    std::shared_ptr<Register> m_memory;
 };
 
 }

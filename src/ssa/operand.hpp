@@ -32,6 +32,7 @@ struct Register : Operand {
     std::string m_id;
     std::string m_originalId;
     bool m_memoryDependant = false;
+    bool m_isPhi = false;
 };
 
 struct Immediate : Operand {

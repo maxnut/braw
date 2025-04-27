@@ -24,7 +24,7 @@ bool CSE::run(Function& f, std::shared_ptr<Block> block, std::unordered_set<std:
         auto ins = f.m_instructions.at(i).get();
         if(ins->m_type != Instruction::Assign) continue;
         auto ass = (Assignment*)ins;
-        if(ass->m_to->m_type != Operand::Register) continue;
+        if(ass->m_to->m_type != Operand::Register || !ass->m_operation->m_memory || ass->m_operation->m_memory->m_id.contains("phi")) continue;
         auto reg = std::static_pointer_cast<Register>(ass->m_to);
         originalToVersioned[reg->m_originalId] = reg;
         switch (ass->m_operation->m_type) {
@@ -59,7 +59,7 @@ bool CSE::run(Function& f, std::shared_ptr<Block> block, std::unordered_set<std:
                     break;
                 auto newOper = std::make_shared<Operation>(Operation::Load, newOp->m_typeInfo, newOp, ass->m_operation->m_memory);
                 ass->m_operation = newOper;
-                change = true; //16 26 50 
+                change = true;
                 break;
             }
             case Operation::Load:

@@ -118,8 +118,12 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
 
     if(!f.m_external) {
         f.m_blocks = std::move(buildCFG(f, ctx));
-        CopyPropagator::propagate(f);
-        CSE::run(f);
+        while(true) {
+            bool changed = false;
+            changed |= CopyPropagator::propagate(f);
+            changed |= CSE::run(f);
+            if(!changed) break;
+        }
     }
 
     return f;
@@ -747,6 +751,7 @@ std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f, FunctionConte
 std::shared_ptr<Register> cloneRegister(std::shared_ptr<Register> reg) {
     auto ret = std::make_shared<Register>(reg->m_id, reg->m_typeInfo);
     ret->m_memoryDependant = reg->m_memoryDependant;
+    ret->m_isPhi = reg->m_isPhi;
     return ret;
 }
 
@@ -844,6 +849,7 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
             case Instruction::Phi: {
                 Phi* p = static_cast<Phi*>(instr.get());
                 p->m_to = assigned(p->m_to);
+                nameStack[cast<Register>(p->m_to)->m_originalId].back() += "_phi";
                 break;
             }
             case Instruction::Return:

@@ -1,5 +1,18 @@
 import "syscall.braw"
 
+fn memory_set(ptr: void*, value: int, num: long) -> void {
+    let p: char* = (char*)ptr;
+    for(let i = 0l; i < num; i = i + 1l):
+        p[i] = (char)value;
+}
+
+fn memory_copy(dest: void*, src: void*, num: long) -> void {
+    let d: char* = (char*)dest;
+    let s: char* = (char*)src;
+    for(let i = 0l; i < num; i = i + 1l):
+        d[i] = s[i];
+}
+
 struct MemoryBlock {
     size: long;
     free: bool;
@@ -23,7 +36,74 @@ fn allocator_get() -> Allocator* {
         alloc->free_list = (MemoryBlock*)0;
     }
     return alloc;
-}fn memory_free(ptr: void*) -> void {
+}
+
+fn split_block(block: MemoryBlock*, size: long) -> void {
+    let overhead = 17l;
+    if (block->size >= size + overhead + 16l) {
+        let new_block = (MemoryBlock*)((long)block + overhead + size);
+        new_block->size = block->size - size - overhead;
+        new_block->free = true;
+        new_block->next = block->next;
+
+        block->size = size;
+        block->next = new_block;
+    }
+}
+
+fn find_free_block(size: long) -> MemoryBlock* {
+    let allocator = allocator_get();
+    let current = allocator->free_list;
+    while ((long)current != 0l) {
+        if (current->free && current->size >= size):
+            return current;
+        current = current->next;
+    }
+    return (MemoryBlock*)0;
+}
+
+fn add_to_free_list(block: MemoryBlock*) -> void {
+    let allocator = allocator_get();
+    if ((long)allocator->free_list == 0l) {
+        allocator->free_list = block;
+        return;
+    }
+
+    let current = allocator->free_list;
+    while ((long)current->next != 0l) {
+        current = current->next;
+    }
+    current->next = block;
+}
+
+fn memory_allocate(size: long) -> void* {
+    if (size <= 0l):
+        return (void*)0;
+
+    let block = find_free_block(size);
+    if ((long)block != 0l) {
+        split_block(block, size);
+        block->free = false;
+        return (void*)((long)block + 17l);
+    }
+
+    let total_size = $HEAP_SIZE;
+    let mem = memory_map((void*)0, total_size, 3, 34, -1, 0l);
+    if ((long)mem == -1l) {
+        return (void*)0;
+    }
+
+    let new_block = (MemoryBlock*)mem;
+    new_block->size = total_size - 17l;
+    new_block->free = true;
+    new_block->next = (MemoryBlock*)0;
+
+    add_to_free_list(new_block);
+
+    return memory_allocate(size);
+}
+
+fn memory_free(ptr: void*) -> void {
     if ((long)ptr == 0l): return;
 
     let block = (MemoryBlock*)((long)ptr - 17l);
@@ -39,4 +119,23 @@ fn allocator_get() -> Allocator* {
             current = current->next;
         }
     }
+}
+
+fn memory_reallocate(ptr: void*, size: long) -> void* {
+    if((long)ptr == 0l): return memory_allocate(size);
+
+    if(size == 0l) {
+        memory_free(ptr);
+        return (void*)0l;
+    }
+
+    let block = (MemoryBlock*)((long)ptr - 1l);
+    if(block->size >= size): return ptr;
+
+    let new_ptr = memory_allocate(size);
+    if((long)new_ptr == 0l): return new_ptr;
+
+    memory_copy(new_ptr, ptr, block->size);
+    memory_free(ptr);
+    return new_ptr;
 }

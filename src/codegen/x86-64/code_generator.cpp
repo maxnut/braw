@@ -293,9 +293,12 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
             return ret(ctx);
         case ::Instruction::Copy: {
             auto bin = (const ::BasicInstruction*)instr;
-            auto addr1 = cast<Operands::Address>(convertOperand(bin->m_o1, ctx));
-            auto addr2 = cast<Operands::Address>(convertOperand(bin->m_o2, ctx));
-            copyAddressToAddress(addr1, addr2, addr1->m_typeInfo.m_size, ctx);
+            auto addr1 = convertOperand(bin->m_o1, ctx);
+            auto addr2 = convertOperand(bin->m_o2, ctx);
+            if(addr2->m_type == Operand::Type::Register)
+                copyAddressToAddressPointer(addr1, addr2, addr1->m_typeInfo.m_size, ctx);
+            else
+                copyAddressToAddress(addr1, addr2, addr1->m_typeInfo.m_size, ctx);
             break;
         }
         case ::Instruction::Point: {
@@ -692,7 +695,7 @@ std::shared_ptr<Operands::Address> CodeGenerator::copyAddressToNew(std::shared_p
     return target;
 }
 
-void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx) {
+void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, size_t size, FunctionContext& ctx) {
     std::vector<std::shared_ptr<Operands::Register>> save;
 
     if(isRegisterAlive(Register::RDI, ctx))
@@ -749,7 +752,7 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operands::Addres
         pop(reg, ctx);
 }
 
-void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx) {
+void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, size_t size, FunctionContext& ctx) {
     std::vector<std::shared_ptr<Operands::Register>> save;
 
     if(isRegisterAlive(Register::RDI, ctx))

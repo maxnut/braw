@@ -54,8 +54,8 @@ private:
     void compareAndStore(std::shared_ptr<Operand> opp, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, FunctionContext& ctx);
     void compareAndJump(std::shared_ptr<Operand> opp, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Label> label, Opcode jumpOpcode, FunctionContext& ctx);
     std::shared_ptr<Operands::Address> copyAddressToNew(std::shared_ptr<Operands::Address> address, size_t size, FunctionContext& ctx);
-    void copyAddressToAddress(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx);
-    void copyAddressToAddressPointer(std::shared_ptr<Operands::Address> target, std::shared_ptr<Operands::Address> source, size_t size, FunctionContext& ctx);
+    void copyAddressToAddress(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, size_t size, FunctionContext& ctx);
+    void copyAddressToAddressPointer(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, size_t size, FunctionContext& ctx);
 
 
     std::shared_ptr<Operand> convertOperand(::Operand source, FunctionContext& ctx);

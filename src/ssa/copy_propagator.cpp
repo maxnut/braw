@@ -49,6 +49,29 @@ bool CopyPropagator::propagate(Function& function) {
     return runs > 1;
 }
 
+std::shared_ptr<Operand> tryReplace(std::shared_ptr<Operand> op, bool& doErase, std::shared_ptr<Register> memoryCmp, std::shared_ptr<Register> repl, bool& replaced, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion) {
+    if(op->m_type == Operand::Address) {
+        auto addr = std::static_pointer_cast<Address>(op);
+        if(with->m_type == Operand::Register && !std::static_pointer_cast<Register>(with)->m_memoryDependant) {
+            addr->m_base = std::static_pointer_cast<Register>(tryReplace(addr->m_base, doErase, memoryCmp, repl, replaced, with, memoryVersion));
+            if(addr->m_index)
+                addr->m_index = std::static_pointer_cast<Register>(tryReplace(addr->m_index, doErase, memoryCmp, repl, replaced, with, memoryVersion));
+        }
+        return op;
+    }
+    
+    if(op->m_type != Operand::Register || std::static_pointer_cast<Register>(op)->m_id != repl->m_id)
+        return op;
+
+    if(memoryCmp != nullptr && memoryCmp->m_id != memoryVersion->m_id) {
+        doErase = false;
+        return op;
+    }
+
+    replaced = true;
+    return with;
+};
+
 bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> repl, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion,  std::unordered_set<std::shared_ptr<Block>>& visited, bool& doErase) {
     if(visited.contains(block))
         return false;
@@ -56,18 +79,6 @@ bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t s
 
     bool replaced = false;
 
-    auto tryReplace = [&](std::shared_ptr<Operand> op, bool& doErase, std::shared_ptr<Register> memoryCmp = nullptr) -> std::shared_ptr<Operand> {
-        if(op->m_type != Operand::Register || std::static_pointer_cast<Register>(op)->m_id != repl->m_id)
-            return op;
-
-        if(memoryCmp != nullptr && memoryCmp->m_id != memoryVersion->m_id) {
-            doErase = false;
-            return op;
-        }
-
-        replaced = true;
-        return with;
-    };
     
     for(size_t i = start; i <= block->m_instructionRange.second; i++) {
         Instruction* ins = f.m_instructions.at(i).get();
@@ -81,26 +92,26 @@ bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t s
                     break;
                 }
 
-                oper->m_o1 = tryReplace(oper->m_o1, doErase, oper->m_memoryDependant ? oper->m_memory : nullptr);
+                oper->m_o1 = tryReplace(oper->m_o1, doErase, oper->m_memoryDependant ? oper->m_memory : nullptr, repl, replaced, with, memoryVersion);
                 if(oper->m_o2)
-                    oper->m_o2 = tryReplace(oper->m_o2, doErase, oper->m_memoryDependant ? oper->m_memory : nullptr);
+                    oper->m_o2 = tryReplace(oper->m_o2, doErase, oper->m_memoryDependant ? oper->m_memory : nullptr, repl, replaced, with, memoryVersion);
                 break;
             }
             case Instruction::Call: {
                 Call* call = (Call*)ins;
                 for(auto& param : call->m_parameters)
-                    param = tryReplace(param, doErase); 
+                    param = tryReplace(param, doErase, nullptr, repl, replaced, with, memoryVersion); 
                 break;
             }
             case Instruction::JumpFalse:
             case Instruction::JumpTrue: {
                 Jump* jump = (Jump*)ins;
-                jump->m_check = tryReplace(jump->m_check, doErase);
+                jump->m_check = tryReplace(jump->m_check, doErase, nullptr, repl, replaced, with, memoryVersion);
                 break;
             }
             case Instruction::WriteMem: {
                 WriteMem* write = (WriteMem*)ins;
-                write->m_value = tryReplace(write->m_value, doErase);
+                write->m_value = tryReplace(write->m_value, doErase, nullptr, repl, replaced, with, memoryVersion);
                 break;
             }
             case Instruction::Phi: {

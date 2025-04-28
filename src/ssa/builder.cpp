@@ -755,22 +755,31 @@ std::shared_ptr<Register> cloneRegister(std::shared_ptr<Register> reg) {
     return ret;
 }
 
+std::shared_ptr<Operand> replace(std::shared_ptr<Operand> op, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand) {
+    if(op->m_type == Operand::Address) {
+        auto addr = cast<Address>(op);
+        addr->m_base = cast<Register>(replace(addr->m_base, nameStack, nameForOperand));
+        if(addr->m_index)
+            addr->m_index = cast<Register>(replace(addr->m_index, nameStack, nameForOperand));
+        return op;
+    }
+    
+    if(op->m_type != Operand::Register)
+        return op;
+    auto reg = cloneRegister(cast<Register>(op));
+    std::string opStr = reg->m_originalId;
+    const std::string& name = nameStack.at(opStr).back();
+    reg->m_id = name;
+    nameForOperand[opStr] = reg;
+    return reg;
+};
+
 void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand, FunctionContext& context) {
     if(visited.contains(block))
         return;
     visited.insert(block);
     std::unordered_set<std::string> assignedVariables;
 
-    auto replace = [&](std::shared_ptr<Operand> op) -> std::shared_ptr<Operand> {
-        if(op->m_type != Operand::Register)
-            return op;
-        auto reg = cloneRegister(cast<Register>(op));
-        std::string opStr = reg->m_originalId;
-        const std::string& name = nameStack.at(opStr).back();
-        reg->m_id = name;
-        nameForOperand[opStr] = reg;
-        return reg;
-    };
 
     auto assigned = [&](std::shared_ptr<Operand> op) -> std::shared_ptr<Operand> {
         if(op->m_type != Operand::Register)
@@ -803,10 +812,10 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
                 Assignment* a = static_cast<Assignment*>(instr.get());
                 a->m_to = assigned(a->m_to);
                 if(a->m_operation->m_o1)
-                    a->m_operation->m_o1 = replace(a->m_operation->m_o1);
+                    a->m_operation->m_o1 = replace(a->m_operation->m_o1, nameStack, nameForOperand);
                 if(a->m_operation->m_o2)
-                    a->m_operation->m_o2 = replace(a->m_operation->m_o2);
-                a->m_operation->m_memory = cast<Register>(replace(a->m_operation->m_memory));
+                    a->m_operation->m_o2 = replace(a->m_operation->m_o2, nameStack, nameForOperand);
+                a->m_operation->m_memory = cast<Register>(replace(a->m_operation->m_memory, nameStack, nameForOperand));
 
                 bool mem = false;
                 if(a->m_operation->m_o1->m_type == Operand::Register)
@@ -826,7 +835,7 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
             case Instruction::Call: {
                 Call* c = static_cast<Call*>(instr.get());
                 for(auto& argument : c->m_parameters) {
-                    argument = replace(argument);
+                    argument = replace(argument, nameStack, nameForOperand);
                 }
                 if(c->m_optReturn)
                     c->m_optReturn = cast<Register>(assigned(c->m_optReturn));
@@ -836,14 +845,14 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
             case Instruction::JumpTrue: {
                 Jump* j = static_cast<Jump*>(instr.get());
                 if(j->m_check)
-                    j->m_check = replace(j->m_check);
+                    j->m_check = replace(j->m_check, nameStack, nameForOperand);
                 break;
             }
             case Instruction::WriteMem: {
                 WriteMem* w = static_cast<WriteMem*>(instr.get());
                 w->m_to = assigned(w->m_to);
                 w->m_memory = cast<Register>(assigned(w->m_memory));
-                w->m_value = replace(w->m_value);
+                w->m_value = replace(w->m_value, nameStack, nameForOperand);
                 break;
             }
             case Instruction::Phi: {

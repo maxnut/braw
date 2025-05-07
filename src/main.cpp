@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
     args::Flag assemble(parser, "assemble", "Assemble the output file", {"assemble"});
     args::Flag link(parser, "link", "Link the output file", {'l', "link"});
     args::Flag debug(parser, "debug", "Add debug information", {'d', "debug"});
+    args::ValueFlag<int> optimizationLevel(parser, "level", "Set optimization level (0-1)", {'O', "opt"}, 0);
 
     try {
         parser.ParseCLI(argc, argv);
@@ -89,6 +90,7 @@ int main(int argc, char** argv) {
 
     BrawContext ctx = ctxOr.value();
     ctx.m_debug = debug;
+    ctx.m_optLevel = optimizationLevel.Get();
 
     std::vector<SSA::File> ssaFiles = SSA::Builder::build(ast.value().get(), ctx);
     for(const SSA::File& file : ssaFiles) {

@@ -25,6 +25,9 @@ bool CSE::run(Function& f, std::shared_ptr<Block> block, std::unordered_set<std:
         if(ins->m_type != Instruction::Assign) continue;
         auto ass = (Assignment*)ins;
         if(ass->m_to->m_type != Operand::Register || !ass->m_operation->m_memory || ass->m_operation->m_memory->m_id.contains("phi")) continue;
+        if((ass->m_operation->m_o1->m_type == Operand::Register && std::static_pointer_cast<Register>(ass->m_operation->m_o1)->m_id.contains("phi")) ||
+            (ass->m_operation->m_o2 && ass->m_operation->m_o2->m_type == Operand::Register && std::static_pointer_cast<Register>(ass->m_operation->m_o2)->m_id.contains("phi"))) continue;
+
         auto reg = std::static_pointer_cast<Register>(ass->m_to);
         originalToVersioned[reg->m_originalId] = reg;
         switch (ass->m_operation->m_type) {

@@ -921,10 +921,10 @@ bool CodeGenerator::isDouble(std::shared_ptr<Operand> o) const {
 bool CodeGenerator::isRegisterAlive(Operands::Register::RegisterGroup reg, FunctionContext& ctx) const {
     size_t blockIndex = ctx.m_allocatorResult.m_propagated.blockForInstruction.at(ctx.m_instructionIndex);
     for(auto range : ctx.m_allocatorResult.m_propagated.blocks.at(blockIndex)->m_rangeVector) {
-        if(!(range->m_range.first <= ctx.m_instructionIndex && ctx.m_instructionIndex <= range->m_range.second) || range->m_isAssignedFirst)
+        std::shared_ptr<Operand> arg = ctx.m_virtualRegisters.at(range->m_id);
+        if(!(range->m_range.first <= ctx.m_instructionIndex && ctx.m_instructionIndex <= range->m_range.second)/*  || range->m_isAssignedFirst */)
             continue;
 
-        std::shared_ptr<Operand> arg = ctx.m_virtualRegisters.at(range->m_id);
 
         if(arg->m_type != Operand::Type::Register || cast<Operands::Register>(arg)->m_group != reg)
             continue;

@@ -43,4 +43,5 @@ struct BrawContext {
     bool m_debug = false;
     
     size_t m_stackSize = 0;
+    int m_optLevel = 0;
 };

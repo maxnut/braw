@@ -20,9 +20,9 @@ bool CopyPropagator::propagate(Function& function) {
                     continue;
                 Assignment* ass = (Assignment*)ins;
 
-                if(function.m_retains.contains(std::static_pointer_cast<Register>(ass->m_to)->m_originalId)) continue;
+                if(function.m_retains.contains(std::static_pointer_cast<Register>(ass->m_to)->m_originalId) || ass->m_operation->m_o1->m_type != Operand::Register || std::static_pointer_cast<Register>(ass->m_operation->m_o1)->m_memoryDependant) continue;
 
-                std::unordered_set<std::shared_ptr<Block>> visited;
+                std::unordered_map<std::shared_ptr<Block>, uint32_t> visited;
                 bool doErase = true;
                 if(replace(block, function, i + 1, std::static_pointer_cast<Register>(ass->m_to), ass->m_operation->m_o1, ass->m_operation->m_memory, visited, doErase)) {
                     function.m_instructions.erase(function.m_instructions.begin() + i);
@@ -72,10 +72,12 @@ std::shared_ptr<Operand> tryReplace(std::shared_ptr<Operand> op, bool& doErase, 
     return with;
 };
 
-bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> repl, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion,  std::unordered_set<std::shared_ptr<Block>>& visited, bool& doErase) {
-    if(visited.contains(block))
+bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> repl, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion,  std::unordered_map<std::shared_ptr<Block>, uint32_t>& visited, bool& doErase) {
+    if(visited.contains(block) && visited.at(block) > 1)
         return false;
-    visited.insert(block);
+    if(!visited.contains(block))
+        visited[block] = 0;
+    visited.at(block)++;
 
     bool replaced = false;
 
@@ -130,7 +132,7 @@ bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t s
         }
     }
 
-    for(auto con : block->m_dominated)
+    for(auto con : block->m_connections)
         replaced |= replace(con, f, con->m_instructionRange.first, repl, with, memoryVersion, visited, doErase);
 
     return replaced && doErase;

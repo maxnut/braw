@@ -32,7 +32,7 @@ function(compile_braw_test braw_file)
 
     add_custom_command(
         OUTPUT ${ASM_FILE}
-        COMMAND ${CMAKE_BINARY_DIR}/bin/brawc ${braw_file} -o ${ASM_DIR}
+        COMMAND ${CMAKE_BINARY_DIR}/bin/brawc ${braw_file} -o ${ASM_DIR} -O 1
         DEPENDS brawc ${braw_file}
         COMMENT "Compiling ${braw_file} -> ${ASM_FILE}"
     )

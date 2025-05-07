@@ -71,6 +71,8 @@ std::string operatorString(Operand op) {
                 case 5:
                     return std::get<std::string>(value);
                 case 6:
+                    return std::to_string(std::get<char>(value)) + "(" + std::to_string((int)std::get<char>(value)) + ")";
+                case 7:
                     return "NULL";
                 default:
                     return "";

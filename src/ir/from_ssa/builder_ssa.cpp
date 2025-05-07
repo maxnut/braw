@@ -12,6 +12,7 @@
 #include "utils.hpp"
 #include "ssa/block.hpp"
 #include <memory>
+#include <vector>
 
 File IRBuilderSSA::build(const SSA::File& file, BrawContext& context) {
     File fRet;
@@ -26,6 +27,28 @@ File IRBuilderSSA::build(const SSA::File& file, BrawContext& context) {
     }
 
     return fRet;
+}
+
+bool operandEquals(Operand op1, Operand op2) {
+    if(op1.index() != op2.index())
+        return false;
+    switch(op1.index()) {
+        case 1:
+            return std::get<std::shared_ptr<Register>>(op1) == std::get<std::shared_ptr<Register>>(op2);
+        case 2:
+            return std::get<Value>(op1) == std::get<Value>(op2);
+        case 3: {
+            auto addr1 = std::get<Address>(op1);
+            auto addr2 = std::get<Address>(op2);
+            return operandEquals(addr1.m_base, addr2.m_base)
+                && addr1.m_offset == addr2.m_offset
+                && addr1.m_scale == addr2.m_scale
+                && operandEquals(addr1.m_index, addr2.m_index);
+        }
+        default:
+            break;
+    }
+    return false;
 }
 
 Function IRBuilderSSA::build(const SSA::Function& function, BrawContext& context) {
@@ -53,8 +76,17 @@ Function IRBuilderSSA::build(const SSA::Function& function, BrawContext& context
             build(pair.second.get(), ictx);
     }
 
-    if(!fRet.m_external)
-        CopyPropagator::propagate(fRet);
+    // if(!fRet.m_external && context.m_optLevel > 0)
+    //     CopyPropagator::propagate(fRet);
+
+    std::erase_if(fRet.m_instructions, [](std::unique_ptr<Instruction>& instr){
+        if(instr->m_type != Instruction::Move && instr->m_type != Instruction::Copy)
+            return false;
+        auto basic = static_cast<BasicInstruction*>(instr.get());
+        if(operandEquals(basic->m_o1, basic->m_o2))
+            return true;
+        return false;
+    });
 
     return fRet;
 }

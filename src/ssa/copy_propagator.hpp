@@ -14,7 +14,7 @@ namespace SSA {
 class CopyPropagator {
 public:
     static bool propagate(Function& function);
-    static bool replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> replace, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion, std::unordered_set<std::shared_ptr<Block>>& visited, bool& doErase);
+    static bool replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> replace, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion, std::unordered_map<std::shared_ptr<Block>, uint32_t>& visited, bool& doErase);
 };
 
 }

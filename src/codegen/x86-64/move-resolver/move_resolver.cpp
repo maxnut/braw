@@ -5,6 +5,7 @@
 #include "codegen/x86-64/instruction.hpp"
 #include "codegen/x86-64/olabel.hpp"
 #include "codegen/x86-64/register.hpp"
+#include "ir/operand.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <memory>
@@ -46,6 +47,11 @@ bool MoveResolver::operandEquals(std::shared_ptr<Operand> op1, std::shared_ptr<O
 }
 
 const int findForSwap(std::shared_ptr<Operand> op, const std::vector<Instruction>& moves, size_t off) {
+    if(op->m_type == Operand::Type::Register) {
+        auto reg = cast<Operands::Register>(op);
+        if(reg->m_group != Operands::Register::RDI && reg->m_group != Operands::Register::RSI && reg->m_group != Operands::Register::RDX && reg->m_group != Operands::Register::RCX && reg->m_group != Operands::Register::R8 && reg->m_group != Operands::Register::R9)
+            return -1;
+    }
     for(size_t i = off; i < moves.size(); i++) {
         const Instruction& move = moves[i];
         if(MoveResolver::operandEquals(op, move.m_operands.at(1))) {

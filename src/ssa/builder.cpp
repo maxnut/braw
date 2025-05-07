@@ -118,11 +118,13 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
 
     if(!f.m_external) {
         f.m_blocks = std::move(buildCFG(f, ctx));
-        while(true) {
-            bool changed = false;
-            changed |= CopyPropagator::propagate(f);
-            changed |= CSE::run(f);
-            if(!changed) break;
+        if(context.m_optLevel > 0) {
+            while(true) {
+                bool changed = false;
+                changed |= CopyPropagator::propagate(f);
+                changed |= CSE::run(f);
+                if(!changed) break;
+            }
         }
     }
 
@@ -397,13 +399,13 @@ std::shared_ptr<Operand> Builder::addressOperator(AST::UnaryOperatorNode* node, 
 std::shared_ptr<Operand> Builder::subscriptOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
     auto index = buildExpression(node->m_expression.get(), context, ictx);
     if(index->m_type != Operand::Register) {
-        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName() + "_0", ictx);
+        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
         tmp->m_typeInfo = index->m_typeInfo;
         assign(tmp, load(index, ictx), node->m_rangeBegin, ictx);
         index = tmp;
     }
     if(op->m_type != Operand::Register) {
-        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName() + "_1", ictx);
+        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
         tmp->m_typeInfo = op->m_typeInfo;
         if(op->m_type == Operand::Address && cast<Address>(op)->m_scaleSize > 1)
             assign(tmp, point(op, ictx), node->m_rangeBegin, ictx);
@@ -413,7 +415,7 @@ std::shared_ptr<Operand> Builder::subscriptOperator(AST::UnaryOperatorNode* node
     }
 
     if(index->m_typeInfo.m_name == INT_T) {
-        auto tmp = makeOrGetRegister(cast<Register>(index)->m_id + "_0", ictx);
+        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
         assign(tmp, operation(Operation::Upsize, context.getTypeInfo(LONG_T).value(), ictx, index), node->m_rangeBegin, ictx);
         index = tmp;
     }

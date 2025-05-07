@@ -154,7 +154,7 @@ void Printer::print(std::ostream& out, const Instruction* instr) {
             print(out, oper->m_o2.get());
         }
 
-        if(oper->m_memory) {
+        if(oper->m_memory && oper->m_memoryDependant) {
             out << ", ";
             print(out, oper->m_memory.get());
         }
@@ -182,6 +182,8 @@ void Printer::print(std::ostream& out, const Instruction* instr) {
             case 5:
                 out << std::get<std::string>(imm->m_value); break;
             case 6:
+                out << std::get<char>(imm->m_value) << "(" << (int)std::get<char>(imm->m_value) << ")"; break;
+            case 7:
                 out << "NULL"; break;
             default:
                 out << ""; break;

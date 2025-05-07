@@ -1,0 +1,9 @@
+import "stdinout.braw"
+import "../new_tests/array/array.braw"
+import "assert.braw"
+
+fn main() -> int {
+    $ASSERT(arr_simple() == 1);
+    print_string("ALL TESTS PASSED\n");
+    return 0;
+}

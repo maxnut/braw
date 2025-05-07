@@ -23,61 +23,32 @@ target_include_directories(brawc PRIVATE
 install(TARGETS brawc)
 
 if (RUN_TESTS)
-function(compile_braw_test braw_file)
-    get_filename_component(test_name ${braw_file} NAME_WE)
-
-    set(ASM_DIR "${CMAKE_BINARY_DIR}/testfiles")
-    set(ASM_FILE "${ASM_DIR}/${test_name}.asm")
-    set(OBJ_FILE "${CMAKE_BINARY_DIR}/testfiles/${test_name}.o")
-
-    add_custom_command(
-        OUTPUT ${ASM_FILE}
-        COMMAND ${CMAKE_BINARY_DIR}/bin/brawc ${braw_file} -o ${ASM_DIR} -O 1
-        DEPENDS brawc ${braw_file}
-        COMMENT "Compiling ${braw_file} -> ${ASM_FILE}"
-    )
-
-    add_custom_command(
-        OUTPUT ${OBJ_FILE}
-        COMMAND as --64 -g ${ASM_FILE} -o ${OBJ_FILE} # as --64 -g -o ./build/main.o ./build/main.asm
-        DEPENDS ${ASM_FILE}
-        COMMENT "Assembling ${ASM_FILE} -> ${OBJ_FILE}"
-    )
-
-    set(TEST_OBJECTS ${TEST_OBJECTS} ${OBJ_FILE} PARENT_SCOPE)
-endfunction()
-
-file(GLOB_RECURSE BRAW_TEST_FILES tests/*.braw)
-
-set(TEST_OBJECTS "")
-
-foreach(BRAW_FILE ${BRAW_TEST_FILES})
-    compile_braw_test(${BRAW_FILE})
-endforeach()
-
-enable_testing()
-
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(googletest)
-
-file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
-
-add_executable(tests ${TEST_SOURCES} ${TEST_OBJECTS})
-target_link_libraries(tests PRIVATE GTest::gtest_main)
-
-install(TARGETS tests)
-
-add_test(NAME AllTests COMMAND tests)
-
 add_custom_command(
-    TARGET tests POST_BUILD
-    COMMAND tests
-    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-    COMMENT "Running test..."
+    OUTPUT ${CMAKE_BINARY_DIR}/a.out
+    COMMAND ${CMAKE_COMMAND} -E env
+            BRAW_STDLIB=${CMAKE_SOURCE_DIR}/stdlib
+            ${CMAKE_BINARY_DIR}/bin/brawc
+            ${CMAKE_SOURCE_DIR}/new_tests/test.braw
+            -o ${CMAKE_BINARY_DIR}/build_test --assemble --link
+            -O 1
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Building test executable"
+)
+
+add_custom_target(build_test ALL
+    DEPENDS ${CMAKE_BINARY_DIR}/a.out
+)
+add_custom_target(run_test ALL
+    COMMAND ./a.out
+    DEPENDS build_test
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running a.out"
+)
+add_custom_target(delete_test ALL
+    COMMAND ${CMAKE_COMMAND} -E rm -f ./a.out
+    COMMAND ${CMAKE_COMMAND} -E rm -r ./build_test
+    DEPENDS build_test
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Deleting a.out"
 )
 endif()

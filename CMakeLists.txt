@@ -28,7 +28,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E env
             BRAW_STDLIB=${CMAKE_SOURCE_DIR}/stdlib
             ${CMAKE_BINARY_DIR}/bin/brawc
-            ${CMAKE_SOURCE_DIR}/new_tests/test.braw
+            ${CMAKE_SOURCE_DIR}/tests/test.braw
             -o ${CMAKE_BINARY_DIR}/build_test --assemble --link
             -O 1
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

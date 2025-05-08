@@ -10,6 +10,7 @@ import "../new_tests/pointer/pointer.braw"
 import "../new_tests/retain/retain.braw"
 import "../new_tests/string_char/string_char.braw"
 import "../new_tests/struct/struct.braw"
+import "../new_tests/mem/mem.braw"
 
 fn total_runs() -> int* {
     retain runs = 0;
@@ -102,6 +103,9 @@ fn main() -> int {
         simple_run("Running dotchain test\n", struct_dot_chain() == 1);
         simple_run("Running arrow test\n", struct_arrow() == 1);
         simple_run("Running arrow complex test\n", struct_arrow_complex() == 1);
+    });
+    $TEST("MEMORY TESTS\n", {
+        simple_run("Running basic test\n", mem_simple() == 10);
     });
 
     let tot = *total_runs();

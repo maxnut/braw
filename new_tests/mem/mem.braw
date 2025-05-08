@@ -1,0 +1,9 @@
+import "memory.braw"
+
+fn mem_simple() -> int {
+    let mem = (int*)memory_allocate(4l);
+    *mem = 10;
+    let save = *mem;
+    memory_free(mem);
+    return save;
+}

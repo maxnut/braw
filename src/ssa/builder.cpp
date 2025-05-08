@@ -8,6 +8,7 @@
 #include "ssa/copy_propagator.hpp"
 #include "ssa/cse.hpp"
 #include "utils.hpp"
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -36,18 +37,18 @@ bool isJump(const Instruction* i) {
 }
 
 std::shared_ptr<Operation> Builder::operation(Operation::Type t, const TypeInfo& ti, FunctionContext& ictx, std::shared_ptr<Operand> o1, std::shared_ptr<Operand> o2) { 
-    if(t != Operation::Reference && t != Operation::Load) {
-        if(o1->m_type == Operand::Type::Address) {
-            auto reg = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
-            assign(reg, load(o1, ictx), {0,0}, ictx);
-            o1 = reg;
-        }
-        if(o2 && o2->m_type == Operand::Type::Address) {
-            auto reg = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
-            assign(reg, load(o2, ictx), {0,0}, ictx);
-            o2 = reg;
-        }
-    }
+    // if(t != Operation::Reference && t != Operation::Load) {
+    //     if(o1->m_type == Operand::Type::Address) {
+    //         auto reg = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
+    //         assign(reg, load(o1, ictx), {0,0}, ictx);
+    //         o1 = reg;
+    //     }
+    //     if(o2 && o2->m_type == Operand::Type::Address) {
+    //         auto reg = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
+    //         assign(reg, load(o2, ictx), {0,0}, ictx);
+    //         o2 = reg;
+    //     }
+    // }
     
     return std::make_shared<Operation>(t, ti, o1, o2, makeOrGetRegister("mem", ictx));
 }
@@ -101,6 +102,7 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
         ctx.m_returnRegister = f.m_optReturn;
     }
 
+    ctx.m_scopeIdStack.push_back(0);
     for(auto& arg : node->m_signature.m_parameters) {
         f.m_args.push_back(makeOrGetRegister("%" + arg->m_name.m_name + "_0", ctx));
         f.m_args.back()->m_typeInfo = context.getTypeInfo(arg->m_type).value();
@@ -115,6 +117,7 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
             ctx.m_instructions.push_back(std::make_shared<Instruction>(Instruction::Return, node->m_rangeEnd));
         f.m_instructions = std::move(ctx.m_instructions);
     }
+    ctx.m_scopeIdStack.pop_back();
 
     if(!f.m_external) {
         f.m_blocks = std::move(buildCFG(f, ctx));
@@ -132,10 +135,10 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
 }
 
 void Builder::build(AST::ScopeNode* node, BrawContext& context, FunctionContext& ictx) {
-    ictx.m_scopeDepth++;
+    ictx.m_scopeIdStack.push_back((uintptr_t)node);
     for(auto& in : node->m_instructions)
         build(in.get(), context, ictx);
-    ictx.m_scopeDepth--;
+    ictx.m_scopeIdStack.pop_back();
 }
 
 void Builder::build(AST::Node* node, BrawContext& context, FunctionContext& ictx) {
@@ -162,7 +165,7 @@ void Builder::build(AST::Node* node, BrawContext& context, FunctionContext& ictx
 }
 
 void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, FunctionContext& ictx) {
-    auto reg = makeOrGetRegister("%" + node->m_name.m_name + "_" + std::to_string(ictx.m_scopeDepth), ictx);
+    auto reg = makeOrGetRegister("%" + node->m_name.m_name, ictx, true);
     reg->m_typeInfo = context.getTypeInfo(node->m_type).value();
     reg->m_scale = node->m_scale;
     reg->m_typeInfo.m_builtin = reg->m_scale <= 1 && reg->m_typeInfo.m_builtin;
@@ -171,12 +174,18 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
 
     if(node->m_retain)
         ictx.m_function->m_retains.insert({reg->m_originalId, reg});
-    else if(!reg->m_typeInfo.m_builtin)
-        ictx.m_instructions.push_back(std::make_shared<Allocate>(node->m_rangeBegin, reg, reg->m_typeInfo.m_size));
+    else if(!reg->m_typeInfo.m_builtin) {
+        if(reg->m_scale > 1) {
+            reg->m_typeInfo = Utils::getRawType(reg->m_typeInfo, context).value();
+            ictx.m_instructions.push_back(std::make_shared<Allocate>(node->m_rangeBegin, reg, (Utils::getRawType(reg->m_typeInfo, context))->m_size * reg->m_scale));
+        }
+        else
+            ictx.m_instructions.push_back(std::make_shared<Allocate>(node->m_rangeBegin, reg, reg->m_typeInfo.m_size));
+    }
 
     if(node->m_value) {
         if(node->m_retain) {
-            auto guard = makeOrGetRegister("%" + node->m_name.m_name + "_" + std::to_string(ictx.m_scopeDepth) + "_guard", ictx);
+            auto guard = makeOrGetRegister("%" + node->m_name.m_name + "_guard", ictx, true);
             guard->m_typeInfo = context.getTypeInfo(BOOL_T).value();
             guard->m_scale = 1;
             guard->m_typeInfo.m_builtin = true;
@@ -299,9 +308,16 @@ std::shared_ptr<Operand> Builder::buildExpression(AST::Node* node, BrawContext& 
         }
         case AST::Node::VariableAccess:{
             auto var = static_cast<AST::VariableAccessNode*>(node);
-            for(int i = ictx.m_scopeDepth; i >= 0; i--) {
-                if(ictx.m_registers.contains("%" + var->m_name.m_name + "_" + std::to_string(i)))
-                    return ictx.m_registers["%" + var->m_name.m_name + "_" + std::to_string(i)];
+            for(uint64_t id : ictx.m_scopeIdStack) {
+                if(ictx.m_registers.contains("%" + var->m_name.m_name + "_" + std::to_string(id))) {
+                    auto reg = ictx.m_registers["%" + var->m_name.m_name + "_" + std::to_string(id)];
+                    if(reg->m_scale > 1) {
+                        auto tmp = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
+                        assign(tmp, point(reg, ictx), node->m_rangeBegin, ictx);
+                        return tmp;
+                    }
+                    return reg;
+                }
             }
             break;
         }
@@ -622,12 +638,13 @@ void Builder::assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> ope
     }
 }
 
-std::shared_ptr<Register> Builder::makeOrGetRegister(const std::string& name, FunctionContext& ctx) {
-    if(ctx.m_registers.contains(name))
-        return ctx.m_registers[name];
+std::shared_ptr<Register> Builder::makeOrGetRegister(const std::string& name, FunctionContext& ctx, bool useScopeId) {
+    auto key = useScopeId ? name + "_" + std::to_string(ctx.m_scopeIdStack.back()) : name;
+    if(ctx.m_registers.contains(key))
+        return ctx.m_registers[key];
 
-    std::shared_ptr<Register> reg = std::make_shared<Register>(name);
-    ctx.m_registers[name] = reg;
+    std::shared_ptr<Register> reg = std::make_shared<Register>(key);
+    ctx.m_registers[key] = reg;
     return reg;
 }
 
@@ -643,10 +660,6 @@ std::shared_ptr<Operation> Builder::point(std::shared_ptr<Operand> op, FunctionC
 std::vector<std::shared_ptr<Block>> Builder::buildCFG(Function& f, FunctionContext& context) {
     std::vector<std::shared_ptr<Block>> blocks = getBlocks(f);
 
-    std::vector<std::shared_ptr<Block>> currentPath;
-    std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>> paths;
-    //compute paths
-    getAllPaths(blocks.at(0), currentPath, paths);
     //compute dominators
     for(auto& block : blocks)
         block->m_dominators.insert(block->m_dominators.begin(), blocks.begin(), blocks.end());
@@ -754,6 +767,7 @@ std::shared_ptr<Register> cloneRegister(std::shared_ptr<Register> reg) {
     auto ret = std::make_shared<Register>(reg->m_id, reg->m_typeInfo);
     ret->m_memoryDependant = reg->m_memoryDependant;
     ret->m_isPhi = reg->m_isPhi;
+    ret->m_scale = reg->m_scale;
     return ret;
 }
 
@@ -870,8 +884,13 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
         }
     }
 
+    std::vector<std::pair<const std::string, std::shared_ptr<SSA::Phi>>> missing;    
     for(auto s : block->m_connections) {
         for(auto& phiPair : s->m_phiForVariable) {
+            if(!nameForOperand.contains(phiPair.first)) {
+                missing.push_back(phiPair);
+                continue;
+            }
             phiPair.second->m_operands.push_back(nameForOperand.at(phiPair.first));
             Instruction::Type t = f.m_instructions.at(block->m_instructionRange.second)->m_type;
             size_t idx = t == Instruction::Jump || t == Instruction::JumpFalse || t == Instruction::JumpTrue ? block->m_instructionRange.second - 1 : block->m_instructionRange.second;
@@ -881,6 +900,15 @@ void Builder::rename(std::shared_ptr<Block> block, Function& f, std::unordered_m
 
     for(auto d : block->m_connections)
         rename(d, f, counters, nameStack, visited, nameForOperand, context);
+
+    for(auto s : block->m_connections) {
+        for(auto& phiPair : missing) {
+            phiPair.second->m_operands.push_back(nameForOperand.at(phiPair.first));
+            Instruction::Type t = f.m_instructions.at(block->m_instructionRange.second)->m_type;
+            size_t idx = t == Instruction::Jump || t == Instruction::JumpFalse || t == Instruction::JumpTrue ? block->m_instructionRange.second - 1 : block->m_instructionRange.second;
+            phiPair.second->m_placeOpAt.push_back(idx);
+        }
+    }
 
 
     for(const std::string& variable : assignedVariables) {
@@ -936,22 +964,6 @@ void Builder::buildGraphRecursive(std::shared_ptr<Block> root, const std::unorde
         next->m_predecessors.push_back(root);
         buildGraphRecursive(next, blockForInstruction, blocks, visited, f);
     }
-}
-
-void Builder::getAllPaths(std::shared_ptr<Block> root, std::vector<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths) {
-    if(std::find(currentPath.begin(), currentPath.end(), root) != currentPath.end())
-        return;
-    currentPath.push_back(root);
-    std::vector<std::shared_ptr<Block>> pathVec; pathVec.reserve(currentPath.size());
-    for(auto& b : currentPath)
-        pathVec.push_back(b);
-    if(pathVec.size() > 0)
-        paths[root].push_back(std::move(pathVec));
-
-    for(auto& con : root->m_connections)
-        getAllPaths(con, currentPath, paths);
-
-    currentPath.pop_back();
 }
 
 std::string Builder::operandString(std::shared_ptr<Operand> op) {

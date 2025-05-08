@@ -33,6 +33,7 @@ add_custom_command(
             -O 1
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Building test executable"
+    DEPENDS brawc
 )
 
 add_custom_target(build_test ALL

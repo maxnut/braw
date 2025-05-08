@@ -1,47 +1,47 @@
-fn i_ptr() -> int {
+fn ptr_i_ptr() -> int {
     let a: int = 0;
     let ptr: int* = &a;
     a = 1;
     return *ptr;
 }
 
-fn f_ptr() -> float {
+fn ptr_f_ptr() -> float {
     let a: float = 0.f;
     let ptr: float* = &a;
     a = 1.f;
     return *ptr;
 }
 
-struct V {
+struct PV {
     a: int;
 };
 
-fn s_ptr() -> int {
-    let v: V;
+fn ptr_s_ptr() -> int {
+    let v: PV;
     v.a = 0;
-    let ptr: V* = &v;
+    let ptr: PV* = &v;
     v.a = 1;
     return ptr->a;
 }
 
-fn i_assign() -> int {
+fn ptr_i_assign() -> int {
     let a: int = 2;
     let ptr: int* = &a;
     *ptr = 1;
     return a;
 }
 
-fn f_assign() -> float {
+fn ptr_f_assign() -> float {
     let a: float = 2.f;
     let ptr: float* = &a;
     *ptr = 1.f;
     return a;
 }
 
-fn s_assign() -> int {
-    let v: V;
+fn ptr_s_assign() -> int {
+    let v: PV;
     v.a = 2;
-    let ptr: V* = &v;
+    let ptr: PV* = &v;
     ptr->a = 1;
     return v.a;
 }

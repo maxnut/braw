@@ -278,7 +278,7 @@ void IRBuilderSSA::build(const SSA::WriteMem* writeMem, IRFunctionContextSSA& co
     auto reg = std::static_pointer_cast<SSA::Register>(writeMem->m_to);
     Address left = context.m_refs.at(reg->m_originalId);
     auto right = convertOperand(writeMem->m_value.get(), context);
-    context.m_function->m_instructions.push_back(std::make_unique<BasicInstruction>(left.m_typeInfo.m_builtin ? Instruction::Move : Instruction::Copy, writeMem->m_range, left, right));
+    context.m_function->m_instructions.push_back(std::make_unique<BasicInstruction>(left.m_typeInfo.m_builtin || Rules::isPtr(left.m_typeInfo.m_name) ? Instruction::Move : Instruction::Copy, writeMem->m_range, left, right));
 }
 
 

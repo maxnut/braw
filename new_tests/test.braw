@@ -1,9 +1,128 @@
 import "stdinout.braw"
+import "string.braw"
 import "../new_tests/array/array.braw"
-import "assert.braw"
+import "../new_tests/double/double.braw"
+import "../new_tests/float/float.braw"
+import "../new_tests/integer/integer.braw"
+import "../new_tests/loop_recursion/loop_recursion.braw"
+import "../new_tests/macro/macro.braw"
+import "../new_tests/pointer/pointer.braw"
+import "../new_tests/retain/retain.braw"
+import "../new_tests/string_char/string_char.braw"
+import "../new_tests/struct/struct.braw"
+
+fn total_runs() -> int* {
+    retain runs = 0;
+    return &runs;
+}
+
+fn fails() -> int* {
+    retain fails = 0;
+    return &fails;
+}
+
+fn success() -> int* {
+    retain success = 0;
+    return &success;
+}
+
+fn simple_run(message: char*, condition: bool) -> void {
+    print_string(message);
+    if(condition){
+        print_string("PASSED\n");
+        let succ = success();
+        *succ = *succ + 1;
+    }
+    else{
+        print_string("FAILED\n");
+        let fail = fails();
+        *fail = *fail + 1;
+    }
+
+    let tot = total_runs();
+    *tot = *tot + 1;
+}
+
+define TEST(message, bundle) {
+    print_string(#message);
+    print_string("-------------------\n");
+    #bundle;
+    print_string("-------------------\n");
+}
+
 
 fn main() -> int {
-    $ASSERT(arr_simple() == 1);
-    print_string("ALL TESTS PASSED\n");
+    $TEST("ARRAY TESTS\n", {
+        simple_run("Running simple array test\n", arr_simple() == 1);
+        simple_run("Running pointer array test\n", arr_ptr() == 1);
+        simple_run("Running array in struct test\n", arr_in_struct() == 1);
+    });
+    $TEST("DOUBLE TESTS\n", {
+        simple_run("Running simple double test\n", d_nothing() == 0.0);
+        simple_run("Running addition double test\n", d_addition() == 2.0);
+        simple_run("Running precedence double test\n", d_precedence() == 5.0);
+    });
+    $TEST("FLOAT TESTS\n", {
+        simple_run("Running simple float test\n", f_nothing() == 0.f);
+        simple_run("Running addition float test\n", f_addition() == 2.f);
+        simple_run("Running precedence float test\n", f_precedence() == 5.f);
+    });
+    $TEST("INTEGER TESTS\n", {
+        simple_run("Running simple int test\n", i_nothing() == 0);
+        simple_run("Running addition int test\n", i_addition() == 2);
+        simple_run("Running precedence int test\n", i_precedence() == 5);
+    });
+    $TEST("LOOP RECURSION TESTS\n", {
+        simple_run("Running loop test\n", lr_sum(3) == 3);
+        simple_run("Running recursion test\n", lr_factorial(5) == 120);
+    });
+    $TEST("MACRO TESTS\n", {
+        simple_run("Running macro test\n", m_macro() == 2);
+    });
+    $TEST("POINTER TESTS\n", {
+        simple_run("Running int pointer test\n", ptr_i_ptr() == 1);
+        simple_run("Running float pointer test\n", ptr_f_ptr() == 1.f);
+        simple_run("Running struct pointer test\n", ptr_s_ptr() == 1);
+        simple_run("Running int assign test\n", ptr_i_assign() == 1);
+        simple_run("Running float assign test\n", ptr_f_assign() == 1.f);
+        simple_run("Running struct assign test\n", ptr_s_assign() == 1);
+    });
+    $TEST("RETAIN TESTS\n", {
+        simple_run("Running retain 1 test\n", ret_counter() == 1);
+        simple_run("Running retain 2 test\n", ret_counter() == 2);
+        simple_run("Running retain 3 test\n", ret_counter() == 3);
+    });
+    $TEST("STRING CHAR TESTS\n", {
+        simple_run("Running string test\n", str_compare(stc_hello(), "hello\n") == 1);
+        simple_run("Running char test\n", stc_h() == 'h');
+        simple_run("Running string subscript test\n", stc_subscript() == 'h');
+    });
+    $TEST("STRUCT TESTS\n", {
+        simple_run("Running basic test\n", struct_basic() == 1);
+        simple_run("Running dotchain test\n", struct_dot_chain() == 1);
+        simple_run("Running arrow test\n", struct_arrow() == 1);
+        simple_run("Running arrow complex test\n", struct_arrow_complex() == 1);
+    });
+
+    let tot = *total_runs();
+    let fails = *fails();
+    let success = *success();
+    let tot_str[10]: char*;
+    str_from_int(tot, tot_str);
+    str_concat(tot_str, "\n");
+    let fails_str[10]: char*;
+    str_from_int(fails, fails_str);
+    str_concat(fails_str, "\n");
+    let su_str[10]: char*;
+    str_from_int(success, su_str);
+    str_concat(su_str, "\n");
+    print_string("TEST RESULTS\n");
+    print_string("-------------------\n");
+    print_string("Total runs: ");
+    print_string(tot_str);
+    print_string("Total fails: ");
+    print_string(fails_str);
+    print_string("Total success: ");
+    print_string(su_str);
     return 0;
 }

@@ -23,7 +23,7 @@ namespace SSA {
 struct FunctionContext {
     std::unordered_map<std::string, std::shared_ptr<Register>> m_registers;
     std::vector<std::shared_ptr<Instruction>> m_instructions;
-    uint32_t m_scopeDepth = 0;
+    std::vector<uint64_t> m_scopeIdStack;
     std::shared_ptr<Register> m_returnRegister;
     Function* m_function;
 };
@@ -52,7 +52,7 @@ public:
     static std::shared_ptr<Operand> castOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx);
     static std::shared_ptr<Operand> logicalNotOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx);
 
-    static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, FunctionContext& ctx);
+    static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, FunctionContext& ctx, bool useScopeDepth = false);
     static void assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> operation, std::pair<uint32_t, uint32_t> pos, FunctionContext& ctx);
     static std::shared_ptr<Operation> point(std::shared_ptr<Operand> op, FunctionContext& ictx);
     static std::shared_ptr<Operation> load(std::shared_ptr<Operand> op, FunctionContext& ictx);
@@ -60,7 +60,6 @@ public:
     static std::vector<std::shared_ptr<Block>> buildCFG(Function& f, FunctionContext& context);
     static std::vector<std::shared_ptr<Block>> getBlocks(const Function& f);
     static void buildGraphRecursive(std::shared_ptr<Block> root, const std::unordered_map<size_t, size_t>& blockForInstruction, const std::vector<std::shared_ptr<Block>>& blocks, std::unordered_set<std::shared_ptr<Block>>& visited, const Function& f);
-    static void getAllPaths(std::shared_ptr<Block> root, std::vector<std::shared_ptr<Block>>& currentPath, std::unordered_map<std::shared_ptr<Block>, std::vector<std::vector<std::shared_ptr<Block>>>>& paths);
     static void placePhiBlocks(std::shared_ptr<Operand> op, std::vector<std::shared_ptr<Block>> blocks, const std::vector<std::shared_ptr<Block>>& allBlocks, Function& f);
     static void rename(std::shared_ptr<Block> block, Function& f, std::unordered_map<std::string, size_t>& counters, std::unordered_map<std::string, std::vector<std::string>>& nameStack, std::unordered_set<std::shared_ptr<Block>>& visited, std::unordered_map<std::string, std::shared_ptr<Operand>>& nameForOperand, FunctionContext& context);
 

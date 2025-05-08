@@ -1,9 +1,9 @@
-struct V {
+struct MV {
     a: int;
     b: int;
 };
 
-define TEST(type) {
+define MAC(type) {
     $foreach(var : #type) {
         $make_function($concat($concat(#type, #"_"), $concat(#"get_", #var.name)), #var, {$make_variable(#"v", #type);}) {
             return $make_dot(v, #var.name);
@@ -11,9 +11,9 @@ define TEST(type) {
     }
 }
 
-$TEST(#<V>);
+$MAC(#<MV>);
 
-fn macro() -> int {
-    let v: V; v.a = 1; v.b = 1;
-    return V_get_a(v) + V_get_b(v);
+fn m_macro() -> int {
+    let v: MV; v.a = 1; v.b = 1;
+    return MV_get_a(v) + MV_get_b(v);
 }

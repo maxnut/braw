@@ -130,8 +130,10 @@ std::shared_ptr<AST::MacroNode> findMacro(const std::string& name, std::shared_p
         return builtin.at(name);
     
     std::shared_ptr<AST::MacroNode> res;
-    for(auto import : file->m_imports)
+    for(auto import : file->m_imports) {
         res = findMacro(name, import);
+        if(res) return res;
+    }
 
     if(file->m_macros.contains(name))
         res = file->m_macros.at(name);
@@ -288,6 +290,8 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::deepClone(std::share
         }
         case AST::Node::MacroParameterReference: {
             auto param = std::static_pointer_cast<AST::MacroParameterReferenceNode>(node);
+            if(!ctx.m_variables.contains(param->m_name))
+                return std::unexpected{unknownMacroParameter(param, ctx.m_file->m_path)};
             return ctx.m_variables.at(param->m_name);
             break;
         }
@@ -711,6 +715,15 @@ MacroError Evaluator::notFunctionDefinition(std::shared_ptr<AST::Node> causer, c
 MacroError Evaluator::expectedParamCount(std::shared_ptr<AST::Node> causer, int got, int expected, const std::filesystem::path& path) {
     return MacroError {
         fmt::format("Expected {} parameters, got {}", expected, got),
+        path,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    };
+}
+
+MacroError Evaluator::unknownMacroParameter(std::shared_ptr<AST::MacroParameterReferenceNode> causer, const std::filesystem::path& path) {
+    return MacroError {
+        fmt::format("Unknown macro parameter: {}", causer->m_name),
         path,
         causer->m_rangeBegin,
         causer->m_rangeEnd

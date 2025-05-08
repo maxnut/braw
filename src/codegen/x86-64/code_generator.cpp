@@ -37,6 +37,7 @@ using Operands::Register;
 const Register::RegisterGroup SPILL1 = Register::R15;
 const Register::RegisterGroup SPILL2 = Register::R14;
 const Register::RegisterGroup PRCSPILL1 = Register::XMM15;
+const Register::RegisterGroup PRCSPILL2 = Register::XMM14;
 
 template <typename T>
 std::shared_ptr<T> cast(const std::shared_ptr<void>& ptr) {
@@ -656,9 +657,15 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::
 }
 
 void CodeGenerator::compareAndStore(std::shared_ptr<Operand> opp, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, FunctionContext& ctx) {
-    if(opp->m_type == Operand::Type::Immediate) {
-        move(m_registers.at(SPILL1), opp, ctx);
-        opp = m_registers.at(SPILL1);
+    if(opp->m_type == Operand::Type::Immediate || opp->m_type == Operand::Type::Address) {
+        auto target = isDouble(opp) || isFloat(opp) ? m_registers.at(PRCSPILL1) : m_registers.at(SPILL1);
+        move(target, opp, ctx);
+        opp = target;
+    }
+    if(op->m_type == Operand::Type::Immediate || op->m_type == Operand::Type::Address) {
+        auto target = isDouble(op) || isFloat(op) ? m_registers.at(PRCSPILL2) : m_registers.at(SPILL2);
+        move(target, op, ctx);
+        op = target;
     }
     Instruction cmp, set;
     cmp.m_opcode = isFloat(op) ? Ucomiss : isDouble(op) ? Ucomisd : Cmp;

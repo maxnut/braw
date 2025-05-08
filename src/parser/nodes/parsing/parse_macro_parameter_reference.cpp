@@ -14,7 +14,7 @@ Result<std::shared_ptr<AST::MacroParameterReferenceNode>> Parser::parseMacroPara
 
     ret->m_name = cursor.get().value().m_value;
 
-    ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     cursor.tryNext();
+    ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     return ret;
 }

@@ -1,0 +1,45 @@
+struct STRV {
+    a: int;
+    b: int;
+};
+
+struct STRVV {
+    v: STRV;
+};
+
+struct STRVPtr {
+    ptr: STRV*;
+};
+
+fn struct_basic() -> int {
+    let v: STRV;
+    v.a = 0;
+    v.b = 1;
+    return v.a + v.b;
+}
+
+fn struct_dot_chain() -> int {
+    let v: STRV;
+    v.a = 0;
+    v.b = 1;
+    let vv: STRVV;
+    vv.v = v;
+    return vv.v.a + vv.v.b;
+}
+
+fn struct_arrow() -> int {
+    let v: STRV;
+    v.a = 0;
+    v.b = 1;
+    let ptr: STRV* = &v;
+    return ptr->a + ptr->b;
+}
+
+fn struct_arrow_complex() -> int {
+    let v: STRV;
+    v.a = 0;
+    v.b = 1;
+    let vptr: STRVPtr;
+    vptr.ptr = &v;
+    return vptr.ptr->a + vptr.ptr->b;
+}

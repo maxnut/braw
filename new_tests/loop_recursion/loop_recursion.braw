@@ -1,10 +1,10 @@
-fn factorial(n: int) -> int {
+fn lr_factorial(n: int) -> int {
     if(n <= 1):
         return 1;
-    return n * factorial(n - 1);
+    return n * lr_factorial(n - 1);
 }
 
-fn sum(n: int) -> int {
+fn lr_sum(n: int) -> int {
     let sum: int = 0;
     let i: int = 0;
     while(i < n) {

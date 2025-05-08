@@ -1,10 +1,10 @@
-fn hello() -> char* {
+fn stc_hello() -> char* {
     return "hello\n";
 }
-fn h() -> char {
+fn stc_h() -> char {
     return 'h';
 }
-fn subscript() -> char {
+fn stc_subscript() -> char {
     let str: char* = "hello";
     return str[0];
 }

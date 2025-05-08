@@ -6,6 +6,7 @@
 #include "parser/nodes/macro.hpp"
 #include "parser/nodes/macro_call.hpp"
 #include "parser/nodes/macro_parameter.hpp"
+#include "parser/nodes/macro_parameter_reference.hpp"
 #include "parser/nodes/node.hpp"
 
 #include <__expected/expected.h>
@@ -42,6 +43,7 @@ private:
 
     static MacroError unexpectedParameterTypeExpected(std::shared_ptr<AST::MacroParameterNode> causer, AST::MacroParameterType expected, const std::filesystem::path& path);
     static MacroError unknownMacro(std::shared_ptr<AST::MacroCallNode> causer, const std::filesystem::path& path);
+    static MacroError unknownMacroParameter(std::shared_ptr<AST::MacroParameterReferenceNode> causer, const std::filesystem::path& path);
     static MacroError unknownFunction(std::shared_ptr<AST::MacroParameterFunctionNode> causer, const std::filesystem::path& path);
     static MacroError unknownType(std::shared_ptr<AST::Node> causer, const std::string& type, const std::filesystem::path& path);
     static MacroError notVariableDeclaration(std::shared_ptr<AST::Node> causer, const std::filesystem::path& path);

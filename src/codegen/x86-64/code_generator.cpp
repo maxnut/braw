@@ -73,7 +73,8 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         ctx.m_functionIndex = idx++;
 
         for(auto& retains : f.m_retains) {
-            file.m_data.m_retains.push_back({retains.first.substr(1), retains.second->m_type});
+            TypeInfo type = retains.second->m_scale > 1 ? Utils::getRawType(retains.second->m_type, braw).value() : retains.second->m_type;
+            file.m_data.m_retains.push_back({retains.first.substr(1), std::move(type), retains.second->m_scale});
             ctx.m_virtualRegisters[retains.first] = std::make_shared<Operands::Address>(std::make_shared<Operands::Label>(retains.first.substr(1)), retains.second->m_type);
         }
 

@@ -9,9 +9,15 @@
 
 namespace CodeGen::x86_64 {
 
+struct RetainData {
+    std::string m_name;
+    TypeInfo m_type;
+    size_t m_scale = 1;
+};
+
 struct DataSection {
     std::vector<std::pair<std::string, Value>> m_labels;
-    std::vector<std::pair<std::string, TypeInfo>> m_retains;
+    std::vector<RetainData> m_retains;
 };
 
 struct TextSection {

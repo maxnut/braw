@@ -112,10 +112,6 @@ If you don't have it, or simply don't want them, disable them by setting ```RUN_
 - [x] Pointers
 - [x] Branch aware graph coloring
 - [x] Arrays
-- [ ] Parallelize compilation
 - [x] Strings
-- [ ] Variadics
-- [ ] Expand the standard library (its basically nonexistant now 🔥🔥🔥)
-- [ ] Stick more to conventions to make it call other language's functions
-- [ ] Make it not explode every two seconds
-- [ ] Debugging?
+- [x] Make it not explode every two seconds
+- [ ] Parallelize lexing and parsing

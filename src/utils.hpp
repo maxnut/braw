@@ -18,7 +18,7 @@ namespace Utils {
             auto& parameter = signature.m_parameters[i];
             if(parameter->m_name.m_name.size() > 0)
                 funcString += parameter->m_name.m_name + ": ";
-            funcString + parameter->m_type.m_name;
+            funcString += parameter->m_type.m_name;
             
             if(i < signature.m_parameters.size() - 1)
                 funcString += ", ";
@@ -45,7 +45,7 @@ namespace Utils {
         std::string funcString = signature.m_name + "_";
         for(int i = 0; i < signature.m_parameters.size(); i++) {
             auto& parameter = signature.m_parameters[i];
-            funcString + parameter.m_name;
+            funcString += parameter.m_name;
             
             if(i < signature.m_parameters.size() - 1)
                 funcString += "_";

@@ -8,6 +8,8 @@
 #include "ssa/copy_propagator.hpp"
 #include "ssa/cse.hpp"
 #include "utils.hpp"
+
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <memory>

@@ -16,8 +16,6 @@
 #include "rules.hpp"
 #include "utils.hpp"
 
-#include <__expected/unexpect.h>
-#include <__expected/unexpected.h>
 #include <optional>
 #include <spdlog/fmt/fmt.h>
 
@@ -295,7 +293,7 @@ SemanticError SemanticAnalyzer::invalidOperator(const AST::UnaryOperatorNode* ca
 
 SemanticError SemanticAnalyzer::invalidInstruction(const AST::Node* causer, const AST::Node* origin, BrawContext& ctx) {
     return SemanticError(
-        fmt::format("This instruction cannot be used at {}", Utils::extractRangeWithContext(ctx.m_currentFile, origin->m_rangeBegin.first, origin->m_rangeBegin.second, origin->m_rangeEnd.first, origin->m_rangeEnd.second, 0, false, 0)),
+        fmt::format("This instruction cannot be used at {}", Utils::extractRangeWithContext(ctx.m_currentFile.string(), origin->m_rangeBegin.first, origin->m_rangeBegin.second, origin->m_rangeEnd.first, origin->m_rangeEnd.second, 0, false, 0)),
         ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd

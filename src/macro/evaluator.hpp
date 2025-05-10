@@ -9,7 +9,7 @@
 #include "parser/nodes/macro_parameter_reference.hpp"
 #include "parser/nodes/node.hpp"
 
-#include <__expected/expected.h>
+#include <expected>
 #include <filesystem>
 #include <memory>
 #include <unordered_map>

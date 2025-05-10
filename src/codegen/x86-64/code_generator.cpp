@@ -21,6 +21,8 @@
 #include "rules.hpp"
 #include "type_info.hpp"
 #include "utils.hpp"
+
+#include <array>
 #include <algorithm>
 #include <cassert>
 #include <cstdint>

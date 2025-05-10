@@ -11,6 +11,8 @@
 #include "ssa/operation.hpp"
 #include "utils.hpp"
 #include "ssa/block.hpp"
+
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -19,7 +21,7 @@ File IRBuilderSSA::build(const SSA::File& file, BrawContext& context) {
     fRet.m_path = file.m_path;
 
     for(auto& function : file.m_functions)
-        fRet.m_functions.push_back(build(function, context));
+        fRet.m_functions.emplace_back(std::move(build(function, context)));
 
     for(auto& function : fRet.m_functions) {
         if(function.m_external)

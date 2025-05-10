@@ -13,12 +13,16 @@
 #include "ssa/printer.hpp"
 #include "utils.hpp"
 
-#include <oneapi/tbb/blocked_range.h>
-#include <oneapi/tbb/parallel_for.h>
 #include <spdlog/spdlog.h>
 #include <args/args.hxx>
+
+#ifdef __linux__
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
+#else
+#include <algorithm>
+#include <execution>
+#endif
 
 #include <filesystem>
 #include <fstream>
@@ -77,20 +81,20 @@ int main(int argc, char** argv) {
     auto ctxOr = SemanticAnalyzer::fillTypes(ast.value().get());
     if (!ctxOr) {
         SemanticError err = ctxOr.error();
-        spdlog::error("{}({},{}): SemanticError: {}\n{}", err.m_path.string(), err.m_rangeBegin.first, err.m_rangeBegin.second, err.m_message, Utils::extractRangeWithContext(err.m_path, err.m_rangeBegin.first, err.m_rangeBegin.second, err.m_rangeEnd.first, err.m_rangeEnd.second));
+        spdlog::error("{}({},{}): SemanticError: {}\n{}", err.m_path.string(), err.m_rangeBegin.first, err.m_rangeBegin.second, err.m_message, Utils::extractRangeWithContext(err.m_path.string(), err.m_rangeBegin.first, err.m_rangeBegin.second, err.m_rangeEnd.first, err.m_rangeEnd.second));
         return 1;
     }
 
     std::optional<Macro::MacroError> macroErr = Macro::Evaluator::processAST(ast.value(), ctxOr.value());
 
     if(macroErr) {
-        spdlog::error("{}({},{}): MacroError: {}\n{}", macroErr->m_path.string(), macroErr->m_rangeBegin.first, macroErr->m_rangeBegin.second, macroErr->m_message, Utils::extractRangeWithContext(macroErr->m_path, macroErr->m_rangeBegin.first, macroErr->m_rangeBegin.second, macroErr->m_rangeEnd.first, macroErr->m_rangeEnd.second));
+        spdlog::error("{}({},{}): MacroError: {}\n{}", macroErr->m_path.string(), macroErr->m_rangeBegin.first, macroErr->m_rangeBegin.second, macroErr->m_message, Utils::extractRangeWithContext(macroErr->m_path.string(), macroErr->m_rangeBegin.first, macroErr->m_rangeBegin.second, macroErr->m_rangeEnd.first, macroErr->m_rangeEnd.second));
         return 1;
     }
     
     std::optional<SemanticError> err = SemanticAnalyzer::analyze(ast.value().get(), ctxOr.value());
     if(err) {
-        spdlog::error("{}({},{}): SemanticError: {}\n{}", err->m_path.string(), err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_message, Utils::extractRangeWithContext(err->m_path, err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_rangeEnd.first, err->m_rangeEnd.second));
+        spdlog::error("{}({},{}): SemanticError: {}\n{}", err->m_path.string(), err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_message, Utils::extractRangeWithContext(err->m_path.string(), err->m_rangeBegin.first, err->m_rangeBegin.second, err->m_rangeEnd.first, err->m_rangeEnd.second));
         return 1;
     }
 
@@ -101,99 +105,73 @@ int main(int argc, char** argv) {
     std::vector<std::filesystem::path> objectFiles;
     std::vector<SSA::File> ssaFiles = SSA::Builder::build(ast.value().get(), ctx);
 
+    auto compile = [&](SSA::File& file) {
+        bool allExt = true;
+        for(auto& f : file.m_functions) {
+            if(!f.m_external) {
+                allExt = false;
+                break;
+            }
+        }
+        if(allExt) return;
+        spdlog::info("Compiling {}", file.m_path.string());
+        std::filesystem::path relative = std::filesystem::relative(file.m_path.parent_path(), std::filesystem::current_path());
+        std::filesystem::path relativeSanitized;
+        for(const auto& part : relative) {
+            if(part == "..")
+                relativeSanitized /= "back";
+            else
+                relativeSanitized /= part;
+        }
+        std::filesystem::path fileOut = outputPath / relativeSanitized;
+        std::filesystem::create_directories(fileOut);
+        auto ssaOutputPath = fileOut / (file.m_path.stem().string() + ".ssa");
+        std::ofstream fs(ssaOutputPath);
+        SSA::Printer::print(fs, file);
+        fs.close();
+
+        File irFile = IRBuilderSSA::build(file, ctx);
+        auto irOutputPath = fileOut / (file.m_path.stem().string() + ".ir");
+        fs = std::ofstream(irOutputPath);
+        IRPrinter::print(fs, irFile);
+        fs.close();
+
+        CodeGen::x86_64::CodeGenerator generator;
+        CodeGen::x86_64::File asmFile = generator.generate(irFile, ctx);
+
+        auto codegenOutputPath = fileOut / (irFile.m_path.stem().string() + ".asm");
+        fs = std::ofstream(codegenOutputPath);
+        CodeGen::x86_64::Emitter::emit(asmFile, irFile, fs, ctx);
+        fs.close();
+
+        if(!assemble) return;
+        std::filesystem::path assemblerOutputPath = fileOut / (file.m_path.stem().string() + ".o");
+        // std::string cmd = "as --64 -g -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
+        std::string cmd = "as --64 -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
+        // spdlog::info("Assembling {} with command: {}", file.m_path.string(), cmd);
+        int result = std::system((cmd).c_str());
+        if(result != 0) {
+            spdlog::error("Assembler failed with exit code {}", result);
+        }
+        else
+            objectFiles.push_back(assemblerOutputPath);
+    };
+
     if(parallel) {
+#ifdef __linux__
         tbb::parallel_for(tbb::blocked_range<size_t>(0, ssaFiles.size()), [&](tbb::blocked_range<size_t> r) {
             SSA::File& file = ssaFiles[r.begin()];
-            bool allExt = true;
-            for(auto& f : file.m_functions) {
-                if(!f.m_external) {
-                    allExt = false;
-                    break;
-                }
-            }
-            if(allExt) return;
-            spdlog::info("Compiling {}", file.m_path.string());
-            std::filesystem::path relative = std::filesystem::relative(file.m_path.parent_path(), std::filesystem::current_path());
-            std::filesystem::path relativeSanitized;
-            for(const auto& part : relative) {
-                if(part == "..")
-                    relativeSanitized /= "back";
-                else
-                    relativeSanitized /= part;
-            }
-            std::filesystem::path fileOut = outputPath / relativeSanitized;
-            std::filesystem::create_directories(fileOut);
-            auto ssaOutputPath = fileOut / (file.m_path.stem().string() + ".ssa");
-            std::ofstream fs(ssaOutputPath);
-            SSA::Printer::print(fs, file);
-            fs.close();
-
-            File irFile = IRBuilderSSA::build(file, ctx);
-            auto irOutputPath = fileOut / (file.m_path.stem().string() + ".ir");
-            fs = std::ofstream(irOutputPath);
-            IRPrinter::print(fs, irFile);
-            fs.close();
-
-            CodeGen::x86_64::CodeGenerator generator;
-            CodeGen::x86_64::File asmFile = generator.generate(irFile, ctx);
-
-            auto codegenOutputPath = fileOut / (irFile.m_path.stem().string() + ".asm");
-            fs = std::ofstream(codegenOutputPath);
-            CodeGen::x86_64::Emitter::emit(asmFile, irFile, fs, ctx);
-            fs.close();
-
-            if(!assemble) return;
-            std::filesystem::path assemblerOutputPath = fileOut / (file.m_path.stem().string() + ".o");
-            std::string cmd = "as --64 -g -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
-            // spdlog::info("Assembling {} with command: {}", file.m_path.string(), cmd);
-            int result = std::system((cmd).c_str());
-            if(result != 0) {
-                spdlog::error("Assembler failed with exit code {}", result);
-            }
-            else
-                objectFiles.push_back(assemblerOutputPath);
+            compile(file);
         });
+#else
+        std::for_each(std::execution::par_unseq, ssaFiles.begin(), ssaFiles.end(), [&](SSA::File& file) {
+            compile(file);
+        });
+#endif
     }
     else {
-        for(const SSA::File& file : ssaFiles) {
-            bool allExt = true;
-            for(auto& f : file.m_functions) {
-                if(!f.m_external) {
-                    allExt = false;
-                    break;
-                }
-            }
-            if(allExt) continue;
-            spdlog::info("Compiling {}", file.m_path.string());
-            auto ssaOutputPath = outputPath / (file.m_path.stem().string() + ".ssa");
-            std::ofstream fs(ssaOutputPath);
-            SSA::Printer::print(fs, file);
-            fs.close();
-
-            File irFile = IRBuilderSSA::build(file, ctx);
-            auto irOutputPath = outputPath / (file.m_path.stem().string() + ".ir");
-            fs = std::ofstream(irOutputPath);
-            IRPrinter::print(fs, irFile);
-            fs.close();
-
-            CodeGen::x86_64::CodeGenerator generator;
-            CodeGen::x86_64::File asmFile = generator.generate(irFile, ctx);
-
-            auto codegenOutputPath = outputPath / (irFile.m_path.stem().string() + ".asm");
-            fs = std::ofstream(codegenOutputPath);
-            CodeGen::x86_64::Emitter::emit(asmFile, irFile, fs, ctx);
-            fs.close();
-
-            if(!assemble) continue;
-            std::filesystem::path assemblerOutputPath = outputPath / (file.m_path.stem().string() + ".o");
-            std::string cmd = "as --64 -g -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
-            // spdlog::info("Assembling {} with command: {}", file.m_path.string(), cmd);
-            int result = std::system((cmd).c_str());
-            if(result != 0) {
-                spdlog::error("Assembler failed with exit code {}", result);
-            }
-            else
-                objectFiles.push_back(assemblerOutputPath);
+        for(SSA::File& file : ssaFiles) {
+            compile(file);
         }
     }
 
@@ -206,11 +184,11 @@ int main(int argc, char** argv) {
 
         std::ofstream rspFile(outputPath / "obj.txt");
         for(const auto& file : objectFiles) {
-            rspFile << file.string() << "\n";
+            rspFile << file.generic_string() << "\n";
         }
         rspFile.close();
         
-        std::string cmd = "gcc @" + (outputPath / ("obj.txt")).string() + " " + (std::filesystem::path(stdPath) / "impl" / "*.o").string() + " -no-pie -m64";
+        std::string cmd = "gcc @" + (outputPath / ("obj.txt")).string() + " " + (std::filesystem::path(stdPath) / "impl" / "*.o").string() + " -m64";
         spdlog::info("Linking with command: {}", cmd);
         int result = std::system((cmd).c_str());
         if(result != 0) {

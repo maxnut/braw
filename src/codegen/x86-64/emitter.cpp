@@ -20,7 +20,9 @@ void Emitter::emit(const File& f, const ::File& ir, std::ostream& out, const Bra
     const char* doublePrefix = ".double";
     const char* stringPrefix = ".asciz";
 
+#ifdef __linux__
     out << ".section .note.GNU-stack,\"\",@progbits\n";
+#endif
     out << ".intel_syntax noprefix\n\n";
     if(ctx.m_debug)
         out << ".file 1 " << ir.m_path << "\n";

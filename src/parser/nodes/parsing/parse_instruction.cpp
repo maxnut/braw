@@ -1,3 +1,5 @@
+#include "parser/nodes/break.hpp"
+#include "parser/nodes/continue.hpp"
 #include "parser/parser.hpp"
 #include "../variable_declaration.hpp"
 #include "../binary_operator.hpp"
@@ -32,6 +34,18 @@ Result<std::shared_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor,
         instruction = parseMacroMakeFunction(cursor, ctx);
     else if(Rules::isMacroMakeVariable(cursor))
         instruction = parseMacroMakeVariable(cursor, ctx);
+    else if(Rules::isContinue(cursor)) {
+        instruction = std::make_shared<AST::ContinueNode>();
+        instruction->get()->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+        cursor.next();
+        instruction->get()->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
+    }
+    else if(Rules::isBreak(cursor)) {
+        instruction = std::make_shared<AST::BreakNode>();
+        instruction->get()->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+        cursor.next();
+        instruction->get()->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
+    }
     else
         instruction = parseExpression(cursor, ctx);
     

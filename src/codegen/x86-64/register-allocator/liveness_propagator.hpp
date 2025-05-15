@@ -42,7 +42,7 @@ class Propagator {
 public:
     static PropagatorResult buildGraph(const Function& f);
     static void buildGraphRecursive(std::shared_ptr<Block> root, const std::unordered_map<size_t, size_t>& blockForInstruction, const std::vector<std::shared_ptr<Block>>& blocks, std::unordered_set<std::shared_ptr<Block>>& visited, const Function& f);
-    static void fillRanges(const Function& function, Block* result);
+    static void fillRanges(const Function& function, Block* result, std::vector<std::shared_ptr<Block>>& blocks);
     static void visit(std::shared_ptr<Block> root, std::unordered_set<std::shared_ptr<Block>>& visited);
     static void fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> current, std::vector<std::shared_ptr<Block>>& path, std::unordered_set<std::shared_ptr<Block>>& visited);
     static void propagate(std::shared_ptr<Block> root, std::unordered_set<std::shared_ptr<Block>>& visited);

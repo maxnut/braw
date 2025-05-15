@@ -4,6 +4,7 @@
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::ForNode* node, BrawContext& ctx) {
     if(!expressionWhitelist.contains(node->m_condition->m_type)) return invalidInstruction(node->m_condition.get(), node, ctx);
     
+    ctx.m_loopOrSwitch = true;
     auto errorOpt = analyze(node->m_initializer.get(), ctx);
     if(errorOpt) return errorOpt;
 
@@ -15,6 +16,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::ForNode* node,
 
     errorOpt = analyze(node->m_body.get(), ctx);
     if(errorOpt) return errorOpt;
+    ctx.m_loopOrSwitch = false;
 
     return std::nullopt;
 }

@@ -29,7 +29,9 @@ struct Node {
         MacroDot,
         MacroForeach,
         MacroMakeFunction,
-        MacroMakeVariable
+        MacroMakeVariable,
+        Continue,
+        Break
     };
 
     Node() = default;

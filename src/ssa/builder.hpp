@@ -3,10 +3,13 @@
 #include "braw_context.hpp"
 #include "ir/instruction.hpp"
 #include "parser/nodes/binary_operator.hpp"
+#include "parser/nodes/break.hpp"
+#include "parser/nodes/continue.hpp"
 #include "parser/nodes/file.hpp"
 #include "parser/nodes/for.hpp"
 #include "parser/nodes/function_call.hpp"
 #include "parser/nodes/if.hpp"
+#include "parser/nodes/node.hpp"
 #include "parser/nodes/return.hpp"
 #include "parser/nodes/unary_operator.hpp"
 #include "parser/nodes/while.hpp"
@@ -26,6 +29,9 @@ struct FunctionContext {
     std::vector<uint64_t> m_scopeIdStack;
     std::shared_ptr<Register> m_returnRegister;
     Function* m_function;
+
+    std::shared_ptr<Label> m_continueLabel = nullptr;
+    std::shared_ptr<Label> m_breakLabel = nullptr;
 };
 
 
@@ -40,6 +46,8 @@ public:
     static void build(AST::WhileNode* node, BrawContext& context, FunctionContext& ictx);
     static void build(AST::ForNode* node, BrawContext& context, FunctionContext& ictx);
     static void build(AST::ReturnNode* node, BrawContext& context, FunctionContext& ictx);
+    static void build(AST::ContinueNode* node, BrawContext& context, FunctionContext& ictx);
+    static void build(AST::BreakNode* node, BrawContext& context, FunctionContext& ictx);
     static std::shared_ptr<Operand> buildCall(AST::FunctionCallNode* node, BrawContext& context, FunctionContext& ictx);
     static void buildAssignment(AST::BinaryOperatorNode* node, BrawContext& context, FunctionContext& ictx);
     static std::shared_ptr<Operand> buildExpression(AST::Node* node, BrawContext& context, FunctionContext& ictx);

@@ -155,6 +155,10 @@ void Builder::build(AST::Node* node, BrawContext& context, FunctionContext& ictx
             return build((AST::ForNode*)node, context, ictx);
         case AST::Node::Return:
             return build((AST::ReturnNode*)node, context, ictx);
+        case AST::Node::Continue:
+            return build((AST::ContinueNode*)node, context, ictx);
+        case AST::Node::Break:
+            return build((AST::BreakNode*)node, context, ictx);
         case AST::Node::Type::BinaryOperator:
             if(static_cast<const AST::BinaryOperatorNode*>(node)->m_operator == "=")
                 return buildAssignment(static_cast<AST::BinaryOperatorNode*>(node), context, ictx);
@@ -211,8 +215,13 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
 }
 
 void Builder::build(AST::WhileNode* node, BrawContext& context, FunctionContext& ictx) {
-    auto label = std::make_shared<Label>(node->m_condition->m_rangeBegin, Utils::uniqueLabelName() + "_condition");
-    auto labelBody = std::make_shared<Label>(node->m_then->m_rangeBegin, Utils::uniqueLabelName() + "_body");
+    auto p = ictx.m_continueLabel;
+    auto q = ictx.m_breakLabel;
+    auto label = std::make_shared<Label>(node->m_condition->m_rangeBegin, Utils::uniqueLabelName());
+    ictx.m_continueLabel = label;
+    auto labelBody = std::make_shared<Label>(node->m_then->m_rangeBegin, Utils::uniqueLabelName());
+    auto labelExit = std::make_shared<Label>(node->m_then->m_rangeEnd, Utils::uniqueLabelName());
+    ictx.m_breakLabel = labelExit;
     if(!node->m_do)
         ictx.m_instructions.push_back(std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, label));
     ictx.m_instructions.push_back(labelBody);
@@ -222,23 +231,36 @@ void Builder::build(AST::WhileNode* node, BrawContext& context, FunctionContext&
     ictx.m_instructions.push_back(
         std::make_shared<Jump>(Instruction::JumpTrue, node->m_rangeEnd, labelBody, condition)
     );
+    ictx.m_instructions.push_back(labelExit);
+    ictx.m_continueLabel = p;
+    ictx.m_breakLabel = q;
 }
 
 void Builder::build(AST::ForNode* node, BrawContext& context, FunctionContext& ictx) {
+    auto p = ictx.m_continueLabel;
+    auto q = ictx.m_breakLabel;
     build(node->m_initializer.get(), context, ictx);
-    auto labelCondition = std::make_shared<Label>(node->m_condition->m_rangeBegin, Utils::uniqueLabelName() + "_condition");
-    auto labelBody = std::make_shared<Label>(node->m_body->m_rangeBegin, Utils::uniqueLabelName() + "_body");
+    auto labelCondition = std::make_shared<Label>(node->m_condition->m_rangeBegin, Utils::uniqueLabelName());
+    auto labelBody = std::make_shared<Label>(node->m_body->m_rangeBegin, Utils::uniqueLabelName());
+    auto labelExit = std::make_shared<Label>(node->m_body->m_rangeEnd, Utils::uniqueLabelName());
+    auto labelContinue = std::make_shared<Label>(node->m_body->m_rangeEnd, Utils::uniqueLabelName());
+    ictx.m_continueLabel = labelContinue;
+    ictx.m_breakLabel = labelExit;
     ictx.m_instructions.push_back(
         std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, labelCondition)
     );
     ictx.m_instructions.push_back(labelBody);
     build(node->m_body.get(), context, ictx);
+    ictx.m_instructions.push_back(labelContinue);
     build(node->m_increment.get(), context, ictx);
     ictx.m_instructions.push_back(labelCondition);
     auto condition = buildExpression(node->m_condition.get(), context, ictx);
     ictx.m_instructions.push_back(
         std::make_shared<Jump>(Instruction::JumpTrue, node->m_body->m_rangeEnd, labelBody, condition)
     );
+    ictx.m_instructions.push_back(labelExit);
+    ictx.m_breakLabel = q;
+    ictx.m_continueLabel = p;
 }
 
 
@@ -272,6 +294,18 @@ void Builder::build(AST::ReturnNode* node, BrawContext& context, FunctionContext
     }
 
     ictx.m_instructions.push_back(std::make_shared<Instruction>(Instruction::Return, node->m_rangeBegin));
+}
+
+void Builder::build(AST::ContinueNode* node, BrawContext& context, FunctionContext& ictx) {
+    ictx.m_instructions.push_back(
+        std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, ictx.m_continueLabel)
+    );
+}
+
+void Builder::build(AST::BreakNode* node, BrawContext& context, FunctionContext& ictx) {
+    ictx.m_instructions.push_back(
+        std::make_shared<Jump>(Instruction::Jump, node->m_rangeBegin, ictx.m_breakLabel)
+    );
 }
 
 void Builder::buildAssignment(AST::BinaryOperatorNode* node, BrawContext& context, FunctionContext& ictx) {

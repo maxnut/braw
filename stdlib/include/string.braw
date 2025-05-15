@@ -84,5 +84,5 @@ fn str_to_int(s: char*) -> int {
         n = n * 10 + (int)(s[i] - '0');
         i = i + 1;
     }
-    return n * sign;
+    return n;
 }

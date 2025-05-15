@@ -1,6 +1,8 @@
 #pragma once
 
 #include "braw_context.hpp"
+#include "parser/nodes/break.hpp"
+#include "parser/nodes/continue.hpp"
 #include "parser/nodes/function_definition.hpp"
 
 #include <string>
@@ -73,6 +75,8 @@ private:
     static SemanticError invalidOperator(const AST::UnaryOperatorNode* causer, BrawContext& ctx);
     static SemanticError invalidInstruction(const AST::Node* causer, const AST::Node* origin, BrawContext& ctx);
     static SemanticError cannotInferType(const AST::VariableDeclarationNode* causer, BrawContext& ctx);
+    static SemanticError notInLoop(const AST::ContinueNode* causer, BrawContext& ctx);
+    static SemanticError notInLoop(const AST::BreakNode* causer, BrawContext& ctx);
 
     static std::unordered_set<AST::Node::Type> expressionWhitelist;
 

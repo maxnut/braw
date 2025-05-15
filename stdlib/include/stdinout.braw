@@ -7,6 +7,6 @@ fn print_string(str: char*) -> void {
 }
 
 fn read_string(str: char*, len: int) -> void {
-    syscall(0, (void*)0, (void*)str, (void*)len, (void*)0, (void*)0, (void*)0);
-    str[len - 1] = '\0';
+    let read = syscall(0, (void*)0, (void*)str, (void*)len, (void*)0, (void*)0, (void*)0);
+    str[read - 1l] = '\0';
 }

@@ -1,4 +1,5 @@
 #include "semantic_analyzer.hpp"
+#include "parser/nodes/continue.hpp"
 #include "parser/nodes/file.hpp"
 #include "parser/nodes/for.hpp"
 #include "parser/nodes/function_definition.hpp"
@@ -70,6 +71,14 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::Node* root, BrawCont
             return analyze(static_cast<const AST::LiteralNode*>(root), context);
         case AST::Node::Return:
             return analyze(static_cast<const AST::ReturnNode*>(root), context);
+        case AST::Node::Break: {
+            if(!context.m_loopOrSwitch) return notInLoop(static_cast<const AST::BreakNode*>(root), context);
+            return std::nullopt;
+        }
+        case AST::Node::Continue: {
+            if(!context.m_loopOrSwitch) return notInLoop(static_cast<const AST::ContinueNode*>(root), context);
+            return std::nullopt;
+        }
         case AST::Node::Macro:
         case AST::Node::MacroParameterReference:
         case AST::Node::MacroParameter:
@@ -303,6 +312,24 @@ SemanticError SemanticAnalyzer::invalidInstruction(const AST::Node* causer, cons
 SemanticError SemanticAnalyzer::cannotInferType(const AST::VariableDeclarationNode* causer, BrawContext& ctx) {
     return SemanticError(
         fmt::format("Cannot infer type of variable {}", causer->m_name.m_name),
+        ctx.m_currentFile,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}
+
+SemanticError SemanticAnalyzer::notInLoop(const AST::ContinueNode* causer, BrawContext& ctx) {
+    return SemanticError(
+        "Cannot use continue outside of loop",
+        ctx.m_currentFile,
+        causer->m_rangeBegin,
+        causer->m_rangeEnd
+    );
+}
+
+SemanticError SemanticAnalyzer::notInLoop(const AST::BreakNode* causer, BrawContext& ctx) {
+    return SemanticError(
+        "Cannot use break outside of loop or switch",
         ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd

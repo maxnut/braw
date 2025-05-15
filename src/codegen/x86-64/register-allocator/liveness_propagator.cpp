@@ -40,7 +40,7 @@ PropagatorResult Propagator::buildGraph(const Function& f) {
     }
 
     for(auto& block : result.blocks)
-        fillRanges(f, block.get());
+        fillRanges(f, block.get(), result.blocks);
 
     std::unordered_set<std::shared_ptr<Block>> visited;
     buildGraphRecursive(result.blocks.at(0), result.blockForInstruction, result.blocks, visited, f);
@@ -148,7 +148,7 @@ void Propagator::fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> c
     path.pop_back();
 }
 
-void Propagator::fillRanges(const Function& function, Block* result) {
+void Propagator::fillRanges(const Function& function, Block* result, std::vector<std::shared_ptr<Block>>& blocks) {
     auto tryRegister = [&](::Operand o, uint32_t i, bool assignmentIfFirst = false, Operands::Register::RegisterGroup forceRegister = Operands::Register::Count) {
         if(o.index() != 1 && o.index() != 3)
             return;
@@ -206,8 +206,13 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
                 if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2)) {
-                    for(auto range : result->m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id])
-                        range->m_isPointedOrDereferenced = true;
+                    for(auto block : blocks) {
+                        auto id = std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id;
+                        if(!block->m_ranges.contains(id))
+                            continue;
+                        for(auto range : block->m_ranges[id])
+                            range->m_isPointedOrDereferenced = true;
+                    }
                 }
                 break;
             }
@@ -221,8 +226,13 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
                 if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2)) {
-                    for(auto range : result->m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id])
-                        range->m_isPointedOrDereferenced = true;
+                    for(auto block : blocks) {
+                        auto id = std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id;
+                        if(!block->m_ranges.contains(id))
+                            continue;
+                        for(auto range : block->m_ranges[id])
+                            range->m_isPointedOrDereferenced = true;
+                    }
                 }
                 break;
             }
@@ -233,8 +243,13 @@ void Propagator::fillRanges(const Function& function, Block* result) {
                 tryRegister(basic->m_o3, i);
                 tryRegister(basic->m_o4, i);
                 if(std::holds_alternative<std::shared_ptr<Register>>(basic->m_o2)) {
-                    for(auto range : result->m_ranges[std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id])
-                        range->m_isPointedOrDereferenced = true;
+                    for(auto block : blocks) {
+                        auto id = std::get<std::shared_ptr<Register>>(basic->m_o2)->m_id;
+                        if(!block->m_ranges.contains(id))
+                            continue;
+                        for(auto range : block->m_ranges[id])
+                            range->m_isPointedOrDereferenced = true;
+                    }
                 }
                 break;
             }

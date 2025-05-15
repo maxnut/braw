@@ -88,6 +88,14 @@ namespace Rules {
         return cursor.get().value().m_type == Token::KEYWORD && cursor.get().value().m_value == "if";
     }
 
+    inline bool isContinue(TokenCursor cursor) {
+        return cursor.get().value().m_type == Token::KEYWORD && cursor.get().value().m_value == "continue";
+    }
+
+    inline bool isBreak(TokenCursor cursor) {
+        return cursor.get().value().m_type == Token::KEYWORD && cursor.get().value().m_value == "break";
+    }
+
     inline bool isWhile(TokenCursor cursor) {
         return cursor.get().value().m_type == Token::KEYWORD && (cursor.get().value().m_value == "while" || cursor.get().value().m_value == "do");
     }

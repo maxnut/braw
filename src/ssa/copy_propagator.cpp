@@ -20,7 +20,7 @@ bool CopyPropagator::propagate(Function& function) {
                     continue;
                 Assignment* ass = (Assignment*)ins;
 
-                if(function.m_retains.contains(std::static_pointer_cast<Register>(ass->m_to)->m_originalId) || ass->m_operation->m_o1->m_type != Operand::Register || std::static_pointer_cast<Register>(ass->m_operation->m_o1)->m_memoryDependant) continue;
+                if(function.m_retains.contains(std::static_pointer_cast<Register>(ass->m_to)->m_originalId) || ass->m_operation->m_o1->m_type == Operand::Address || std::static_pointer_cast<Register>(ass->m_operation->m_o1)->m_memoryDependant) continue;
 
                 std::unordered_map<std::shared_ptr<Block>, uint32_t> visited;
                 bool doErase = true;

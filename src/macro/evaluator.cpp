@@ -379,6 +379,8 @@ std::expected<std::shared_ptr<Node>, MacroError> Evaluator::deepClone(std::share
         case AST::Node::File:
         case AST::Node::Macro:
         case AST::Node::FunctionDefinition:
+        case AST::Node::Continue:
+        case AST::Node::Break:
             break;
         }
     return ret;
@@ -413,6 +415,8 @@ std::optional<MacroError> Evaluator::processAST(std::shared_ptr<AST::Node> node,
         case AST::Node::Macro:
         case AST::Node::Struct:
         case AST::Node::VariableAccess:
+        case AST::Node::Continue:
+        case AST::Node::Break:
             break;
         case AST::Node::VariableDeclaration: {
             auto decl = std::static_pointer_cast<AST::VariableDeclarationNode>(node);

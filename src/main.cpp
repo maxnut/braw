@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
     args::ArgumentParser parser("Braw Compiler - A simple compiler for the Braw programming language.");
     args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
     args::Positional<std::string> inputFile(parser, "file", "The source file to compile");
-    args::ValueFlag<std::string> outputDirectory(parser, "output", "The directory to output to", {'o', "output"}, "out.asm");
+    args::ValueFlag<std::string> outputDirectory(parser, "output", "The directory to output to", {'o', "output"}, "build");
     args::Flag assemble(parser, "assemble", "Assemble the output file", {"assemble"});
     args::Flag link(parser, "link", "Link the output file", {'l', "link"});
     args::Flag debug(parser, "debug", "Add debug information", {'d', "debug"});

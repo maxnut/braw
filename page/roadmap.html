@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Braw Roadmap</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="min-h-screen relative bg-zinc-800 text-zinc-300">
+  <div class="fixed inset-0 -z-10">
+    <div class="w-full h-full bg-gradient-to-b from-black to-zinc-900"></div>
+  </div>
+  <header class="fixed top-0 w-full z-50 bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="index.html" class="text-white text-xl font-semibold">Braw</a>
+      <nav class="space-x-4 text-sm flex items-center">
+        <a href="index.html" class="hover:text-teal-200 hover:scale-[1.04] transition-all duration-200 ease-out">Home</a>
+        <a href="examples.html" class="hover:text-teal-200 hover:scale-[1.04] transition-all duration-200 ease-out">Examples</a>
+        <a href="roadmap.html" class="text-teal-500 font-bold hover:scale-[1.04] transition-all duration-200 ease-out">Roadmap</a>
+        <a href="https://github.com/maxnut/braw" class="ml-4 text-zinc-300 hover:text-white hover:scale-[1.08] transition-all duration-200 ease-out"
+          aria-label="GitHub">
+          <i data-lucide="github" class="w-5 h-5"></i>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="pt-28 px-6 pb-24 max-w-3xl mx-auto">
+    <h1
+      class="text-center md:text-5xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg">
+      Roadmap
+    </h1>
+    <p class="text-zinc-400 mb-10 mt-4 text-center">Things I want to implement eventually.</p>
+
+    <div class="space-y-10">
+      <section class="bg-zinc-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold mb-4 text-teal-400">Core Language Features</h2>
+        <ul class="space-y-2 list-disc list-inside">
+          <li>Implicit casting (e.g. long to int)</li>
+          <li>Pre/post increment and decrement operators</li>
+          <li>Expand/improve macro system</li>
+        </ul>
+      </section>
+
+      <section class="bg-zinc-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold mb-4 text-teal-400">Compiler / Tooling</h2>
+        <ul class="space-y-2 list-disc list-inside">
+          <li>Implement error recovery</li>
+          <li>Add more optimization passes</li>
+        </ul>
+      </section>
+
+      <section class="bg-zinc-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold mb-4 text-teal-400">Stretch / Long-Term Ideas</h2>
+        <ul class="space-y-2 list-disc list-inside">
+          <li>Compile to other targets (e.g. Windows, ARM)</li>
+          <li>Multithread every compiler stage</li>
+          <li>Maybe replace the import system with a proper module system?</li>
+        </ul>
+      </section>
+    </div>
+
+    <p class="mt-16 text-center text-sm text-zinc-400">
+      Found a bug or want to suggest something? <a href="https://github.com/maxnut/braw/issues"
+        class="text-teal-400 hover:underline">Open an issue</a>.
+    </p>
+  </main>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+
+</html>

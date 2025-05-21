@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Braw Language</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap"
+    rel="stylesheet">
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    h1,
+    h2,
+    .nav-title {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .ripple-effect {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      animation: ripple-animation 600ms linear;
+      transform: scale(0);
+      pointer-events: none;
+    }
+
+    @keyframes ripple-animation {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-zinc-950 text-zinc-100 font-sans">
+  <header class="fixed top-0 w-full z-50 bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="index.html" class="text-white text-xl font-semibold">Braw</a>
+      <nav class="space-x-4 text-sm flex items-center">
+        <a href="index.html" class="text-teal-500 font-bold hover:scale-[1.04] transition-all duration-200 ease-out">Home</a>
+        <a href="examples.html" class="hover:text-teal-200 hover:scale-[1.04] transition-all duration-200 ease-out">Examples</a>
+        <a href="roadmap.html" class="hover:text-teal-200 hover:scale-[1.04] transition-all duration-200 ease-out">Roadmap</a>
+        <a href="https://github.com/maxnut/braw" class="ml-4 text-zinc-300 hover:text-white hover:scale-[1.08] transition-all duration-200 ease-out" aria-label="GitHub">
+          <i data-lucide="github" class="w-5 h-5"></i>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="pt-32 pb-24 text-center bg-gradient-to-b from-zinc-950 to-zinc-900">
+    <h1
+      class="text-5xl md:text-7xl font-bold bg-gradient-to-br from-teal-100 to-emerald-900 bg-clip-text text-transparent drop-shadow-lg">
+      Braw
+    </h1>
+    <p class="mt-4 text-zinc-300 text-lg max-w-xl mx-auto">A lightweight, native compiled language</p>
+    <div class="mt-8">
+      <a href="#getting-started"
+        class="inline-block bg-gradient-to-br from-teal-800 to-teal-500 text-white shadow-md font-medium px-8 py-3 rounded-xl shadow transition-all hover:scale-105">Get
+        Started</a>
+    </div>
+  </section>
+
+  <main class="max-w-6xl mx-auto px-4 py-16 space-y-24">
+    <section id="community-support" class="max-w-3xl mx-auto space-y-8">
+      <h2 class="text-4xl font-semibold text-white text-center mt-6">Community & Support</h2>
+      <p class="text-zinc-300 text-lg leading-relaxed">
+        This is still very much a toy compiler and a work in progress. It is in the early stages of development,
+        but still developed enough to share to a public. It’s not yet production-ready by any means, but that’s exactly
+        why your help is
+        needed!
+      </p>
+      <p class="text-zinc-300 text-lg leading-relaxed">
+        Contributions and testing are the best ways to help. Whether it’s reporting bugs, submitting code, or sharing
+        ideas,
+        every bit of support would be greatly appreciated.
+      </p>
+    </section>
+
+    <section id="getting-started">
+      <h2 class="text-4xl font-semibold text-white mb-10 text-center">Getting Started</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <a href="https://github.com/maxnut/braw/releases"
+          class="ripple relative overflow-hidden bg-zinc-900/70 p-6 rounded-xl hover:bg-zinc-800 hover:scale-[1.02] transition-all duration-200 ease-out cursor-pointer flex flex-col items-center">
+          <i data-lucide="download" class="w-8 h-8 text-teal-400 mb-4"></i>
+          <h3 class="text-xl font-semibold text-teal-400 mb-2 text-center">Download</h3>
+          <p class="text-zinc-300 text-center">Grab the latest version of the Braw compiler.</p>
+        </a>
+
+        <a href="examples.html"
+          class="ripple relative overflow-hidden bg-zinc-900/70 p-6 rounded-xl hover:bg-zinc-800 hover:scale-[1.02] transition-all duration-200 ease-out cursor-pointer flex flex-col items-center">
+          <i data-lucide="file-code" class="w-8 h-8 text-teal-400 mb-4"></i>
+          <h3 class="text-xl font-semibold text-teal-400 mb-2 text-center">Examples</h3>
+          <p class="text-zinc-300 text-center">Browse code samples and see how the language works.</p>
+        </a>
+
+        <a href="https://github.com/maxnut/braw"
+          class="ripple relative overflow-hidden bg-zinc-900/70 p-6 rounded-xl hover:bg-zinc-800 hover:scale-[1.02] transition-all duration-200 ease-out cursor-pointer flex flex-col items-center">
+          <i data-lucide="github" class="w-8 h-8 text-teal-400 mb-4"></i>
+          <h3 class="text-xl font-semibold text-teal-400 mb-2 text-center">Source Code</h3>
+          <p class="text-zinc-300 text-center">Take a look at the compiler internals.</p>
+        </a>
+
+      </div>
+    </section>
+
+    <script>
+    </script>
+
+    <section id="links">
+      <h2 class="text-3xl font-semibold text-white mb-6 text-center">Other links</h2>
+      <ul class="text-center text-teal-400 space-y-3">
+        <li><a href="https://github.com/maxnut/braw/issues" class="hover:underline">Issue Tracker</a></li>
+        <li><a href="https://github.com/maxnut/braw/blob/compiler-new/LICENSE" class="hover:underline">License</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    lucide.createIcons();
+    document.querySelectorAll('.ripple').forEach(button => {
+      button.addEventListener('click', function (e) {
+        const circle = document.createElement('span');
+        const diameter = Math.max(this.clientWidth, this.clientHeight);
+        const radius = diameter / 2;
+
+        circle.style.width = circle.style.height = `${diameter}px`;
+        circle.style.left = `${e.clientX - this.getBoundingClientRect().left - radius}px`;
+        circle.style.top = `${e.clientY - this.getBoundingClientRect().top - radius}px`;
+        circle.classList.add('ripple-effect');
+
+        const ripple = this.querySelector('.ripple-effect');
+        if (ripple) ripple.remove();
+
+        this.appendChild(circle);
+      });
+    });
+  </script>
+</body>
+
+</html>

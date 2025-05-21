@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Braw Examples</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link href="prism.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.css"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="braw-prism.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 7rem;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen relative bg-zinc-800 text-zinc-300">
+    <div class="fixed inset-0 -z-10">
+        <div class="w-full h-full bg-gradient-to-b from-black to-zinc-900"></div>
+    </div>
+    </main>
+    <header class="fixed top-0 w-full z-50 bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-white text-xl font-semibold">Braw</a>
+            <nav class="space-x-4 text-sm flex items-center">
+                <a href="index.html"
+                    class="hover:text-teal-200 hover:scale-[1.04] transition-all duration-200 ease-out">Home</a>
+                <a href="examples.html"
+                    class="text-teal-500 font-bold hover:scale-[1.04] transition-all duration-200 ease-out">Examples</a>
+                <a href="roadmap.html"
+                    class="hover:text-teal-200 hover:scale-[1.04] transition-all duration-200 ease-out">Roadmap</a>
+                <a href="https://github.com/maxnut/braw"
+                    class="ml-4 text-zinc-300 hover:text-white hover:scale-[1.08] transition-all duration-200 ease-out"
+                    aria-label="GitHub">
+                    <i data-lucide="github" class="w-5 h-5"></i>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="pt-28 pb-16 px-4 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-10">
+        <main class="space-y-16">
+            <section id="hello-world" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    Hello World</h2>
+                <p class="text-zinc-300 mb-4">Your first Braw program.</p>
+                <pre class="line-numbers language-braw line-numbers"><code>import "stdinout.braw"
+                    
+fn main() -> int {
+    print_string("Hello, world!\n");
+    return 0;
+}
+</code></pre>
+                <p class="text-zinc-300 mb-4">Compile it using this command.</p>
+                <pre
+                    class="bg-black/90 p-4 rounded-md overflow-auto text-sm"><code>./brawc main.braw --assemble --link</code></pre>
+            </section>
+
+            <section id="variables" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    Variables</h2>
+                <p class="text-zinc-300 mb-4">Declaring and using variables in Braw.</p>
+                <pre class="line-numbers language-braw line-numbers"><code>let x: int = 10;
+let y = x * 2;
+</code></pre>
+            </section>
+
+            <section id="functions" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    Functions</h2>
+                <p class="text-zinc-300 mb-4">How to declare and use functions.</p>
+                <pre class="line-numbers prettyprint lang-braw"><code>fn times2(n: int) -> int {
+    return n * 2;
+}
+</code></pre>
+                You can also declare single line functions like this:
+                <pre class="line-numbers prettyprint lang-braw"><code>fn times2(n: int) -> int: return n * 2;
+</code></pre>
+            </section>
+
+            <section id="builtin" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    Builtin types</h2>
+                <p class="text-zinc-300 mb-4">A quick look at the builtin types.</p>
+                <pre class="line-numbers prettyprint lang-braw"><code>let a: int = 0;
+let b: uint = 0;
+let c: long = 0l;
+let d: ulong = 0ul;
+let e: char = 'a';
+let f: uchar = 'a';
+let g: float = 0.f;
+let h: double = 0.0;
+let g: bool = true;
+let ptr: int* = (int*)0;
+</code></pre>
+            </section>
+
+            <section id="if" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    If statements</h2>
+                <pre class="line-numbers prettyprint lang-braw bg-black/90 mt-6 p-4 rounded-md overflow-auto text-sm"><code>let n = 5;
+
+if (n > 3):
+    print_string("Big\n");
+else:
+    print_string("Small\n");
+</code></pre>
+            </section>
+            <section id="while" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    While loops</h2>
+                <pre class="line-numbers prettyprint lang-braw"><code>let n = 0;
+
+while (n < 10) {
+    print_string("Hello, world!\n");
+    n = n + 1;
+}
+</code></pre>
+                <p class="text-zinc-300 mb-4">You can also run do-while loops:</p>
+                <pre class="line-numbers prettyprint lang-braw"><code>do while (n < 10) {
+    print_string("Hello, world!\n");
+    n = n + 1;
+}
+</code></pre>
+            </section>
+            <section id="for" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    For loops</h2>
+                <pre class="line-numbers prettyprint lang-braw"><code>for (let i = 0; i < 10; i = i + 1):
+    print_string("Hello, world!\n");
+</code></pre>
+            </section>
+
+            </section>
+            <section id="struct" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    Struct declarations</h2>
+                <pre class="line-numbers prettyprint lang-braw"><code>struct Vec2 {
+    x: float;
+    y: float;
+}
+
+struct Player {
+    position: Vec2;
+    velocity: Vec2;
+}
+</code></pre>
+            </section>
+
+            <section id="macros" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+                <h2
+                    class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    Macros</h2>
+                <p class="text-zinc-300 mb-4">Macros in Braw are defined using the <code>define</code> keyword and
+                    invoked using the <code>$</code> symbol.</p>
+
+                <pre class="line-numbers prettyprint lang-braw"><code>define CONST: 5;
+
+fn wow() -> void {
+    let a: int = $CONST;
+}
+</code></pre>
+
+                <p class="text-zinc-300 mb-4">Macros can take parameters:</p>
+
+                <pre class="line-numbers prettyprint lang-braw"><code>define CONST(param): 5 + #param;
+
+fn wow() -> void {
+    let a: int = $CONST(5);
+}
+</code></pre>
+
+                <h3
+                    class="text-xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    Full example</h3>
+                <pre class="line-numbers prettyprint lang-braw"><code>struct MV {
+    a: int;
+    b: int;
+};
+
+define MAC(type) {
+    $foreach(var : #type) {
+        $make_function($concat($concat(#type, #"_"), $concat(#"get_", #var.name)), #var, {$make_variable(#"v", #type);}) {
+            return $make_dot(v, #var.name);
+        }
+    }
+}
+
+$MAC(#&ltMV&gt);
+
+fn m_macro() -> int {
+    let v: MV; v.a = 1; v.b = 1;
+    return MV_get_a(v) + MV_get_b(v);
+}
+</code></pre>
+            </section>
+
+
+        </main>
+
+        <aside class="h-fit w-2/3 lg:sticky top-28 bg-zinc-900 rounded-xl p-6 shadow-md">
+            <h3 class="text-teal-300 font-semibold text-lg mb-4">Examples</h3>
+            <ul class="space-y-2 text-sm">
+                <li><a href="#hello-world"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Hello
+                        World</a></li>
+                <li><a href="#variables"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Variables</a>
+                </li>
+                <li><a href="#functions"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Functions</a>
+                </li>
+                <li><a href="#if"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">If
+                        statements</a></li>
+                <li><a href="#while"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">While
+                        loops</a></li>
+                <li><a href="#for"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">For
+                        loops</a></li>
+                <li><a href="#struct"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Struct
+                        declarations</a></li>
+                <li><a href="#macros"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Macros</a>
+                </li>
+            </ul>
+        </aside>
+    </div>
+    <p class="mb-16 text-center text-sm text-zinc-400">
+        Found a bug or want to suggest something? <a href="https://github.com/maxnut/braw/issues"
+            class="text-teal-400 hover:underline">Open an issue</a>.
+    </p>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

@@ -155,12 +155,12 @@ while (n < 10) {
                 <pre class="line-numbers prettyprint lang-braw"><code>struct Vec2 {
     x: float;
     y: float;
-}
+};
 
 struct Player {
     position: Vec2;
     velocity: Vec2;
-}
+};
 </code></pre>
             </section>
 
@@ -186,9 +186,39 @@ fn wow() -> void {
     let a: int = $CONST(5);
 }
 </code></pre>
+   <h3 class="text-xl font-semibold text-teal-300 mt-6 mb-2">Parameter Kinds</h3>
+    <p class="text-zinc-300 mb-2">Parameters can be:</p>
+    <ul class="list-disc list-inside text-zinc-300 mb-4">
+        <li><strong>Instructions</strong>: passed directly, expanded with <code>#param</code></li>
+        <li><strong>Values</strong>: passed as <code>#"value"</code>, get assigned the value</li>
+        <li><strong>Types</strong>: passed as <code>#&lt;int&gt;</code>, get the typename</li>
+        <li><strong>Functions</strong>: passed as <code>#fun()</code>, get the function name</li>
+    </ul>
 
+    <p class="text-zinc-300 mb-4">Parameters also have fields accessible with <code>#param.field</code>:</p>
+    <ul class="list-disc list-inside text-zinc-300 mb-4">
+        <li><strong>Types</strong>: <code>#param.memberName</code></li>
+        <li><strong>Functions</strong>: <code>#param.returnType</code>, <code>#param.parameters</code></li>
+    </ul>
+
+    <h3 class="text-xl font-semibold text-teal-300 mt-6 mb-2">Macro Constructs</h3>
+    <p class="text-zinc-300 mb-4">You can use the following constructs inside macros for compile-time logic:</p>
+
+    <ul class="list-disc list-inside text-zinc-300 space-y-1 text-sm">
+        <li><code>$concat(a, b)</code> – concatenate two values</li>
+        <li><code>$compare(a, b)</code> – returns true if equal</li>
+        <li><code>$not(val)</code> – boolean negation</li>
+        <li><code>$and(a, b)</code> – boolean AND</li>
+        <li><code>$or(a, b)</code> – boolean OR</li>
+        <li><code>$if(val) { ... }</code> – includes body only if value is true</li>
+        <li><code>$foreach(v : value) { ... }</code> – repeat body for each member in value</li>
+        <li><code>$make_variable(name, type)</code> – generates a variable declaration</li>
+        <li><code>$make_function(name, returnType, {parameters}) { ... }</code> – generates a function</li>
+        <li><code>$make_dot(expression, value)</code> – creates a dot operator</li>
+        <li><code>$make_arrow(expression, value)</code> – creates an arrow operator</li>
+    </ul>
                 <h3
-                    class="text-xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
+                    class="text-xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg my-4">
                     Full example</h3>
                 <pre class="line-numbers prettyprint lang-braw"><code>struct MV {
     a: int;

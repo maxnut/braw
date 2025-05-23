@@ -11,7 +11,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
     auto errorOpt = analyze(node->m_operand.get(), ctx);
     if(errorOpt) return errorOpt;
 
-    if(node->m_operator != "!" && node->m_operator != "cast" && node->m_operator != "." && node->m_operator != "->" && node->m_operator != "&" && node->m_operator != "*" && node->m_operator != "[]")
+    if(node->m_operator != "!" && node->m_operator != "cast" && node->m_operator != "." && node->m_operator != "->" && node->m_operator != "&" && node->m_operator != "*" && node->m_operator != "[]" && node->m_operator != "pre++" && node->m_operator != "pre--" && node->m_operator != "post++" && node->m_operator != "post--")
         return unknownOperator(node, ctx);
 
     auto typeOr = getType(node->m_operand.get(), ctx);
@@ -68,6 +68,12 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
         TypeInfo type = typeOr.value();
         if(type.m_name != INT_T && type.m_name != LONG_T)
             return mismatchedTypes(node, type.m_name, std::string(INT_T) + " or " + std::string(LONG_T), ctx);
+    }
+    else if(node->m_operator == "pre++" || node->m_operator == "pre--" || node->m_operator == "post++" || node->m_operator == "post--") {
+        typeOr = getType(node->m_operand.get(), ctx);
+        if(!typeOr) return typeOr.error();
+        if(typeOr->m_name != INT_T && typeOr->m_name != LONG_T && typeOr->m_name != CHAR_T && typeOr->m_name != UINT_T && typeOr->m_name != ULONG_T && typeOr->m_name != UCHAR_T)
+            return mismatchedTypes(node, typeOr.value().m_name, "integer", ctx);
     }
 
     return std::nullopt;

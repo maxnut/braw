@@ -13,9 +13,9 @@ Result<std::shared_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor, Par
     std::shared_ptr<AST::UnaryOperatorNode> unary = nullptr;
     std::pair<uint32_t, uint32_t> rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 
-    if(cursor.get().value().m_value == "&" || cursor.get().value().m_value == "*" || cursor.get().value().m_value == "!") {
+    if(cursor.get().value().m_value == "&" || cursor.get().value().m_value == "*" || cursor.get().value().m_value == "!" || cursor.get().value().m_value == "--" || cursor.get().value().m_value == "++") {
         unary = std::make_shared<AST::UnaryOperatorNode>();
-        unary->m_operator = cursor.get().value().m_value;
+        unary->m_operator = cursor.value().m_value == "++" || cursor.value().m_value == "--" ? "pre" + cursor.get().value().m_value : cursor.get().value().m_value;
         unary->m_rangeBegin = rangeBegin;
         cursor.next();
         auto operandOpt = parseOperand(cursor, ctx);
@@ -55,6 +55,15 @@ Result<std::shared_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor, Par
                 return std::unexpected{dotArrowOpt.error()};
             ret = std::move(dotArrowOpt.value());
             continue;
+        }
+        else if(cursor.get().value().m_value == "--" || cursor.get().value().m_value == "++") {
+            ret->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
+            std::shared_ptr<AST::UnaryOperatorNode> incDec = std::make_shared<AST::UnaryOperatorNode>();
+            incDec->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+            incDec->m_operator = "post" + cursor.get().value().m_value;
+            incDec->m_operand = std::move(ret);
+            ret = std::move(incDec);
+            cursor.tryNext();
         }
         break;
     }

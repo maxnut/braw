@@ -138,6 +138,9 @@ std::expected<TypeInfo, SemanticError> SemanticAnalyzer::getType(const AST::Node
             else if(op->m_operator == "!") {
                 return ctx.getTypeInfo(BOOL_T).value();
             }
+            else if(op->m_operator == "pre++" || op->m_operator == "pre--" || op->m_operator == "post++" || op->m_operator == "post--") {
+                return type;
+            }
             return std::unexpected{unknownOperator(op, ctx)};
         }
         case AST::Node::BinaryOperator: {

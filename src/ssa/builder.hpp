@@ -59,6 +59,8 @@ public:
     static std::shared_ptr<Operand> subscriptOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx);
     static std::shared_ptr<Operand> castOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx);
     static std::shared_ptr<Operand> logicalNotOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx);
+    static std::shared_ptr<Operand> preIncDec(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx);
+    static std::shared_ptr<Operand> postIncDec(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx);
 
     static std::shared_ptr<Register> makeOrGetRegister(const std::string& name, FunctionContext& ctx, bool useScopeDepth = false);
     static void assign(std::shared_ptr<Operand> to, std::shared_ptr<Operation> operation, std::pair<uint32_t, uint32_t> pos, FunctionContext& ctx);

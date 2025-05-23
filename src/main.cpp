@@ -146,8 +146,8 @@ int main(int argc, char** argv) {
 
         if(!assemble) return;
         std::filesystem::path assemblerOutputPath = fileOut / (file.m_path.stem().string() + ".o");
-        // std::string cmd = "as --64 -g -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
-        std::string cmd = "as --64 -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
+        std::string cmd = "as --64 -g -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
+        // std::string cmd = "as --64 -o \"" + assemblerOutputPath.string() + "\" \"" + codegenOutputPath.string() + "\"";
         // spdlog::info("Assembling {} with command: {}", file.m_path.string(), cmd);
         int result = std::system((cmd).c_str());
         if(result != 0) {

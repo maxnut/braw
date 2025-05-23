@@ -7,6 +7,8 @@
 #include "rules.hpp"
 #include "ssa/copy_propagator.hpp"
 #include "ssa/cse.hpp"
+#include "ssa/operand.hpp"
+#include "type_info.hpp"
 #include "utils.hpp"
 
 #include <array>
@@ -567,6 +569,20 @@ std::shared_ptr<Operand> Builder::logicalNotOperator(AST::UnaryOperatorNode* nod
     return ret;
 }
 
+std::shared_ptr<Operand> Builder::preIncDec(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
+    std::shared_ptr<Immediate> inc = std::make_shared<Immediate>(node->m_operator == "pre++" ? 1 : -1, op->m_typeInfo);
+    assign(op, operation(Operation::Add, op->m_typeInfo, ictx, op, inc), node->m_rangeBegin, ictx);
+    return op;
+}
+
+std::shared_ptr<Operand> Builder::postIncDec(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
+    auto tmp = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
+    std::shared_ptr<Immediate> inc = std::make_shared<Immediate>(node->m_operator == "post++" ? 1 : -1, op->m_typeInfo);
+    assign(tmp, load(op, ictx), node->m_rangeBegin, ictx);
+    assign(op, operation(Operation::Add, op->m_typeInfo, ictx, op, inc), node->m_rangeBegin, ictx);
+    return tmp;
+}
+
 std::shared_ptr<Operand> Builder::buildUnaryOperator(AST::UnaryOperatorNode* node, BrawContext& context, FunctionContext& ictx) {
     std::shared_ptr<Operand> ret;
     std::shared_ptr<Operand> op = buildExpression(node->m_operand.get(), context, ictx);
@@ -582,15 +598,16 @@ std::shared_ptr<Operand> Builder::buildUnaryOperator(AST::UnaryOperatorNode* nod
         ret = dereferenceOperator(node, op, context, ictx);
         ret = dotOperator(node, ret, context, ictx);
     }
-    else if(node->m_operator == "[]") {
+    else if(node->m_operator == "[]")
         ret = subscriptOperator(node, op, context, ictx);
-    }
-    else if(node->m_operator == "cast") {
+    else if(node->m_operator == "cast")
         ret = castOperator(node, op, context, ictx);
-    }
-    else if(node->m_operator == "!") {
+    else if(node->m_operator == "!")
         ret = logicalNotOperator(node, op, context, ictx);
-    }
+    else if(node->m_operator == "pre++" || node->m_operator == "pre--")
+        ret = preIncDec(node, op, context, ictx);
+    else if(node->m_operator == "post++" || node->m_operator == "post--")
+        ret = postIncDec(node, op, context, ictx);
 
     return ret;
 }

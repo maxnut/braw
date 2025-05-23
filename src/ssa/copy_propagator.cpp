@@ -70,7 +70,7 @@ std::shared_ptr<Operand> tryReplace(std::shared_ptr<Operand> op, bool& doErase, 
 
     replaced = true;
     return with;
-};
+}
 
 bool CopyPropagator::replace(std::shared_ptr<Block> block, Function& f, size_t start, std::shared_ptr<Register> repl, std::shared_ptr<Operand> with, std::shared_ptr<Register> memoryVersion,  std::unordered_map<std::shared_ptr<Block>, uint32_t>& visited, bool& doErase) {
     if(visited.contains(block) && visited.at(block) > 1)

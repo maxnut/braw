@@ -10,7 +10,7 @@ namespace AST {
 struct StructNode : Node {
     StructNode() : Node(Type::Struct) {}
 
-    Identifier m_name;
+    std::shared_ptr<Node> m_name;
     std::vector<std::shared_ptr<VariableDeclarationNode>> m_members;
 };
 

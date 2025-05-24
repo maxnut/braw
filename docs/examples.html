@@ -148,19 +148,19 @@ while (n < 10) {
             </section>
 
             </section>
-            <section id="struct" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
+            <section id="type" class="rounded-md bg-zinc-900/80 shadow-xl p-6">
                 <h2
                     class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
-                    Struct declarations</h2>
-                <pre class="line-numbers prettyprint lang-braw"><code>struct Vec2 {
+                    Type declarations</h2>
+                <pre class="line-numbers prettyprint lang-braw"><code>type Vec2 {
     x: float;
     y: float;
-};
+}
 
-struct Player {
+type Player {
     position: Vec2;
     velocity: Vec2;
-};
+}
 </code></pre>
             </section>
 
@@ -168,10 +168,10 @@ struct Player {
                 <h2
                     class="text-2xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg mb-2">
                     Macros</h2>
-                <p class="text-zinc-300 mb-4">Macros in Braw are defined using the <code>define</code> keyword and
+                <p class="text-zinc-300 mb-4">Macros in Braw are defined using the <code>macro</code> keyword and
                     invoked using the <code>$</code> symbol.</p>
 
-                <pre class="line-numbers prettyprint lang-braw"><code>define CONST: 5;
+                <pre class="line-numbers prettyprint lang-braw"><code>macro CONST: 5;
 
 fn wow() -> void {
     let a: int = $CONST;
@@ -180,7 +180,7 @@ fn wow() -> void {
 
                 <p class="text-zinc-300 mb-4">Macros can take parameters:</p>
 
-                <pre class="line-numbers prettyprint lang-braw"><code>define CONST(param): 5 + #param;
+                <pre class="line-numbers prettyprint lang-braw"><code>macro CONST(param): 5 + #param;
 
 fn wow() -> void {
     let a: int = $CONST(5);
@@ -197,43 +197,37 @@ fn wow() -> void {
 
     <p class="text-zinc-300 mb-4">Parameters also have fields accessible with <code>#param.field</code>:</p>
     <ul class="list-disc list-inside text-zinc-300 mb-4">
-        <li><strong>Types</strong>: <code>#param.memberName</code></li>
-        <li><strong>Functions</strong>: <code>#param.returnType</code>, <code>#param.parameters</code></li>
+        <li><strong>Types</strong>: <code>#param=>memberName</code></li>
+        <li><strong>Functions</strong>: <code>#param=>returnType</code>, <code>#param.parameters</code></li>
     </ul>
 
     <h3 class="text-xl font-semibold text-teal-300 mt-6 mb-2">Macro Constructs</h3>
     <p class="text-zinc-300 mb-4">You can use the following constructs inside macros for compile-time logic:</p>
 
     <ul class="list-disc list-inside text-zinc-300 space-y-1 text-sm">
-        <li><code>$concat(a, b)</code> – concatenate two values</li>
+        <li><code>$concat(a, b, ...)</code> – concatenate values</li>
         <li><code>$compare(a, b)</code> – returns true if equal</li>
         <li><code>$not(val)</code> – boolean negation</li>
         <li><code>$and(a, b)</code> – boolean AND</li>
         <li><code>$or(a, b)</code> – boolean OR</li>
         <li><code>$if(val) { ... }</code> – includes body only if value is true</li>
         <li><code>$foreach(v : value) { ... }</code> – repeat body for each member in value</li>
-        <li><code>$make_variable(name, type)</code> – generates a variable declaration</li>
-        <li><code>$make_function(name, returnType, {parameters}) { ... }</code> – generates a function</li>
-        <li><code>$make_dot(expression, value)</code> – creates a dot operator</li>
-        <li><code>$make_arrow(expression, value)</code> – creates an arrow operator</li>
     </ul>
                 <h3
                     class="text-xl font-bold bg-gradient-to-r from-teal-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-lg my-4">
                     Full example</h3>
-                <pre class="line-numbers prettyprint lang-braw"><code>struct MV {
+                <pre class="line-numbers prettyprint lang-braw"><code>type MV {
     a: int;
     b: int;
-};
+}
 
-define MAC(type) {
+macro GETTERS(type) {
     $foreach(var : #type) {
-        $make_function($concat($concat(#type, #"_"), $concat(#"get_", #var.name)), #var, {$make_variable(#"v", #type);}) {
-            return $make_dot(v, #var.name);
-        }
+        fn $concat(#type, #"_get_", #var=>name)(v: #type) -> #var: return v.#var=>name;
     }
 }
 
-$MAC(#&ltMV&gt);
+$GETTERS(#<MV>);
 
 fn m_macro() -> int {
     let v: MV; v.a = 1; v.b = 1;
@@ -266,8 +260,8 @@ fn m_macro() -> int {
                 <li><a href="#for"
                         class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">For
                         loops</a></li>
-                <li><a href="#struct"
-                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Struct
+                <li><a href="#type"
+                        class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Type
                         declarations</a></li>
                 <li><a href="#macros"
                         class="block hover:text-indigo-300 text-zinc-300 hover:scale-[1.02] transition-all duration-200 ease-out">Macros</a>

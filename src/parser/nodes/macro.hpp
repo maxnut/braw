@@ -2,12 +2,9 @@
 #pragma once
 
 #include "node.hpp"
-#include "parser/identifier.hpp"
 #include "parser/nodes/scope.hpp"
 
-#include <cstdint>
 #include <memory>
-#include <unordered_map>
 
 namespace AST {
 

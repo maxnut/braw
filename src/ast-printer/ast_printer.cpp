@@ -98,18 +98,18 @@ void ASTPrinter::print(const AST::ScopeNode* node, int indent) {
 }
 
 void ASTPrinter::print(const AST::VariableDeclarationNode* node, int indent) {
-    std::cout << indentString(fmt::format("VariableDeclarationNode: \"{}\" ({})\n", node->m_name.m_name, node->m_type.m_name), indent);
+    std::cout << indentString(fmt::format("VariableDeclarationNode: \"{}\" ({})\n", Utils::getIdentifier(node->m_name), Utils::getIdentifier(node->m_type)), indent);
     if(node->m_value)
         print(node->m_value.get(), indent + 1);
 }
 
 void ASTPrinter::print(const AST::VariableAccessNode* node, int indent) {
-    std::cout << indentString(fmt::format("VariableAccessNode: \"{}\"\n", node->m_name.m_name), indent);
+    std::cout << indentString(fmt::format("VariableAccessNode: \"{}\"\n", Utils::getIdentifier(node->m_name)), indent);
 }
 
 void ASTPrinter::print(const AST::UnaryOperatorNode* node, int indent) {
-    if(node->m_data.m_name.size() > 0)
-        std::cout << indentString(fmt::format("UnaryOperatorNode: {} ({})\n", node->m_operator, node->m_data.m_name), indent);
+    if(Utils::getIdentifier(node->m_data).size() > 0)
+        std::cout << indentString(fmt::format("UnaryOperatorNode: {} ({})\n", node->m_operator, Utils::getIdentifier(node->m_data)), indent);
     else
         std::cout << indentString(fmt::format("UnaryOperatorNode: {}\n", node->m_operator), indent);
     
@@ -123,21 +123,21 @@ void ASTPrinter::print(const AST::BinaryOperatorNode* node, int indent) {
 }
 
 void ASTPrinter::print(const AST::StructNode* node, int indent) {
-    std::cout << indentString(fmt::format("StructNode: {}\n", node->m_name.m_name), indent);
+    std::cout << indentString(fmt::format("StructNode: {}\n", Utils::getIdentifier(node->m_name)), indent);
     for(auto& member : node->m_members)
         print(member.get(), indent + 1);
 }
 
 void ASTPrinter::print(const AST::FunctionCallNode* node, int indent) {
     if(node->m_parameters.size() > 0) {
-        std::cout << indentString(fmt::format("FunctionCallNode: {}(\n", node->m_name.m_name), indent);
+        std::cout << indentString(fmt::format("FunctionCallNode: {}(\n", Utils::getIdentifier(node->m_name)), indent);
         for(auto& parameter : node->m_parameters)
             print(parameter.get(), indent + 1);
         std::cout << indentString(")\n", indent);
         return;
     }
 
-    std::cout << indentString(fmt::format("FunctionCallNode: {}()\n", node->m_name.m_name), indent);
+    std::cout << indentString(fmt::format("FunctionCallNode: {}()\n", Utils::getIdentifier(node->m_name)), indent);
 }
 
 void ASTPrinter::print(const AST::IfNode* node, int indent) {

@@ -11,11 +11,11 @@ fn arr_ptr() -> int {
     return ptr[2];
 }
 
-struct V {
+type V {
     arr[5]: int*;
-};
+}
 
-fn arr_in_struct() -> int {
+fn arr_in_type() -> int {
     let v: V;
     v.arr[2] = 1;
     return v.arr[2];

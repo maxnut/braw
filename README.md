@@ -2,7 +2,7 @@
 Bugs included for free
 
 ## Usage
-Run ```brawc file.braw -o build --assemble --link```, this will spit out an executable
+Run ```brawc file.braw --assemble --link```, this will spit out an executable
 
 The compiler targets x86-64 Sys-V, so you need to run it under that
 
@@ -13,19 +13,16 @@ To include files from the standard library, either move the folder to the compil
 ## Syntax
 
 ### Functions
-Functions use `fn` instead of `void`/`int`/whatever. Specify the return after
 ```braw
 fn function(a: int, b: float) -> void {}
 ```
 
 ### Variables
-Variables are declared like this:
 ```braw
 let epic_variable: int;
 ```
 
 ### Single-line blocks
-Who needs `{}` just slap a `:` instead.
 ```braw
 fn add(a: int, b: float) -> int: return a + b;
 
@@ -39,9 +36,9 @@ let buf[10]: char*;
 
 ## Macros
 
-Macros are made using the `define` keyword, and called by using the $ symbol:
+Macros are made using the `macro` keyword, and called by using the $ symbol:
 ```braw
-define CONST: 5;
+macro CONST: 5;
 
 fn wow() -> void {
   let a: int = $CONST;
@@ -50,7 +47,7 @@ fn wow() -> void {
 
 They can also take in parameters:
 ```braw
-define CONST(param): 5 + #param;
+macro CONST(param): 5 + #param;
 
 fn wow() -> void {
   let a: int = $CONST(5);
@@ -82,20 +79,13 @@ For example `#param` will try to expand whatever instruction was passed to the p
 ### Constructs
 
 There are various construct you can use to do compile-time code manipulation:
-- `$concat(a, b)` which returns the concatenation of two values
+- `$concat(a, b, ...)` which returns the concatenation of the values
 - `$compare(a, b)` which returns `true` if the values are equal or `false` otherwise
 - `$not(val)` which negates the boolean value
 - `$and(a, b)` which ands two boolean values
 - `$or(a, b)` which ors two boolean values
 - `$if(val) {}` which checks if the value is true and either includes or excludes its body from the macro
 - `$foreach(v : value) {}` which runs for every member of the value and includes its body in the macro each time
-- `$make_variable(name, type)` which creates a variable declaration
-- `$make_function(name, returnType, {parameters}) {}` which creates a function (parameters are variable declarations)
-- `$make_dot(expression, value)` which creates a dot operator
-- `$make_arrow(expression, value)` which creates an arrow operator
-
-## Examples
-Check the tests
 
 ## Building
 Build the project with Cmake
@@ -106,12 +96,3 @@ You need a C++ stdlib that implements std::expected, as it is used in the projec
 The tests need gas to work.
 
 If you don't have it, or simply don't want them, disable them by setting ```RUN_TESTS``` inside ```CMakeLists.txt``` to **OFF**
-
-## Todo
-
-- [x] Pointers
-- [x] Branch aware graph coloring
-- [x] Arrays
-- [x] Strings
-- [x] Make it not explode every two seconds
-- [ ] Parallelize lexing and parsing

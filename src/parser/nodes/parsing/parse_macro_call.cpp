@@ -1,4 +1,4 @@
-#include "parser/identifier.hpp"
+#include "../identifier.hpp"
 #include "parser/nodes/binary_operator.hpp"
 #include "parser/nodes/for.hpp"
 #include "parser/nodes/function_call.hpp"
@@ -6,6 +6,7 @@
 #include "parser/nodes/literal.hpp"
 #include "parser/nodes/macro_call.hpp"
 #include "parser/nodes/macro_parameter.hpp"
+#include "parser/nodes/macro_parameter_reference.hpp"
 #include "parser/nodes/return.hpp"
 #include "parser/nodes/scope.hpp"
 #include "parser/nodes/struct.hpp"
@@ -24,23 +25,23 @@ Result<std::shared_ptr<AST::MacroParameterNode>> Parser::parseMacroDotChain(Toke
     macroDot->m_value = cursor.get().value().m_value;
     macroDot->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
 
-    if(cursor.hasNext() && cursor.next().get().value().m_value == ".")
+    if(cursor.hasNext() && cursor.next().get().value().m_value == "=>")
         return parseMacroDotChain(cursor, macroDot, ctx);
     
     return macroDot;
 }
 
 Result<std::shared_ptr<AST::MacroParameterNode>> Parser::parseMacroParameter(TokenCursor& cursor, ParserContext& ctx) {
+    std::shared_ptr<AST::MacroParameterNode> ret = nullptr;
     if(cursor.get().value().m_value == "#" && cursor.next().get().prev().value().m_type == Token::IDENTIFIER && cursor.next(2).get().prev(2).value().m_type == Token::LEFT_PAREN) {
         auto param = std::make_shared<AST::MacroParameterFunctionNode>();
         param->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
-        cursor.next();
-        param->m_name = cursor.get().value().m_value;
-        if(!expectTokenType(cursor.next(2).get().value(), Token::RIGHT_PAREN))
+        param->m_name = cursor.next().get().value().m_value;
+        if(!expectTokenType(cursor.next().get().value(), Token::RIGHT_PAREN))
             return unexpectedTokenExpectedType(cursor.value(), Token::RIGHT_PAREN, ctx.m_path);
         param->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
         cursor.tryNext();
-        return param;
+        ret = param;
     }
     else if(cursor.get().value().m_value == "#" && cursor.next().get().prev().value().m_type == Token::QUOTE) {
         auto param = std::make_shared<AST::MacroParameterValueNode>();
@@ -51,7 +52,7 @@ Result<std::shared_ptr<AST::MacroParameterNode>> Parser::parseMacroParameter(Tok
             return unexpectedTokenExpectedType(cursor.value(), Token::QUOTE, ctx.m_path);
         param->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
         cursor.tryNext();
-        return param;
+        ret = param;
     }
     else if(cursor.get().value().m_value == "#" && cursor.next().get().prev().value().m_value == "<") {
         auto param = std::make_shared<AST::MacroParameterTypeNode>();
@@ -62,7 +63,7 @@ Result<std::shared_ptr<AST::MacroParameterNode>> Parser::parseMacroParameter(Tok
             return unexpectedTokenExpectedValue(cursor.value(), ">", ctx.m_path);
         param->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
         cursor.tryNext();
-        return param;
+        ret = param;
     }
     else if(cursor.get().value().m_value == "#") {
         auto param = std::make_shared<AST::MacroParameterASTNode>();               
@@ -70,24 +71,39 @@ Result<std::shared_ptr<AST::MacroParameterNode>> Parser::parseMacroParameter(Tok
         auto inOpt = parseMacroParameterReference(cursor, ctx);
         if(!inOpt)
             return std::unexpected{inOpt.error()};
+        std::shared_ptr<AST::MacroParameterReferenceNode> ref = inOpt.value();
+        param->m_ast = ref;
+        param->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
+        ret = param;
+    }
+    else {
+        auto param = std::make_shared<AST::MacroParameterASTNode>();               
+        param->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
+        auto inOpt = parseInstruction(cursor, ctx);
+        if(!inOpt)
+            return std::unexpected{inOpt.error()};
         param->m_ast = inOpt.value();
         param->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
-        return param;
+        ret = param;
     }
-    auto param = std::make_shared<AST::MacroParameterASTNode>();               
-    param->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
-    auto inOpt = parseInstruction(cursor, ctx);
-    if(!inOpt)
-        return std::unexpected{inOpt.error()};
-    param->m_ast = inOpt.value();
-    param->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
-    return param;
+
+    if(cursor.get().value().m_value == "=>") {
+        auto paramDotOpt = parseMacroDotChain(cursor, ret, ctx);
+        if(!paramDotOpt)
+            return std::unexpected{paramDotOpt.error()};
+        ret = paramDotOpt.value();
+        ret->m_parameterType = AST::MacroParameterType::Dot;
+    }
+    return ret;
 }
 
 Result<std::shared_ptr<AST::MacroCallNode>> Parser::parseMacroCall(TokenCursor& cursor, ParserContext& ctx) {
     std::shared_ptr<AST::MacroCallNode> call = std::make_shared<AST::MacroCallNode>();
     call->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
-    call->m_name = cursor.next().get().next().value().m_value;
+    cursor.tryNext();
+    auto identifierOpt = parseIdentifier(cursor, ctx);
+    if(!identifierOpt) return std::unexpected{identifierOpt.error()};
+    call->m_name = identifierOpt.value();
 
     if(cursor.get().value().m_type == Token::LEFT_PAREN) {
         cursor.tryNext();
@@ -95,13 +111,6 @@ Result<std::shared_ptr<AST::MacroCallNode>> Parser::parseMacroCall(TokenCursor& 
             auto paramOpt = parseMacroParameter(cursor, ctx);
             if(!paramOpt)
                 return std::unexpected{paramOpt.error()};
-            if(cursor.get().value().m_value == ".") {
-                auto paramDotOpt = parseMacroDotChain(cursor, paramOpt.value(), ctx);
-                if(!paramDotOpt)
-                    return std::unexpected{paramDotOpt.error()};
-                paramOpt = paramDotOpt.value();
-                paramOpt.value()->m_parameterType = AST::MacroParameterType::Dot;
-            }
             call->m_parameters.push_back(std::move(paramOpt.value()));
             if(cursor.get().value().m_type == Token::RIGHT_PAREN)
                 break;

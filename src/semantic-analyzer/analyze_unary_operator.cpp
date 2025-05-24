@@ -34,23 +34,23 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::UnaryOperatorN
         else if(Rules::isPtr(type.m_name))
             return invalidOperator(node, ctx);
 
-        if(!type.m_members.contains(node->m_data))
-            return unknownMember(node, type.m_name, node->m_data, ctx);
+        if(!type.m_members.contains(Utils::getIdentifier(node->m_data)))
+            return unknownMember(node, type.m_name, Utils::getIdentifier(node->m_data), ctx);
     }
     else if(node->m_operator == "cast") {
-        std::string data = node->m_data;
+        std::string data = Utils::getIdentifier(node->m_data);
         while(Rules::isPtr(data)) {
             data = data.substr(0, data.size() - 1);
             if(!ctx.getTypeInfo(data).has_value())
-                return unknownType(node, node->m_data, ctx);
+                return unknownType(node, Utils::getIdentifier(node->m_data), ctx);
         }
         
         typeOr = getType(node->m_operand.get(), ctx);
         if(!typeOr) return typeOr.error();
         TypeInfo type = typeOr.value();
 
-        if(!Rules::isPtr(node->m_data)) {
-            if(!Rules::isPtr(type.m_name) && !type.m_validCasts.contains(node->m_data))
+        if(!Rules::isPtr(Utils::getIdentifier(node->m_data))) {
+            if(!Rules::isPtr(type.m_name) && !type.m_validCasts.contains(Utils::getIdentifier(node->m_data)))
                 return invalidCast(node, type.m_name, ctx);
         }
         else if(type.m_name != INT_T && type.m_name != "long" && !Rules::isPtr(type.m_name))

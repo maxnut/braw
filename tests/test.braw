@@ -9,7 +9,7 @@ import "../tests/macro/macro.braw"
 import "../tests/pointer/pointer.braw"
 import "../tests/retain/retain.braw"
 import "../tests/string_char/string_char.braw"
-import "../tests/struct/struct.braw"
+import "../tests/type/type.braw"
 import "../tests/mem/mem.braw"
 
 fn total_runs() -> int* {
@@ -44,7 +44,7 @@ fn simple_run(message: char*, condition: bool) -> void {
     *tot = *tot + 1;
 }
 
-define TEST(message, bundle) {
+macro TEST(message, bundle) {
     print_string(#message);
     print_string("-------------------\n");
     #bundle;
@@ -56,7 +56,7 @@ fn main() -> int {
     $TEST("ARRAY TESTS\n", {
         simple_run("Running simple array test\n", arr_simple() == 1);
         simple_run("Running pointer array test\n", arr_ptr() == 1);
-        simple_run("Running array in struct test\n", arr_in_struct() == 1);
+        simple_run("Running array in type test\n", arr_in_type() == 1);
     });
     $TEST("DOUBLE TESTS\n", {
         simple_run("Running simple double test\n", d_nothing() == 0.0);
@@ -83,10 +83,10 @@ fn main() -> int {
     $TEST("POINTER TESTS\n", {
         simple_run("Running int pointer test\n", ptr_i_ptr() == 1);
         simple_run("Running float pointer test\n", ptr_f_ptr() == 1.f);
-        simple_run("Running struct pointer test\n", ptr_s_ptr() == 1);
+        simple_run("Running type pointer test\n", ptr_s_ptr() == 1);
         simple_run("Running int assign test\n", ptr_i_assign() == 1);
         simple_run("Running float assign test\n", ptr_f_assign() == 1.f);
-        simple_run("Running struct assign test\n", ptr_s_assign() == 1);
+        simple_run("Running type assign test\n", ptr_s_assign() == 1);
     });
     $TEST("RETAIN TESTS\n", {
         simple_run("Running retain 1 test\n", ret_counter() == 1);
@@ -98,11 +98,11 @@ fn main() -> int {
         simple_run("Running char test\n", stc_h() == 'h');
         simple_run("Running string subscript test\n", stc_subscript() == 'h');
     });
-    $TEST("STRUCT TESTS\n", {
-        simple_run("Running basic test\n", struct_basic() == 1);
-        simple_run("Running dotchain test\n", struct_dot_chain() == 1);
-        simple_run("Running arrow test\n", struct_arrow() == 1);
-        simple_run("Running arrow complex test\n", struct_arrow_complex() == 1);
+    $TEST("TYPE TESTS\n", {
+        simple_run("Running basic test\n", type_basic() == 1);
+        simple_run("Running dotchain test\n", type_dot_chain() == 1);
+        simple_run("Running arrow test\n", type_arrow() == 1);
+        simple_run("Running arrow complex test\n", type_arrow_complex() == 1);
     });
     $TEST("MEMORY TESTS\n", {
         simple_run("Running basic test\n", mem_simple() == 10);

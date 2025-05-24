@@ -7,9 +7,12 @@ Result<std::shared_ptr<AST::FunctionCallNode>> Parser::parseFunctionCall(TokenCu
 
     std::shared_ptr<AST::FunctionCallNode> functionCall = std::make_shared<AST::FunctionCallNode>();
     functionCall->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
-    functionCall->m_name = cursor.value().m_value;
+    auto identifierOpt = parseIdentifier(cursor, ctx);
+    if(!identifierOpt)
+        return std::unexpected{identifierOpt.error()};
+    functionCall->m_name = std::move(identifierOpt.value());
 
-    if(!expectTokenType(cursor.next().get().next().value(), Token::LEFT_PAREN))
+    if(!expectTokenType(cursor.get().next().value(), Token::LEFT_PAREN))
         return unexpectedTokenExpectedType(cursor.value(), Token::LEFT_PAREN, ctx.m_path);
 
     while(cursor.hasNext() && cursor.get().value().m_type != Token::RIGHT_PAREN) {

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "node.hpp"
-#include "parser/identifier.hpp"
-#include "parser/nodes/function_definition.hpp"
+#include "identifier.hpp"
 #include <memory>
 #include <string>
 
@@ -29,12 +28,12 @@ struct MacroParameterASTNode : MacroParameterNode {
 
 struct MacroParameterTypeNode : MacroParameterNode {
     MacroParameterTypeNode() : MacroParameterNode() { m_parameterType = MacroParameterType::Type; }
-    Identifier m_type;
+    std::string m_type;
 };
 
 struct MacroParameterFunctionNode : MacroParameterNode {
     MacroParameterFunctionNode() : MacroParameterNode() { m_parameterType = MacroParameterType::Function; }
-    Identifier m_name;
+    std::string m_name;
 };
 
 struct MacroParameterValueNode : MacroParameterNode {

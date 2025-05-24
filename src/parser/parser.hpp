@@ -1,10 +1,6 @@
 #pragma once
 
 #include "nodes/file.hpp"
-#include "identifier.hpp"
-#include "parser/nodes/macro_call.hpp"
-#include "parser/nodes/macro_make_function.hpp"
-#include "parser/nodes/macro_parameter_reference.hpp"
 #include "rules.hpp"
 
 #include <expected>
@@ -28,6 +24,9 @@ struct ReturnNode;
 struct ForNode;
 struct MacroNode;
 struct MacroParameterNode;
+struct IdentifierNode;
+struct MacroParameterReferenceNode;
+struct MacroMakeFunctionNode;
 }
 
 struct ParseError {
@@ -69,7 +68,7 @@ private:
     static Result<std::shared_ptr<AST::IfNode>> parseIf(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::WhileNode>> parseWhile(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::ForNode>> parseFor(TokenCursor& cursor, ParserContext& ctx);
-    static Result<std::shared_ptr<AST::StructNode>> parseStructDefinition(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::StructNode>> parseTypeDefinition(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::FileNode>> parseImport(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::MacroNode>> parseMacro(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::MacroParameterReferenceNode>> parseMacroParameterReference(TokenCursor& cursor, ParserContext& ctx);
@@ -77,11 +76,10 @@ private:
     static Result<std::shared_ptr<AST::MacroCallNode>> parseMacroCall(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::Node>> parseMacroIf(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::Node>> parseMacroForeach(TokenCursor& cursor, ParserContext& ctx);
-    static Result<std::shared_ptr<AST::MacroMakeFunctionNode>> parseMacroMakeFunction(TokenCursor& cursor, ParserContext& ctx);
-    static Result<std::shared_ptr<AST::Node>> parseMacroMakeVariable(TokenCursor& cursor, ParserContext& ctx);
     static Result<std::shared_ptr<AST::MacroParameterNode>> parseMacroDotChain(TokenCursor& cursor, std::shared_ptr<AST::MacroParameterNode> left, ParserContext& ctx);
     static Result<AST::FunctionSignature> parseFunctionSignature(TokenCursor& cursor, ParserContext& ctx);
-    static Result<Identifier> parseTypename(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::Node>> parseTypename(TokenCursor& cursor, ParserContext& ctx);
+    static Result<std::shared_ptr<AST::Node>> parseIdentifier(TokenCursor& cursor, ParserContext& ctx);
 
     static std::unexpected<ParseError> unexpectedToken(Token& token, const std::filesystem::path& path);
     static std::unexpected<ParseError> unexpectedTokenExpectedType(Token& token, Token::Type expectedType, const std::filesystem::path& path);

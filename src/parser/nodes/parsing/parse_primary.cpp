@@ -5,13 +5,18 @@
 #include "../unary_operator.hpp"
 
 Result<std::shared_ptr<AST::Node>> Parser::parsePrimary(TokenCursor& cursor, ParserContext& ctx) {
+    if(Rules::isMacroCall(cursor))
+        return parseMacroCall(cursor, ctx);
+    else if(Rules::isMacroParameterReference(cursor))
+        return parseMacroParameter(cursor, ctx);
+
     Result<std::shared_ptr<AST::Node>> result;
     Token beg = cursor.get().value();
 
     if(Rules::isFunctionCall(cursor))
         result = parseFunctionCall(cursor, ctx);
     else if(Rules::isVariableAccess(cursor))
-        result = parseVariableAccess(cursor, ctx);
+        result = parseVariableAccess(cursor, ctx); //remove variableaccessnode?
     else if(Rules::isLiteral(cursor))
         result = parseLiteral(cursor, ctx);
     else if(Rules::isCast(cursor))

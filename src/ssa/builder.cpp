@@ -91,9 +91,9 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
     FunctionContext ctx;
     ctx.m_function = &f;
     
-    if(context.getTypeInfo(node->m_signature.m_returnType).value().m_size != 0) {
-        if(context.getTypeInfo(node->m_signature.m_returnType).value().m_builtin) {
-            if(node->m_signature.m_returnType.m_name == FLOAT_T || node->m_signature.m_returnType.m_name == DOUBLE_T)
+    if(context.getTypeInfo(Utils::getIdentifier(node->m_signature.m_returnType)).value().m_size != 0) {
+        if(context.getTypeInfo(Utils::getIdentifier(node->m_signature.m_returnType)).value().m_builtin) {
+            if(Utils::getIdentifier(node->m_signature.m_returnType) == FLOAT_T || Utils::getIdentifier(node->m_signature.m_returnType) == DOUBLE_T)
                 f.m_optReturn = makeOrGetRegister("%returnF", ctx);
             else
                 f.m_optReturn = makeOrGetRegister("%return", ctx);
@@ -108,14 +108,14 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
 
     ctx.m_scopeIdStack.push_back(0);
     for(auto& arg : node->m_signature.m_parameters) {
-        f.m_args.push_back(makeOrGetRegister("%" + arg->m_name.m_name + "_0", ctx));
-        f.m_args.back()->m_typeInfo = context.getTypeInfo(arg->m_type).value();
+        f.m_args.push_back(makeOrGetRegister("%" + Utils::getIdentifier(arg->m_name) + "_0", ctx));
+        f.m_args.back()->m_typeInfo = context.getTypeInfo(Utils::getIdentifier(arg->m_type)).value();
     }
 
-    f.m_name = node->m_signature.m_name;
+    f.m_name = Utils::getIdentifier(node->m_signature.m_name);
 
     if(!node->m_signature.m_external) {
-        ctx.m_instructions.push_back(std::make_shared<Label>(node->m_rangeBegin, node->m_signature.m_name));
+        ctx.m_instructions.push_back(std::make_shared<Label>(node->m_rangeBegin, Utils::getIdentifier(node->m_signature.m_name)));
         build(node->m_scope.get(), context, ctx);
         if(ctx.m_instructions.back()->m_type != Instruction::Return)
             ctx.m_instructions.push_back(std::make_shared<Instruction>(Instruction::Return, node->m_rangeEnd));
@@ -173,8 +173,8 @@ void Builder::build(AST::Node* node, BrawContext& context, FunctionContext& ictx
 }
 
 void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, FunctionContext& ictx) {
-    auto reg = makeOrGetRegister("%" + node->m_name.m_name, ictx, true);
-    reg->m_typeInfo = context.getTypeInfo(node->m_type).value();
+    auto reg = makeOrGetRegister("%" + Utils::getIdentifier(node->m_name) , ictx, true);
+    reg->m_typeInfo = context.getTypeInfo(Utils::getIdentifier(node->m_type)).value();
     reg->m_scale = node->m_scale;
     reg->m_typeInfo.m_builtin = reg->m_scale <= 1 && reg->m_typeInfo.m_builtin;
 
@@ -193,7 +193,7 @@ void Builder::build(AST::VariableDeclarationNode* node, BrawContext& context, Fu
 
     if(node->m_value) {
         if(node->m_retain) {
-            auto guard = makeOrGetRegister("%" + node->m_name.m_name + "_guard", ictx, true);
+            auto guard = makeOrGetRegister("%" + Utils::getIdentifier(node->m_name) + "_guard", ictx, true);
             guard->m_typeInfo = context.getTypeInfo(BOOL_T).value();
             guard->m_scale = 1;
             guard->m_typeInfo.m_builtin = true;
@@ -347,8 +347,8 @@ std::shared_ptr<Operand> Builder::buildExpression(AST::Node* node, BrawContext& 
         case AST::Node::VariableAccess:{
             auto var = static_cast<AST::VariableAccessNode*>(node);
             for(uint64_t id : ictx.m_scopeIdStack) {
-                if(ictx.m_registers.contains("%" + var->m_name.m_name + "_" + std::to_string(id))) {
-                    auto reg = ictx.m_registers["%" + var->m_name.m_name + "_" + std::to_string(id)];
+                if(ictx.m_registers.contains("%" + Utils::getIdentifier(var->m_name) + "_" + std::to_string(id))) {
+                    auto reg = ictx.m_registers["%" + Utils::getIdentifier(var->m_name) + "_" + std::to_string(id)];
                     if(reg->m_scale > 1) {
                         auto tmp = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
                         assign(tmp, point(reg, ictx), node->m_rangeBegin, ictx);
@@ -423,7 +423,7 @@ std::shared_ptr<Operand> Builder::buildBinaryOperator(AST::BinaryOperatorNode* n
 }
 
 std::shared_ptr<Operand> Builder::dotOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
-    MemberInfo member = op->m_typeInfo.m_members.at(node->m_data);
+    MemberInfo member = op->m_typeInfo.m_members.at(Utils::getIdentifier(node->m_data));
     int64_t offset = member.m_offset; 
     auto tMember = context.getTypeInfo(member.m_type).value();
     switch(op->m_type) {
@@ -482,7 +482,7 @@ std::shared_ptr<Operand> Builder::subscriptOperator(AST::UnaryOperatorNode* node
 
 std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
     std::shared_ptr<Operand> ret;
-    if(Rules::isPtr(node->m_data) || node->m_data.m_name == LONG_T) {
+    if(Rules::isPtr(Utils::getIdentifier(node->m_data)) || Utils::getIdentifier(node->m_data) == LONG_T) {
         if(Rules::isPtr(op->m_typeInfo.m_name) || op->m_typeInfo.m_name == LONG_T)
             ret = op;
         else if(op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == CHAR_T) {
@@ -496,11 +496,11 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
             }
             else {
                 ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
-                assign(ret, operation(Operation::Upsize, context.getTypeInfo(node->m_data).value(), ictx, op), node->m_rangeBegin, ictx);
+                assign(ret, operation(Operation::Upsize, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), ictx, op), node->m_rangeBegin, ictx);
             }
         }
     }
-    else if(node->m_data.m_name == INT_T) {
+    else if(Utils::getIdentifier(node->m_data) == INT_T) {
         if(op->m_typeInfo.m_name == CHAR_T) {
             if(op->m_type == Operand::Immediate) {
                 auto imm = cast<Immediate>(op);
@@ -509,7 +509,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
             }
             else {
                 ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
-                assign(ret, operation(Operation::Upsize, context.getTypeInfo(node->m_data).value(), ictx, op), node->m_rangeBegin, ictx);
+                assign(ret, operation(Operation::Upsize, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), ictx, op), node->m_rangeBegin, ictx);
             }
         }
         else if(op->m_typeInfo.m_name == LONG_T) {
@@ -520,11 +520,11 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
             }
             else {
                 ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
-                assign(ret, operation(Operation::Downsize, context.getTypeInfo(node->m_data).value(), ictx, op), node->m_rangeBegin, ictx);
+                assign(ret, operation(Operation::Downsize, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), ictx, op), node->m_rangeBegin, ictx);
             }
         }
     }
-    else if(node->m_data.m_name == CHAR_T) {
+    else if(Utils::getIdentifier(node->m_data) == CHAR_T) {
         if(op->m_typeInfo.m_name == INT_T) {
             if(op->m_type == Operand::Immediate) {
                 auto imm = cast<Immediate>(op);
@@ -533,7 +533,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
             }
             else {
                 ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
-                assign(ret, operation(Operation::Downsize, context.getTypeInfo(node->m_data).value(), ictx, op), node->m_rangeBegin, ictx);
+                assign(ret, operation(Operation::Downsize, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), ictx, op), node->m_rangeBegin, ictx);
             }
         }
         else if(op->m_typeInfo.m_name == LONG_T) {
@@ -544,19 +544,19 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
             }
             else {
                 ret = makeOrGetRegister(Utils::uniqueRegisterName(), ictx);
-                assign(ret, operation(Operation::Downsize, context.getTypeInfo(node->m_data).value(), ictx, op), node->m_rangeBegin, ictx);
+                assign(ret, operation(Operation::Downsize, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), ictx, op), node->m_rangeBegin, ictx);
             }
         }
     }
     if(ret->m_type == Operand::Register) {
         std::shared_ptr<Register> reg = cast<Register>(ret);
-        std::shared_ptr<Register> clone = std::make_shared<Register>(reg->m_id, context.getTypeInfo(node->m_data).value());
+        std::shared_ptr<Register> clone = std::make_shared<Register>(reg->m_id, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value());
         clone->m_scale = reg->m_scale;
         ret = clone;
     }
     else if(ret->m_type == Operand::Address) {
         std::shared_ptr<Address> addr = cast<Address>(ret);
-        std::shared_ptr<Address> clone = std::make_shared<Address>(context.getTypeInfo(node->m_data).value(), addr->m_base, addr->m_offset, addr->m_index, addr->m_scaleSize);
+        std::shared_ptr<Address> clone = std::make_shared<Address>(context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), addr->m_base, addr->m_offset, addr->m_index, addr->m_scaleSize);
         clone->m_scale = addr->m_scale;
         ret = clone;
     }
@@ -614,7 +614,7 @@ std::shared_ptr<Operand> Builder::buildUnaryOperator(AST::UnaryOperatorNode* nod
 
 std::shared_ptr<Operand> Builder::buildCall(AST::FunctionCallNode* node, BrawContext& context, FunctionContext& ictx) {
     auto call = std::make_shared<Call>(node->m_rangeBegin);
-    call->m_id = node->m_name;
+    call->m_id = Utils::getIdentifier(node->m_name);
 
     std::vector<TypeInfo> tmpTypes;
 
@@ -624,14 +624,14 @@ std::shared_ptr<Operand> Builder::buildCall(AST::FunctionCallNode* node, BrawCon
         TypeInfo t = op->m_typeInfo;
 
         if(param->m_type == AST::Node::UnaryOperator && static_cast<const AST::UnaryOperatorNode*>(param.get())->m_operator == "cast")
-            t = context.getTypeInfo(static_cast<const AST::UnaryOperatorNode*>(param.get())->m_data).value();
+            t = context.getTypeInfo(Utils::getIdentifier(static_cast<const AST::UnaryOperatorNode*>(param.get())->m_data)).value();
         call->m_parameters.push_back(op);
         tmpTypes.push_back(t);
     }
 
     std::string name = Utils::uniqueRegisterName();
 
-    auto fun = context.getFunction(node->m_name, tmpTypes);
+    auto fun = context.getFunction(Utils::getIdentifier(node->m_name), tmpTypes);
     call->m_returnType = fun->m_returnType;
     if(fun->m_returnType.m_size != 0) {
         call->m_optReturn = makeOrGetRegister(name, ictx);

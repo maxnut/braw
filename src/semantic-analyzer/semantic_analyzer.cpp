@@ -84,10 +84,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::Node* root, BrawCont
         case AST::Node::MacroParameter:
         case AST::Node::MacroCall:
         case AST::Node::MacroIf:
-        case AST::Node::MacroDot:
         case AST::Node::MacroForeach:
-        case AST::Node::MacroMakeFunction:
-        case AST::Node::MacroMakeVariable:
+        case AST::Node::Identifier:
           break;
         }
     return SemanticError("Unexpected node type");
@@ -97,12 +95,12 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::Node* root, BrawCont
 std::expected<TypeInfo, SemanticError> SemanticAnalyzer::getType(const AST::Node* node, BrawContext& ctx) {
     switch (node->m_type) {
         case AST::Node::VariableDeclaration: {
-            auto optType = ctx.getTypeInfo(static_cast<const AST::VariableDeclarationNode*>(node)->m_type);
-            if(!optType) return std::unexpected{unknownType(node, static_cast<const AST::VariableDeclarationNode*>(node)->m_type, ctx)};
+            auto optType = ctx.getTypeInfo(Utils::getIdentifier(static_cast<const AST::VariableDeclarationNode*>(node)->m_type));
+            if(!optType) return std::unexpected{unknownType(node, Utils::getIdentifier(static_cast<const AST::VariableDeclarationNode*>(node)->m_type), ctx)};
             return optType.value();
         }
         case AST::Node::VariableAccess: {
-            const std::string& var = static_cast<const AST::VariableAccessNode*>(node)->m_name;
+            const std::string& var = Utils::getIdentifier(static_cast<const AST::VariableAccessNode*>(node)->m_name);
             auto optScope = ctx.getScopeInfo(var);
             if(!optScope) return std::unexpected{unknownVariable(static_cast<const AST::VariableAccessNode*>(node), ctx)};
             return optScope.value().m_type;
@@ -126,12 +124,12 @@ std::expected<TypeInfo, SemanticError> SemanticAnalyzer::getType(const AST::Node
                 return typeOpt.value();
             }
             else if(op->m_operator == "cast") {
-                auto typeOpt = ctx.getTypeInfo(op->m_data);
+                auto typeOpt = ctx.getTypeInfo(Utils::getIdentifier(op->m_data));
                 if(!typeOpt) return std::unexpected{unknownType(op->m_operand.get(), type.m_name, ctx)};
                 return typeOpt.value();
             }
             else if(op->m_operator == "." || op->m_operator == "->") {
-                auto typeOpt = ctx.getTypeInfo(type.m_members.at(op->m_data).m_type);
+                auto typeOpt = ctx.getTypeInfo(type.m_members.at(Utils::getIdentifier(op->m_data)).m_type);
                 if(!typeOpt) return std::unexpected{unknownType(op->m_operand.get(), type.m_name, ctx)};
                 return typeOpt.value();
             }
@@ -169,7 +167,7 @@ std::expected<TypeInfo, SemanticError> SemanticAnalyzer::getType(const AST::Node
                 if(!typeOr) return std::unexpected{typeOr.error()};
                 params.push_back(typeOr.value());
             }
-            auto funcOpt = ctx.getFunction(call->m_name, params);
+            auto funcOpt = ctx.getFunction(Utils::getIdentifier(call->m_name), params);
             if(!funcOpt) return std::unexpected{unknownFunction(call, params, ctx)};
             return funcOpt->m_returnType;
         }
@@ -226,7 +224,7 @@ SemanticError SemanticAnalyzer::missingReturn(const AST::Node* causer, const AST
 
 SemanticError SemanticAnalyzer::unknownVariable(const AST::VariableAccessNode* causer, BrawContext& ctx) {
     return SemanticError(
-        fmt::format("Unknown variable: {}", causer->m_name.m_name),
+        fmt::format("Unknown variable: {}", Utils::getIdentifier(causer->m_name)),
         ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
@@ -234,9 +232,9 @@ SemanticError SemanticAnalyzer::unknownVariable(const AST::VariableAccessNode* c
 }
 
 SemanticError SemanticAnalyzer::unknownOperator(const AST::UnaryOperatorNode* causer, BrawContext& ctx) {
-    if(causer->m_data.m_name.size() > 0) {
+    if(Utils::getIdentifier(causer->m_data).size() > 0) {
         return SemanticError(
-            fmt::format("Unknown operator: {} ({})", causer->m_operator, causer->m_data.m_name),
+            fmt::format("Unknown operator: {} ({})", causer->m_operator, Utils::getIdentifier(causer->m_data)),
             ctx.m_currentFile,
             causer->m_rangeBegin,
             causer->m_rangeEnd
@@ -268,7 +266,7 @@ SemanticError SemanticAnalyzer::unknownFunction(const AST::FunctionCallNode* cau
     }
 
     return SemanticError(
-        fmt::format("Unknown function: {}({})", causer->m_name.m_name, parameterString),
+        fmt::format("Unknown function: {}({})", Utils::getIdentifier(causer->m_name), parameterString),
         ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
@@ -286,7 +284,7 @@ SemanticError SemanticAnalyzer::unknownMember(const AST::Node* causer, const std
 
 SemanticError SemanticAnalyzer::invalidCast(const AST::UnaryOperatorNode* causer, const std::string& type, BrawContext& ctx) {
     return SemanticError(
-        fmt::format("Invalid cast from {} to {}", type, causer->m_data.m_name),
+        fmt::format("Invalid cast from {} to {}", type, Utils::getIdentifier(causer->m_data)),
         ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd
@@ -314,7 +312,7 @@ SemanticError SemanticAnalyzer::invalidInstruction(const AST::Node* causer, cons
 
 SemanticError SemanticAnalyzer::cannotInferType(const AST::VariableDeclarationNode* causer, BrawContext& ctx) {
     return SemanticError(
-        fmt::format("Cannot infer type of variable {}", causer->m_name.m_name),
+        fmt::format("Cannot infer type of variable {}", Utils::getIdentifier(causer->m_name)),
         ctx.m_currentFile,
         causer->m_rangeBegin,
         causer->m_rangeEnd

@@ -1,15 +1,10 @@
 #include "parser/parser.hpp"
 #include "../unary_operator.hpp"
-#include "../macro_parameter.hpp"
+#include "../macro_parameter_reference.hpp"
 #include "rules.hpp"
 #include <memory>
 
 Result<std::shared_ptr<AST::Node>> Parser::parseOperand(TokenCursor& cursor, ParserContext& ctx) {
-    if(Rules::isMacroCall(cursor))
-        return parseMacroCall(cursor, ctx);
-    else if(Rules::isMacroParameterReference(cursor))
-        return parseMacroParameterReference(cursor, ctx);
-
     std::shared_ptr<AST::UnaryOperatorNode> unary = nullptr;
     std::pair<uint32_t, uint32_t> rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
 

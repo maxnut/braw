@@ -10,7 +10,9 @@ Result<std::shared_ptr<AST::UnaryOperatorNode>> Parser::parseDotArrow(TokenCurso
     std::shared_ptr<AST::UnaryOperatorNode> dotArrow = std::make_shared<AST::UnaryOperatorNode>();
     dotArrow->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
     dotArrow->m_operator = cursor.get().next().value().m_value;
-    dotArrow->m_data = cursor.get().next().value().m_value;
+    auto data = parseIdentifier(cursor, ctx);
+    if(!data) return std::unexpected{data.error()};
+    dotArrow->m_data = std::move(data.value());
     dotArrow->m_operand = std::move(left);
     dotArrow->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
 

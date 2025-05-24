@@ -1,4 +1,4 @@
-#include "parser/identifier.hpp"
+#include "parser/nodes/identifier.hpp"
 #include "parser/nodes/macro.hpp"
 #include "parser/parser.hpp"
 #include "rules.hpp"
@@ -6,15 +6,15 @@
 Result<std::shared_ptr<AST::MacroNode>> Parser::parseMacro(TokenCursor& cursor, ParserContext& ctx) {
     std::shared_ptr<AST::MacroNode> ret = std::make_shared<AST::MacroNode>();
     ret->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
-    if(!expectTokenValue(cursor.get().next().value(), "define"))
-        return unexpectedTokenExpectedValue(cursor.value(), "define", ctx.m_path);
+    if(!expectTokenValue(cursor.get().next().value(), "macro"))
+        return unexpectedTokenExpectedValue(cursor.value(), "macro", ctx.m_path);
 
     ret->m_name = cursor.get().next().value().m_value;
 
     if(cursor.get().value().m_type == Token::LEFT_PAREN) {
         cursor.tryNext();
         while(cursor.hasNext()) {
-            Identifier param = cursor.get().next().value().m_value;
+            std::string param = cursor.get().next().value().m_value;
             ret->m_parameters.push_back(param);
             if(cursor.get().value().m_type == Token::RIGHT_PAREN)
                 break;

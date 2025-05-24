@@ -1,7 +1,7 @@
 #pragma once
 
 #include "node.hpp"
-#include "../identifier.hpp"
+#include "identifier.hpp"
 
 #include <string>
 #include <memory>
@@ -12,7 +12,7 @@ struct UnaryOperatorNode : Node {
     UnaryOperatorNode() : Node(Type::UnaryOperator) {}
 
     std::string m_operator;
-    Identifier m_data;
+    std::shared_ptr<Node> m_data;
     std::shared_ptr<Node> m_expression = nullptr;
     std::shared_ptr<Node> m_operand;
 };

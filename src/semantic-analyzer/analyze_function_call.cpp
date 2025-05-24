@@ -1,5 +1,6 @@
 #include "semantic_analyzer.hpp"
 #include "parser/nodes/function_call.hpp"
+#include "utils.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionCallNode* node, BrawContext& ctx) {
     std::vector<TypeInfo> parameters = std::vector<TypeInfo>();
@@ -15,7 +16,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionCallNo
         parameters.push_back(typeOr.value());
     }
 
-    if(!ctx.getFunction(node->m_name, parameters))
+    if(!ctx.getFunction(Utils::getIdentifier(node->m_name), parameters))
         return unknownFunction(node, parameters, ctx);
 
     return std::nullopt;

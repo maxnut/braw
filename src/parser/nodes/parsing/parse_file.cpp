@@ -1,8 +1,6 @@
-#include "parser/identifier.hpp"
 #include "parser/parser.hpp"
 #include "../file.hpp"
 #include "rules.hpp"
-#include <cmath>
 #include <memory>
 #include <unordered_map>
 
@@ -27,8 +25,8 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             file->m_functions.push_back(std::move(function.value()));
             continue;
         }
-        else if(Rules::isStructDefinition(cursor)) {
-            auto type = parseStructDefinition(cursor, ctx);
+        else if(Rules::isTypeDefinition(cursor)) {
+            auto type = parseTypeDefinition(cursor, ctx);
 
             if(!type)
                 return std::unexpected{type.error()};
@@ -45,7 +43,7 @@ Result<std::shared_ptr<AST::FileNode>> Parser::parseFile(TokenCursor& cursor, st
             file->m_imports.push_back(import.value());
             continue;
         }
-        else if(Rules::isDefine(cursor)) {
+        else if(Rules::isMacro(cursor)) {
             auto macro = parseMacro(cursor, ctx);
 
             if(!macro)

@@ -1,24 +1,24 @@
-struct STRV {
+type STRV {
     a: int;
     b: int;
-};
+}
 
-struct STRVV {
+type STRVV {
     v: STRV;
-};
+}
 
-struct STRVPtr {
+type STRVPtr {
     ptr: STRV*;
-};
+}
 
-fn struct_basic() -> int {
+fn type_basic() -> int {
     let v: STRV;
     v.a = 0;
     v.b = 1;
     return v.a + v.b;
 }
 
-fn struct_dot_chain() -> int {
+fn type_dot_chain() -> int {
     let v: STRV;
     v.a = 0;
     v.b = 1;
@@ -27,7 +27,7 @@ fn struct_dot_chain() -> int {
     return vv.v.a + vv.v.b;
 }
 
-fn struct_arrow() -> int {
+fn type_arrow() -> int {
     let v: STRV;
     v.a = 0;
     v.b = 1;
@@ -35,7 +35,7 @@ fn struct_arrow() -> int {
     return ptr->a + ptr->b;
 }
 
-fn struct_arrow_complex() -> int {
+fn type_arrow_complex() -> int {
     let v: STRV;
     v.a = 0;
     v.b = 1;

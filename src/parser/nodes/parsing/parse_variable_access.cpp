@@ -7,7 +7,9 @@ Result<std::shared_ptr<AST::VariableAccessNode>> Parser::parseVariableAccess(Tok
 
     std::shared_ptr<AST::VariableAccessNode> variableAccess = std::make_shared<AST::VariableAccessNode>();
     variableAccess->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};
-    variableAccess->m_name = cursor.get().next().value().m_value;
+    auto identifierOpt = parseIdentifier(cursor, ctx);
+    if(!identifierOpt) return std::unexpected{identifierOpt.error()};
+    variableAccess->m_name = identifierOpt.value();
     variableAccess->m_rangeEnd = {cursor.get().value().m_line, cursor.get().value().m_column};
     
     return variableAccess;

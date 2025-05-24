@@ -2,14 +2,15 @@
 #include "semantic_analyzer.hpp"
 #include "parser/nodes/function_definition.hpp"
 #include "type_info.hpp"
+#include "utils.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefinitionNode* node, BrawContext& ctx) {
-    if(!ctx.getTypeInfo(node->m_signature.m_returnType))
-        return unknownType(node, node->m_signature.m_returnType, ctx);
+    if(!ctx.getTypeInfo(Utils::getIdentifier(node->m_signature.m_returnType)))
+        return unknownType(node, Utils::getIdentifier(node->m_signature.m_returnType), ctx);
 
     std::shared_ptr<FunctionSignature> func = std::make_shared<FunctionSignature>();
-    func->m_name = node->m_signature.m_name;
-    func->m_returnType = ctx.getTypeInfo(node->m_signature.m_returnType).value();
+    func->m_name = Utils::getIdentifier(node->m_signature.m_name);
+    func->m_returnType = ctx.getTypeInfo(Utils::getIdentifier(node->m_signature.m_returnType)).value();
     func->m_external = node->m_signature.m_external;
 
     size_t initialStackSize = ctx.m_stackSize;
@@ -17,17 +18,17 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
     std::unordered_map<std::string, ScopeInfo> scopeTable = std::unordered_map<std::string, ScopeInfo>();
 
     for(auto& param : node->m_signature.m_parameters) {
-        if(!ctx.getTypeInfo(param->m_type.m_name))
-            return unknownType(node, param->m_type.m_name, ctx);
-        func->m_parameters.push_back(ctx.getTypeInfo(param->m_type).value());
-        func->m_parameterNames.push_back(param->m_name);
+        if(!ctx.getTypeInfo(Utils::getIdentifier(param->m_type)))
+            return unknownType(node, Utils::getIdentifier(param->m_type) , ctx);
+        func->m_parameters.push_back(ctx.getTypeInfo(Utils::getIdentifier(param->m_type)).value());
+        func->m_parameterNames.push_back(Utils::getIdentifier(param->m_name));
 
-        scopeTable[param->m_name] = ScopeInfo{
-            ctx.getTypeInfo(param->m_type).value(),
+        scopeTable[Utils::getIdentifier(param->m_name)] = ScopeInfo{
+            ctx.getTypeInfo(Utils::getIdentifier(param->m_type)).value(),
             ctx.m_stackSize,
             0
         };
-        ctx.m_stackSize += ctx.getTypeInfo(param->m_type)->m_size;
+        ctx.m_stackSize += ctx.getTypeInfo(Utils::getIdentifier(param->m_type))->m_size;
     }
 
     if(ctx.functionExists(func))

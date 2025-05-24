@@ -26,12 +26,10 @@ struct Node {
         MacroParameter,
         MacroCall,
         MacroIf,
-        MacroDot,
         MacroForeach,
-        MacroMakeFunction,
-        MacroMakeVariable,
         Continue,
-        Break
+        Break,
+        Identifier
     };
 
     Node() = default;

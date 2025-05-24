@@ -412,12 +412,14 @@ void CodeGenerator::sub(std::shared_ptr<Operand> target, std::shared_ptr<Operand
 void CodeGenerator::mul(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx) {
     Instruction in;
     if(source->m_type == Operand::Type::Address) {
-        move(m_registers.at(SPILL1), source, ctx);
-        source = m_registers.at(SPILL1);
+        auto reg = m_registers.at(isFloat(source) || isDouble(source) ? PRCSPILL1 : SPILL1);
+        move(reg, source, ctx);
+        source = reg;
     }
     if(target->m_type == Operand::Type::Address) {
-        move(m_registers.at(SPILL2), source, ctx);
-        target = m_registers.at(SPILL2);
+        auto reg = m_registers.at(isFloat(source) || isDouble(source) ? PRCSPILL2 : SPILL2);
+        move(reg, source, ctx);
+        target = reg;
     }
     in.m_opcode = isFloat(source) ? Mulss : isDouble(source) ? Mulsd : isUnsigned(source) ? Mul : Imul;
     in.addOperand(target);

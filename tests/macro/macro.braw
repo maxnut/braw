@@ -1,17 +1,15 @@
-struct MV {
+type MV {
     a: int;
     b: int;
-};
+}
 
-define MAC(type) {
+macro GETTERS(type) {
     $foreach(var : #type) {
-        $make_function($concat($concat(#type, #"_"), $concat(#"get_", #var.name)), #var, {$make_variable(#"v", #type);}) {
-            return $make_dot(v, #var.name);
-        }
+        fn $concat(#type, #"_get_", #var=>name)(v: #type) -> #var: return v.#var=>name;
     }
 }
 
-$MAC(#<MV>);
+$GETTERS(#<MV>);
 
 fn m_macro() -> int {
     let v: MV; v.a = 1; v.b = 1;

@@ -13,8 +13,8 @@ struct FunctionSignature {
     FunctionSignature(FunctionSignature&&) = default;
     FunctionSignature& operator=(FunctionSignature&&) = default;
     
-    Identifier m_returnType;
-    Identifier m_name;
+    std::shared_ptr<Node> m_returnType;
+    std::shared_ptr<Node> m_name;
     std::vector<std::shared_ptr<AST::VariableDeclarationNode>> m_parameters; 
     bool m_external = false;
 };

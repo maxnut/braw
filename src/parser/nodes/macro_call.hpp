@@ -1,6 +1,6 @@
 #pragma once
 
-#include "parser/identifier.hpp"
+#include "identifier.hpp"
 #include "parser/nodes/macro_parameter.hpp"
 #include "parser/nodes/node.hpp"
 
@@ -11,7 +11,7 @@ namespace AST {
 struct MacroCallNode : Node {
     MacroCallNode() : Node(Type::MacroCall) {}
 
-    Identifier m_name;
+    std::shared_ptr<Node> m_name;
     std::vector<std::shared_ptr<AST::MacroParameterNode>> m_parameters;
 };
 

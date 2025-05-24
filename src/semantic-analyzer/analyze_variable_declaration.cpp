@@ -1,20 +1,21 @@
+#include "parser/nodes/identifier.hpp"
 #include "rules.hpp"
 #include "semantic_analyzer.hpp"
 #include "parser/nodes/variable_declaration.hpp"
 #include "utils.hpp"
 
 std::optional<SemanticError> SemanticAnalyzer::analyze(AST::VariableDeclarationNode* node, BrawContext& ctx) {
-    if(node->m_type.m_name == "@infer") {
+    if(Utils::getIdentifier(node->m_type) == "@infer") {
         if(!node->m_value)
             return cannotInferType(node, ctx);
         auto inferOr = getType(node->m_value.get(), ctx);
         if(!inferOr) return inferOr.error();
-        node->m_type = inferOr.value().m_name;
+        ((AST::IdentifierNode*)node->m_type.get())->m_name = inferOr.value().m_name;
     }
 
-    auto typeOpt = ctx.getTypeInfo(node->m_type);
+    auto typeOpt = ctx.getTypeInfo(Utils::getIdentifier(node->m_type));
     if(!typeOpt)
-        return unknownType(node, node->m_type, ctx);
+        return unknownType(node, Utils::getIdentifier(node->m_type), ctx);
 
     if(node->m_scale > 1 && !Rules::isPtr(typeOpt.value().m_name))
         return mismatchedTypes(node, typeOpt.value().m_name, Utils::makePointer(typeOpt.value()).m_name, ctx);
@@ -32,8 +33,8 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::VariableDeclarationN
             return mismatchedTypes(node, type.m_name, typeOpt.value().m_name, ctx);
     }
 
-    ctx.m_scopes.back()[node->m_name] = ScopeInfo{
-        ctx.getTypeInfo(node->m_type).value(),
+    ctx.m_scopes.back()[Utils::getIdentifier(node->m_name)] = ScopeInfo{
+        ctx.getTypeInfo(Utils::getIdentifier(node->m_type)).value(),
         ctx.m_stackSize,
         0,
         node->m_retain
@@ -41,9 +42,9 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(AST::VariableDeclarationN
     ctx.m_stackSize += node->m_scale <= 1 ? typeOpt->m_size : Utils::getRawType(typeOpt.value(), ctx)->m_size * typeOpt->m_size;
 
     if(node->m_retain) {
-        node->m_name.m_name += "_" + Utils::functionSignatureString(*ctx.m_currentFunction);
-        ctx.m_scopes.back()[node->m_name] = ScopeInfo{
-        ctx.getTypeInfo(node->m_type).value(),
+        ((AST::IdentifierNode*)node->m_name.get())->m_name += "_" + Utils::functionSignatureString(*ctx.m_currentFunction);
+        ctx.m_scopes.back()[Utils::getIdentifier(node->m_name)] = ScopeInfo{
+        ctx.getTypeInfo(Utils::getIdentifier(node->m_type)).value(),
         ctx.m_stackSize,
         0,
         node->m_retain

@@ -27,6 +27,7 @@ struct EvaluatorContext {
     BrawContext& m_ctx;
     std::shared_ptr<AST::FileNode> m_file;
     std::unordered_map<std::string, std::shared_ptr<Node>> m_variables;
+    std::vector<std::shared_ptr<Node>> m_variablesOrdered;
     AST::Node::Type m_rootType;
 };
 

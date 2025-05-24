@@ -13,21 +13,21 @@ fn memory_copy(dest: void*, src: void*, num: long) -> void {
         d[i] = s[i];
 }
 
-struct MemoryBlock {
+type MemoryBlock {
     size: long;
     free: bool;
     next: MemoryBlock*;
-};
+}
 
-struct Allocator {
+type Allocator {
     free_list: MemoryBlock*;
-};
+}
 
 fn memory_map(addr: void*, length: long, prot: int, flags: int, fd: int, offset: long) -> void* {
     return (void*)syscall(9, addr, (void*)length, (void*)prot, (void*)flags, (void*)fd, (void*)offset);
 }
 
-define HEAP_SIZE: 128l * 1024l;
+macro HEAP_SIZE: 128l * 1024l;
 
 fn allocator_get() -> Allocator* {
     retain alloc = (Allocator*)0l;

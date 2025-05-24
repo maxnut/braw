@@ -30,10 +30,6 @@ Result<std::shared_ptr<AST::Node>> Parser::parseInstruction(TokenCursor& cursor,
         instruction = parseMacroIf(cursor, ctx);
     else if(Rules::isMacroForeach(cursor))
         instruction = parseMacroForeach(cursor, ctx);
-    else if(Rules::isMacroMakeFunction(cursor))
-        instruction = parseMacroMakeFunction(cursor, ctx);
-    else if(Rules::isMacroMakeVariable(cursor))
-        instruction = parseMacroMakeVariable(cursor, ctx);
     else if(Rules::isContinue(cursor)) {
         instruction = std::make_shared<AST::ContinueNode>();
         instruction->get()->m_rangeBegin = {cursor.get().value().m_line, cursor.get().value().m_column};

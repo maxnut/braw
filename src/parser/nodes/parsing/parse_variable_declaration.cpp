@@ -1,3 +1,4 @@
+#include "parser/nodes/identifier.hpp"
 #include "parser/parser.hpp"
 #include "../variable_declaration.hpp"
 
@@ -13,7 +14,9 @@ Result<std::shared_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDecla
             return unexpectedTokenExpectedValues(cursor.value(), {"let", "retain"}, ctx.m_path);
     }
 
-    variableDeclaration->m_name = cursor.get().next().value().m_value;
+    auto identifierOpt = parseIdentifier(cursor, ctx);
+    if(!identifierOpt) return std::unexpected{identifierOpt.error()};
+    variableDeclaration->m_name = identifierOpt.value();
 
     if(cursor.get().value().m_type == Token::LEFT_BRACKET) {
         if(!expectTokenTypes(cursor.next().get().value(), {Token::INTEGER, Token::LONG}))
@@ -35,7 +38,7 @@ Result<std::shared_ptr<AST::VariableDeclarationNode>> Parser::parseVariableDecla
         variableDeclaration->m_type = typeOpt.value();
     }
     else if(omitType)
-        variableDeclaration->m_type.m_name = "@infer"; // @ so that i dont accidentally make this a struct if it was created with the name infer
+        variableDeclaration->m_type = std::make_shared<AST::IdentifierNode>("@infer"); // @ so that i dont accidentally make this a struct if it was created with the name infer
     
     bool assignment = Rules::isAssignment(cursor);
     if(assignment) {

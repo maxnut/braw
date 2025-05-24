@@ -1,5 +1,6 @@
 #pragma once
 
+#include "parser/nodes/identifier.hpp"
 #include "type_info.hpp"
 #include "braw_context.hpp"
 #include "parser/nodes/function_definition.hpp"
@@ -13,17 +14,18 @@
 namespace Utils {
 
     inline std::string functionSignatureString(const AST::FunctionSignature& signature) {
-        std::string funcString = signature.m_name.m_name + "(";
+        std::string funcString = ((AST::IdentifierNode*)signature.m_name.get())->m_name + "(";
         for(int i = 0; i < signature.m_parameters.size(); i++) {
             auto& parameter = signature.m_parameters[i];
-            if(parameter->m_name.m_name.size() > 0)
-                funcString += parameter->m_name.m_name + ": ";
-            funcString += parameter->m_type.m_name;
+            std::string parameterName = ((AST::IdentifierNode*)parameter->m_name.get())->m_name;
+            if(parameterName.size() > 0)
+                funcString += parameterName + ": ";
+            funcString += ((AST::IdentifierNode*)parameter->m_type.get())->m_name;
             
             if(i < signature.m_parameters.size() - 1)
                 funcString += ", ";
         }
-        funcString += ") -> " + signature.m_returnType.m_name;
+        funcString += ") -> " + ((AST::IdentifierNode*)signature.m_returnType.get())->m_name;
         return funcString;
     }
 
@@ -166,5 +168,11 @@ namespace Utils {
     inline std::string uniqueRegisterName() {
         static size_t counter = 0;
         return "%" + std::to_string(counter++);
+    }
+
+    inline std::string getIdentifier(std::shared_ptr<AST::Node> node) {
+        if(node->m_type == AST::Node::Identifier)
+            return ((AST::IdentifierNode*)node.get())->m_name;
+        return "";
     }
 }

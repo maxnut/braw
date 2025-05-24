@@ -12,9 +12,9 @@ fn ptr_f_ptr() -> float {
     return *ptr;
 }
 
-struct PV {
+type PV {
     a: int;
-};
+}
 
 fn ptr_s_ptr() -> int {
     let v: PV;

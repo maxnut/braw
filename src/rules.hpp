@@ -63,12 +63,6 @@ namespace Rules {
         if(cursor.get().next().value().m_value != "fn")
             return false;
 
-        if(cursor.get().value().m_type != Token::IDENTIFIER)
-            return false;
-
-        if(cursor.next().get().value().m_type != Token::LEFT_PAREN)
-            return false;
-
         return true;
     }
 
@@ -127,8 +121,8 @@ namespace Rules {
         return true;
     }
 
-    inline bool isStructDefinition(TokenCursor cursor) {
-        if(cursor.get().value().m_value != "struct" || cursor.next().get().value().m_type != Token::IDENTIFIER)
+    inline bool isTypeDefinition(TokenCursor cursor) {
+        if(cursor.get().value().m_value != "type" || cursor.next().get().value().m_type != Token::IDENTIFIER)
             return false;
 
         return true;
@@ -138,8 +132,8 @@ namespace Rules {
         return cursor.get().value().m_value == "import";
     }
 
-    inline bool isDefine(TokenCursor cursor) {
-        return cursor.get().value().m_value == "define";
+    inline bool isMacro(TokenCursor cursor) {
+        return cursor.get().value().m_value == "macro";
     }
 
     inline bool isMacroCall(TokenCursor cursor) {
@@ -155,16 +149,8 @@ namespace Rules {
             cursor.get().value().m_value == "foreach";
     }
 
-    inline bool isMacroMakeFunction(TokenCursor cursor) {
-        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_value == "make_function";
-    }
-
-    inline bool isMacroMakeVariable(TokenCursor cursor) {
-        return cursor.get().value().m_value == "$" && cursor.next().get().value().m_value == "make_variable";
-    }
-
     inline bool isMacroParameterReference(TokenCursor cursor) {
-        return cursor.get().value().m_value == "#" && cursor.next().get().value().m_type == Token::IDENTIFIER && cursor.next().get().value().m_type != Token::LEFT_PAREN;
+        return cursor.get().value().m_value == "#";
     }
 
     inline bool isString(TokenCursor cursor) {
@@ -240,7 +226,7 @@ namespace Rules {
             return InstructionType::FUNCTION_CALL;
         else if(isVariableAccess(cursor))
             return InstructionType::VARIABLE_ACCESS;
-        else if(cursor.get().value().m_type == Token::LEFT_BRACE || isMacroMakeFunction(cursor))
+        else if(cursor.get().value().m_type == Token::LEFT_BRACE)
             return InstructionType::SCOPE;
         else
             return COUNT;

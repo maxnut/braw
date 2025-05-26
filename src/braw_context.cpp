@@ -24,7 +24,7 @@ BrawContext::BrawContext() {
                 {"<", {BOOL_T}},
                 {"<=", {BOOL_T}}
             },
-            {LONG_T,BOOL_T,CHAR_T}
+            {LONG_T,BOOL_T,CHAR_T, UINT_T, ULONG_T, UCHAR_T}
         }},
 
         {LONG_T, TypeInfo{LONG_T, 8, true,
@@ -44,7 +44,7 @@ BrawContext::BrawContext() {
                 {"<", {BOOL_T}},
                 {"<=", {BOOL_T}}
             },
-            {INT_T,BOOL_T,CHAR_T}
+            {INT_T,BOOL_T,CHAR_T, UINT_T, ULONG_T, UCHAR_T}
         }},
 
         {CHAR_T, TypeInfo{CHAR_T, 1, true,
@@ -64,7 +64,7 @@ BrawContext::BrawContext() {
                 {"<", {BOOL_T}},
                 {"<=", {BOOL_T}}
             },
-            {INT_T,LONG_T}
+            {INT_T,BOOL_T,CHAR_T, UINT_T, ULONG_T, UCHAR_T}
         }},
 
         {UINT_T, TypeInfo{UINT_T, 4, true,
@@ -84,7 +84,7 @@ BrawContext::BrawContext() {
                 {"<", {BOOL_T}},
                 {"<=", {BOOL_T}}
             },
-            {ULONG_T,BOOL_T,UCHAR_T}
+            {ULONG_T,BOOL_T,UCHAR_T, INT_T, LONG_T, CHAR_T}
         }},
 
         {ULONG_T, TypeInfo{ULONG_T, 8, true,
@@ -104,7 +104,7 @@ BrawContext::BrawContext() {
                 {"<", {BOOL_T}},
                 {"<=", {BOOL_T}}
             },
-            {UINT_T,BOOL_T,UCHAR_T}
+            {UINT_T,BOOL_T,UCHAR_T, INT_T, LONG_T, CHAR_T}
         }},
 
         {UCHAR_T, TypeInfo{UCHAR_T, 1, true,
@@ -124,7 +124,7 @@ BrawContext::BrawContext() {
                 {"<", {BOOL_T}},
                 {"<=", {BOOL_T}}
             },
-            {UINT_T,ULONG_T}
+            {UINT_T,BOOL_T,UCHAR_T, INT_T, LONG_T, CHAR_T}
         }},
 
         {FLOAT_T, TypeInfo{FLOAT_T, 4, true,

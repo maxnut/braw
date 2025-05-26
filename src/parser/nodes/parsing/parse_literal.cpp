@@ -1,5 +1,6 @@
 #include "parser/parser.hpp"
 #include "../literal.hpp"
+#include <string>
 
 Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& cursor, ParserContext& ctx) {
     std::shared_ptr<AST::LiteralNode> literal = std::make_shared<AST::LiteralNode>();
@@ -8,6 +9,10 @@ Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
 
     if(tkn.m_type == Token::INTEGER)
         literal->m_value = std::stoi(cursor.value().m_value);
+    else if(tkn.m_type == Token::UINTEGER)
+        literal->m_value = (uint32_t)std::stoul(cursor.value().m_value);
+    else if(tkn.m_type == Token::ULONG)
+        literal->m_value = std::stoul(cursor.value().m_value);
     else if(tkn.m_type == Token::LONG)
         literal->m_value = std::stol(cursor.value().m_value);
     else if(tkn.m_type == Token::FLOAT)
@@ -20,9 +25,6 @@ Result<std::shared_ptr<AST::LiteralNode>> Parser::parseLiteral(TokenCursor& curs
         }
         else if(tkn.m_value == "false") {
             literal->m_value = false;
-        }
-        else if(tkn.m_value == "nullptr") {
-            literal->m_value = nullptr;
         }
         else
             return std::unexpected{ParseError{

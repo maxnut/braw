@@ -181,7 +181,8 @@ std::expected<TypeInfo, SemanticError> SemanticAnalyzer::getType(const AST::Node
                 case 4: return ctx.m_typeTable[BOOL_T];
                 case 5: return Utils::makePointer(ctx.m_typeTable[CHAR_T]);
                 case 6: return ctx.m_typeTable[CHAR_T];
-                case 7: return Utils::makePointer(ctx.m_typeTable[VOID_T]);
+                case 7: return ctx.m_typeTable[UINT_T];
+                case 8: return ctx.m_typeTable[ULONG_T];
             }
         }
         default:

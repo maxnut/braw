@@ -58,7 +58,10 @@ enum Opcode {
     Or,
     Xor,
     Test,
-    LabelOp
+    LabelOp,
+    Shr,
+    Sar,
+    Shl
 };
 
 enum Prefix {
@@ -118,6 +121,9 @@ inline const char* opcodeToString(Opcode opcode) {
     case Or: return "or";
     case Xor: return "xor";
     case Test: return "test";
+    case Shr: return "shr";
+    case Sar: return "shr";
+    case Shl: return "shl";
     case LabelOp:
       break;
     }

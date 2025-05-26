@@ -37,9 +37,9 @@ struct Register : Operand {
 
 struct Immediate : Operand {
     Immediate() : Operand(Type::Immediate) {}
-    Immediate(std::variant<int, long, float, double, bool, std::string, char, std::nullptr_t> value, const TypeInfo& ti) : Operand(Type::Immediate, ti), m_value(value) {}
+    Immediate(std::variant<int, long, float, double, bool, std::string, char, uint32_t, uint64_t> value, const TypeInfo& ti) : Operand(Type::Immediate, ti), m_value(value) {}
 
-    std::variant<int, long, float, double, bool, std::string, char, std::nullptr_t> m_value;
+    std::variant<int, long, float, double, bool, std::string, char, uint32_t, uint64_t> m_value;
 };
 
 struct Address : Operand {

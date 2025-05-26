@@ -330,6 +330,12 @@ RegisterType IRBuilderSSA::getRegisterType(const TypeInfo& type) {
         return RegisterType::Signed;
     else if(type.m_name == BOOL_T)
         return RegisterType::Signed;
+    else if(type.m_name == UINT_T)
+        return RegisterType::Unsigned;
+    else if(type.m_name == ULONG_T)
+        return RegisterType::Unsigned;
+    else if(type.m_name == UCHAR_T)
+        return RegisterType::Unsigned;
     else if(Rules::isPtr(type.m_name)) 
         return RegisterType::Pointer;
 

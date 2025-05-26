@@ -14,6 +14,8 @@ public:
         RIGHT_BRACKET,
         INTEGER,
         LONG,
+        UINTEGER,
+        ULONG,
         FLOAT,
         DOUBLE,
         KEYWORD,
@@ -57,6 +59,8 @@ public:
             case COLON: return "COLON";
             case CHAR: return "CHAR";
             case SEMIQUOTE: return "SEMIQUOTE";
+            case UINTEGER: return "UINTEGER";
+            case ULONG: return "ULONG";
             case COUNT: return "UNKNOWN";
         }
         return "UNKNOWN";

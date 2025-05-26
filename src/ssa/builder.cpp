@@ -337,9 +337,9 @@ std::shared_ptr<Operand> Builder::buildExpression(AST::Node* node, BrawContext& 
         case AST::Node::UnaryOperator:
             return buildUnaryOperator(static_cast<AST::UnaryOperatorNode*>(node), context, ictx);
         case AST::Node::Literal: {
-            std::array<TypeInfo, 7> types = {
+            std::array<TypeInfo, 8> types = {
                 context.getTypeInfo(INT_T).value(), context.getTypeInfo(LONG_T).value(), context.getTypeInfo(FLOAT_T).value(), context.getTypeInfo(DOUBLE_T).value(),
-                context.getTypeInfo(BOOL_T).value(), Utils::makePointer(context.getTypeInfo(CHAR_T).value()), Utils::makePointer(context.getTypeInfo(VOID_T).value())
+                context.getTypeInfo(BOOL_T).value(), Utils::makePointer(context.getTypeInfo(CHAR_T).value()), context.getTypeInfo(UINT_T).value(), context.getTypeInfo(ULONG_T).value()
             };
             auto lit = static_cast<AST::LiteralNode*>(node);
             return std::make_shared<Immediate>(lit->m_value, types[lit->m_value.index()]);
@@ -482,13 +482,13 @@ std::shared_ptr<Operand> Builder::subscriptOperator(AST::UnaryOperatorNode* node
 
 std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std::shared_ptr<Operand> op, BrawContext& context, FunctionContext& ictx) {
     std::shared_ptr<Operand> ret;
-    if(Rules::isPtr(Utils::getIdentifier(node->m_data)) || Utils::getIdentifier(node->m_data) == LONG_T) {
-        if(Rules::isPtr(op->m_typeInfo.m_name) || op->m_typeInfo.m_name == LONG_T)
+    if(Rules::isPtr(Utils::getIdentifier(node->m_data)) || Utils::getIdentifier(node->m_data) == LONG_T || Utils::getIdentifier(node->m_data) == ULONG_T) {
+        if(Rules::isPtr(op->m_typeInfo.m_name) || op->m_typeInfo.m_name == LONG_T || op->m_typeInfo.m_name == ULONG_T)
             ret = op;
-        else if(op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == CHAR_T) {
+        else if(op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == CHAR_T || op->m_typeInfo.m_name == UINT_T || op->m_typeInfo.m_name == UCHAR_T) {
             if(op->m_type == Operand::Immediate) {
                 auto imm = cast<Immediate>(op);
-                if(imm->m_typeInfo.m_name == INT_T)
+                if(imm->m_typeInfo.m_name == INT_T || imm->m_typeInfo.m_name == UINT_T)
                     imm->m_value = (long)std::get<int>(imm->m_value);
                 else
                     imm->m_value = (long)std::get<char>(imm->m_value);
@@ -500,8 +500,8 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
             }
         }
     }
-    else if(Utils::getIdentifier(node->m_data) == INT_T) {
-        if(op->m_typeInfo.m_name == CHAR_T) {
+    else if(Utils::getIdentifier(node->m_data) == INT_T || Utils::getIdentifier(node->m_data) == UINT_T) {
+        if(op->m_typeInfo.m_name == CHAR_T || op->m_typeInfo.m_name == UCHAR_T) {
             if(op->m_type == Operand::Immediate) {
                 auto imm = cast<Immediate>(op);
                 imm->m_value = (int)std::get<char>(imm->m_value);
@@ -512,7 +512,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
                 assign(ret, operation(Operation::Upsize, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), ictx, op), node->m_rangeBegin, ictx);
             }
         }
-        else if(op->m_typeInfo.m_name == LONG_T) {
+        else if(op->m_typeInfo.m_name == LONG_T || op->m_typeInfo.m_name == ULONG_T) {
             if(op->m_type == Operand::Immediate) {
                 auto imm = cast<Immediate>(op);
                 imm->m_value = (int)std::get<long>(imm->m_value);
@@ -524,8 +524,8 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
             }
         }
     }
-    else if(Utils::getIdentifier(node->m_data) == CHAR_T) {
-        if(op->m_typeInfo.m_name == INT_T) {
+    else if(Utils::getIdentifier(node->m_data) == CHAR_T || Utils::getIdentifier(node->m_data) == UCHAR_T) {
+        if(op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == UINT_T) {
             if(op->m_type == Operand::Immediate) {
                 auto imm = cast<Immediate>(op);
                 imm->m_value = (char)std::get<int>(imm->m_value);
@@ -536,7 +536,7 @@ std::shared_ptr<Operand> Builder::castOperator(AST::UnaryOperatorNode* node, std
                 assign(ret, operation(Operation::Downsize, context.getTypeInfo(Utils::getIdentifier(node->m_data)).value(), ictx, op), node->m_rangeBegin, ictx);
             }
         }
-        else if(op->m_typeInfo.m_name == LONG_T) {
+        else if(op->m_typeInfo.m_name == LONG_T || op->m_typeInfo.m_name == ULONG_T) {
             if(op->m_type == Operand::Immediate) {
                 auto imm = cast<Immediate>(op);
                 imm->m_value = (char)std::get<long>(imm->m_value);
@@ -1041,7 +1041,9 @@ std::string Builder::operandString(std::shared_ptr<Operand> op) {
             case 5:
                 return std::get<std::string>(imm->m_value);
             case 6:
-                return "NULL";
+                return std::to_string(std::get<uint32_t>(imm->m_value));
+            case 7:
+                return std::to_string(std::get<uint64_t>(imm->m_value));
             default:
                 return "";
             }

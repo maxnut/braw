@@ -5,6 +5,7 @@
 
 enum RegisterType {
     Signed,
+    Unsigned,
     Single,
     Double,
     Struct,

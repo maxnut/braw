@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace CodeGen::x86_64 {
 
@@ -22,7 +23,9 @@ struct FunctionContext {
     BrawContext& m_brawCtx;
     RegisterAllocatorResult& m_allocatorResult;
     std::unordered_map<std::string, std::shared_ptr<Operand>> m_virtualRegisters;
+    std::unordered_set<std::string> m_parameters;
     int64_t m_spills = 0;
+    int64_t m_spillPosition = 0;
     std::vector<std::shared_ptr<Operands::Register>> m_savedRegisters;
     uint64_t m_instructionIndex = 0;
     uint64_t m_functionIndex = 0;
@@ -47,6 +50,7 @@ private:
     void pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx);
     void call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx);
     void ret(FunctionContext& ctx);
+    void shift(std::shared_ptr<Operands::Register> target, int amount, FunctionContext& ctx);
 
     std::shared_ptr<Operands::Register> memoryValueToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx);
     std::shared_ptr<Operands::Register> memoryAddressToRegister(std::shared_ptr<Operands::Address> address, FunctionContext& ctx);

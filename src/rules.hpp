@@ -183,7 +183,7 @@ namespace Rules {
         if(cursor.get().value().m_type != Token::INTEGER && cursor.get().value().m_type != Token::LONG && cursor.get().value().m_type != Token::FLOAT
             && cursor.get().value().m_type != Token::DOUBLE && !isString(cursor) && !isChar(cursor)
             && cursor.get().value().m_value != "true" && cursor.get().value().m_value != "false"
-            && cursor.get().value().m_value != "nullptr")
+            && cursor.get().value().m_type != Token::UINTEGER && cursor.get().value().m_type != Token::ULONG)
             return false;
 
         return true;

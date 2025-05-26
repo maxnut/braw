@@ -99,12 +99,18 @@ Token parseNumber(Cursor<std::string::iterator>& cursor, int lineNumber) {
         return Token(Token::DOUBLE, n, lineNumber, index);
     }
 
+    bool uns = false;
+    if(cursor.get().value() == 'u' || cursor.get().value() == 'U') {
+        uns = true;
+        cursor.next();
+    }       
+
     if(cursor.get().value() == 'l' || cursor.get().value() == 'L') {
         cursor.next();
-        return Token(Token::LONG, n, lineNumber, index);
+        return Token(uns ? Token::ULONG : Token::LONG, n, lineNumber, index);
     }
 
-    return Token(Token::INTEGER, n, lineNumber, index);
+    return Token(uns ? Token::UINTEGER : Token::INTEGER, n, lineNumber, index);
 }
 
 Token parseAlphanumeric(Cursor<std::string::iterator>& cursor, int lineNumber) {

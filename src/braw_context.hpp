@@ -23,6 +23,7 @@ struct FunctionSignature {
     std::vector<std::string> m_parameterNames;
     std::string m_name;
     bool m_external = false;
+    bool m_cSig = false;
 };
 
 struct BrawContext {

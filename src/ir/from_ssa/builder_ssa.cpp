@@ -231,6 +231,7 @@ void IRBuilderSSA::build(const SSA::Call* call, IRFunctionContextSSA& context) {
         callRet->m_optReturn = std::get<std::shared_ptr<Register>>(convertOperand(call->m_optReturn.get(), context));
 
     callRet->m_returnType = call->m_returnType;
+    callRet->m_cSig = call->m_cSig;
 
     for(auto param : call->m_parameters)
         callRet->m_parameters.push_back(convertOperand(param.get(), context));

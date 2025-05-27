@@ -27,6 +27,7 @@ struct FunctionContext {
     int64_t m_spills = 0;
     int64_t m_spillPosition = 0;
     std::vector<std::shared_ptr<Operands::Register>> m_savedRegisters;
+    std::unordered_set<Operands::Register::RegisterGroup> m_parametersUsed;
     uint64_t m_instructionIndex = 0;
     uint64_t m_functionIndex = 0;
 };
@@ -48,7 +49,7 @@ private:
     void mod(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, FunctionContext& ctx);
     void push(std::shared_ptr<Operand> target, FunctionContext& ctx);
     void pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx);
-    void call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx);
+    void call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, bool cSig, FunctionContext& ctx);
     void ret(FunctionContext& ctx);
     void shift(std::shared_ptr<Operands::Register> target, int amount, FunctionContext& ctx);
 

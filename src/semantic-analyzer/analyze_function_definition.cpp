@@ -12,6 +12,7 @@ std::optional<SemanticError> SemanticAnalyzer::analyze(const AST::FunctionDefini
     func->m_name = Utils::getIdentifier(node->m_signature.m_name);
     func->m_returnType = ctx.getTypeInfo(Utils::getIdentifier(node->m_signature.m_returnType)).value();
     func->m_external = node->m_signature.m_external;
+    func->m_cSig = node->m_signature.m_cSig;
 
     size_t initialStackSize = ctx.m_stackSize;
 

@@ -633,6 +633,7 @@ std::shared_ptr<Operand> Builder::buildCall(AST::FunctionCallNode* node, BrawCon
 
     auto fun = context.getFunction(Utils::getIdentifier(node->m_name), tmpTypes);
     call->m_returnType = fun->m_returnType;
+    call->m_cSig = fun->m_cSig;
     if(fun->m_returnType.m_size != 0) {
         call->m_optReturn = makeOrGetRegister(name, ictx);
         call->m_optReturn->m_typeInfo = fun->m_returnType;

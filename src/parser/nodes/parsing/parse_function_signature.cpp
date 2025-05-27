@@ -7,6 +7,10 @@ Result<AST::FunctionSignature> Parser::parseFunctionSignature(TokenCursor& curso
     if(cursor.get().value().m_value == "ext") {
         sig.m_external = true;
         cursor.tryNext();
+        if(cursor.get().value().m_value == "C") {
+            sig.m_cSig = true;
+            cursor.tryNext();
+        }
     }
 
     if(!expectTokenType(cursor.get().value(), Token::KEYWORD))

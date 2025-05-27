@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
     args::Flag debug(parser, "debug", "Add debug information", {'d', "debug"});
     args::Flag parallel(parser, "parallel", "Compile in parallel", {'p', "parallel"});
     args::ValueFlag<int> optimizationLevel(parser, "level", "Set optimization level (0-1)", {'O', "opt"}, 0);
+    args::ValueFlagList<std::string> extraLinkerArguments(parser, "ldargs", "Extra arguments to pass to the linker", {"ldargs"});
 
     try {
         parser.ParseCLI(argc, argv);
@@ -189,6 +190,9 @@ int main(int argc, char** argv) {
         rspFile.close();
         
         std::string cmd = "gcc @" + (outputPath / ("obj.txt")).string() + " " + (std::filesystem::path(stdPath) / "impl" / "*.o").string() + " -m64";
+        for(std::string& arg : extraLinkerArguments) {
+            cmd += " " + arg;
+        }
         spdlog::info("Linking with command: {}", cmd);
         int result = std::system((cmd).c_str());
         if(result != 0) {

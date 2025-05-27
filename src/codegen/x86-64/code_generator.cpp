@@ -25,6 +25,7 @@
 #include <array>
 #include <algorithm>
 #include <cassert>
+#include <climits>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -294,7 +295,7 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
                 memoryAddressToRegister(addr, m_registers.at(Operands::Register::RDI), ctx);
             }
 
-            call(std::make_shared<Operands::Label>(callIn->m_id), callIn->m_returnType.m_builtin ? optRet : nullptr, callIn->m_parameters, callIn->m_returnType.m_builtin ? 0 : 1, ctx);
+            call(std::make_shared<Operands::Label>(callIn->m_id), callIn->m_returnType.m_builtin ? optRet : nullptr, callIn->m_parameters, callIn->m_returnType.m_builtin ? 0 : 1, callIn->m_cSig, ctx);
             break;
         }
         case ::Instruction::Return:
@@ -515,7 +516,32 @@ void CodeGenerator::shift(std::shared_ptr<Operands::Register> target, int amount
     addInstruction(in, ctx);
 }
 
-void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, FunctionContext& ctx) {
+bool canFirstHalfFitInXMM(const TypeInfo& t, BrawContext& ctx) {
+    size_t total = 0;
+    for(auto& member : t.m_members) {
+        if(total > 8) break;
+        auto type = ctx.getTypeInfo(member.second.m_type).value();
+        total += type.m_size;
+        if(type.m_name != FLOAT_T && type.m_name != DOUBLE_T)
+            return false;
+    }
+    return true;
+}
+
+bool canSecondHalfFitInXMM(const TypeInfo& t, BrawContext& ctx) {
+    size_t total = 0;
+    for(auto& member : t.m_members) {
+        if(total > 16) break;
+        auto type = ctx.getTypeInfo(member.second.m_type).value();
+        total += type.m_size;
+        if(total <= 8) continue;
+        if(type.m_name != FLOAT_T && type.m_name != DOUBLE_T)
+            return false;
+    }
+    return true;
+}
+
+void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr<Operands::Register> optReturn, const std::vector<::Operand>& args, size_t skipArgs, bool cSig, FunctionContext& ctx) {
     static const std::unordered_set<Register::RegisterGroup> callerSaved = {Register::RAX,Register::RCX,Register::RDX,Register::RSI,Register::RDI,Register::R8,Register::R9,Register::R10,Register::R11,Register::XMM0,Register::XMM1,Register::XMM2,Register::XMM3,Register::XMM4,Register::XMM5,Register::XMM6,Register::XMM7};
     std::vector<std::shared_ptr<Operands::Register>> saveStack;
 
@@ -530,6 +556,9 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
             continue;
 
         auto reg = cast<Operands::Register>(arg);
+
+        if(!isRegisterAlive(reg->m_group, ctx))
+            continue;
 
         saveStack.push_back(reg);
         push(reg, ctx);
@@ -546,42 +575,59 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     size_t spilledBeg = ctx.m_spills;
     size_t beg = ctx.m_file.m_text.m_instructions.size();
     std::unordered_set<size_t> ignore;
+    std::unordered_set<size_t> beginning;
     for(auto& arg : args) {
         auto op = convertOperand(arg, ctx);
         
         if((isFloat(op) && !floatCursor.hasNext()) || (isDouble(op) && !floatCursor.hasNext()) || ((op->m_typeInfo.m_name == INT_T || op->m_typeInfo.m_name == LONG_T || Rules::isPtr(op->m_typeInfo.m_name)) && !cursor.hasNext())) {
+            size_t begg = ctx.m_file.m_text.m_instructions.size();
             push(op, ctx);
+            for(; begg < ctx.m_file.m_text.m_instructions.size(); ++begg)
+                beginning.insert(begg - beg);
             continue;
         }
 
         if(isFloat(op)) {
             Operands::Register::RegisterGroup reg = floatCursor.get().next().value();
             move(m_registers.at(reg), op, ctx);
+            ctx.m_parametersUsed.insert(reg);
         } else {
-            auto reg = cursor.get().next().value();
             if(arg.index() == 1 && std::get<1>(arg)->m_registerType == RegisterType::Struct) {
                 size_t begg = ctx.m_file.m_text.m_instructions.size();
                 op = copyAddressToNew(cast<Operands::Address>(op), std::get<1>(arg)->m_type.m_size, ctx);
-                for(; begg < ctx.m_file.m_text.m_instructions.size(); ++begg) {
+                for(; begg < ctx.m_file.m_text.m_instructions.size(); ++begg)
                     ignore.insert(begg - beg);
-                }
             }
 
             if(!op->m_typeInfo.m_builtin && op->m_type == Operand::Type::Address) {
                 auto addr = cast<Operands::Address>(op->clone());
-                if(op->m_typeInfo.m_size <= 8 || (op->m_typeInfo.m_size <= 16 && cursor.getIndex() < 5)) {
-                    move(m_registers.at(reg), addr, ctx);
-                    if(op->m_typeInfo.m_size > 8) {
-                        addr->m_offset += 8;
-                        move(m_registers.at(cursor.get().value()), addr, ctx);
-                        cursor.tryNext();
+                if(cSig && (op->m_typeInfo.m_size <= 8 || (op->m_typeInfo.m_size <= 16 && cursor.getIndex() < 5))) {
+                    bool firstHalf = canFirstHalfFitInXMM(op->m_typeInfo, ctx.m_brawCtx);
+                    if((firstHalf && floatCursor.hasNext()) || (cursor.hasNext())) {
+                        auto reg = firstHalf ? m_registers.at(floatCursor.get().next().value()) : m_registers.at(cursor.get().next().value());
+                        if(firstHalf)
+                            addr->m_typeInfo = ctx.m_brawCtx.getTypeInfo(DOUBLE_T).value(); // fuckass hack
+                        move(reg, addr, ctx);
+                        ctx.m_parametersUsed.insert(reg->m_group);
+                        if(op->m_typeInfo.m_size > 8 && ((canSecondHalfFitInXMM(op->m_typeInfo, ctx.m_brawCtx) && floatCursor.hasNext()) || cursor.hasNext())) {
+                            bool secondHalf = canSecondHalfFitInXMM(op->m_typeInfo, ctx.m_brawCtx);
+                            auto reg2 = secondHalf ? m_registers.at(floatCursor.get().next().value()) : m_registers.at(cursor.get().next().value());
+                            addr->m_typeInfo = secondHalf ? ctx.m_brawCtx.getTypeInfo(DOUBLE_T).value() : ctx.m_brawCtx.getTypeInfo(LONG_T).value(); // fuckass hack
+                            addr->m_offset += 8;
+                            move(reg2, addr, ctx);
+                            ctx.m_parametersUsed.insert(reg2->m_group);
+                            cursor.tryNext();
+                        }
+                        continue;
                     }
-                    continue;
                 }
+                auto reg = cursor.get().next().value();
                 addr->m_offset += std::get<1>(arg)->m_type.m_size;
                 memoryAddressToRegister(addr, m_registers.at(reg), ctx);
+                ctx.m_parametersUsed.insert(reg);
             }
             else {
+                auto reg = cursor.get().next().value();
                 if(op->m_type == Operand::Type::Address && cast<Operands::Address>(op)->m_base->m_type == Operand::Type::Label) {
                     auto spill = memoryAddressToRegister(op->m_type == Operand::Type::Register ? std::make_shared<Operands::Address>(op, 0, op->m_typeInfo) : cast<Operands::Address>(op), ctx)->clone();
                     move(m_registers.at(reg),spill, ctx);
@@ -590,13 +636,14 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
                     move(m_registers.at(reg), op, ctx);
                 else
                     memoryAddressToRegister(cast<Operands::Address>(op), m_registers.at(reg), ctx);
+                ctx.m_parametersUsed.insert(reg);
             }
         }
     }
     size_t end = ctx.m_file.m_text.m_instructions.size() - 1;
 
     std::vector<Instruction> from(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
-    std::vector<Instruction> result = MoveResolver::resolve(from, ignore, *this, ctx);
+    std::vector<Instruction> result = MoveResolver::resolve(from, ignore, beginning, *this, ctx);
     ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
     ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
@@ -611,6 +658,8 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     i.m_opcode = Call;
     i.addOperand(label);
     addInstruction(i, ctx);
+
+    ctx.m_parametersUsed.clear();
 
     if(spilled > 0) {
         add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(spilled, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
@@ -672,8 +721,8 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
         }
 
         sub(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>((int)reg->m_typeInfo.m_size, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
-        ctx.m_spills += target->m_typeInfo.m_size;
-        ctx.m_spillPosition += target->m_typeInfo.m_size;
+        ctx.m_spills += reg->m_typeInfo.m_size;
+        ctx.m_spillPosition += reg->m_typeInfo.m_size;
         move(std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP), -ctx.m_spillPosition, TypeInfo{}), reg, ctx);
         return;
     }
@@ -821,7 +870,7 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operand> target,
     }
     size_t end = ctx.m_file.m_text.m_instructions.size() - 1;
     std::vector<Instruction> from(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
-    std::vector<Instruction> result = MoveResolver::resolve(from, {}, *this, ctx);
+    std::vector<Instruction> result = MoveResolver::resolve(from, {}, {}, *this, ctx);
     ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
     ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
@@ -878,7 +927,7 @@ void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operand> target, std::s
     }
     size_t end = ctx.m_file.m_text.m_instructions.size() - 1;
     std::vector<Instruction> from(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
-    std::vector<Instruction> result = MoveResolver::resolve(from, {}, *this, ctx);
+    std::vector<Instruction> result = MoveResolver::resolve(from, {}, {}, *this, ctx);
     ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
     ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
@@ -928,21 +977,21 @@ std::shared_ptr<Operand> CodeGenerator::convertOperand(::Operand source, Functio
         case 3: {
             Address src = std::get<Address>(source);
 
-            if(src.m_base->m_registerType == RegisterType::Struct && src.m_typeInfo.m_size <= 16 && ctx.m_parameters.contains(src.m_base->m_id) && ctx.m_virtualRegisters.contains(src.m_base->m_id)) {
-                auto ret = m_registers.at(Register::R13);
-                bool alive = isRegisterAlive(Register::R13, ctx);
-                if(alive) push(ret, ctx);
-                auto fromReg = src.m_offset > 8 ? ctx.m_virtualRegisters.at(src.m_base->m_id + "_0") : ctx.m_virtualRegisters.at(src.m_base->m_id);
-                fromReg = cast<Operands::Address>(fromReg)->m_base;
-                move(ret, fromReg, ctx);
-                if(src.m_offset > 0) shift(ret, src.m_offset * 8, ctx);
-                Instruction in; in.m_opcode = And;
-                in.addOperand(ret);
-                in.addOperand(std::make_shared<Operands::Immediate>(255, ctx.m_brawCtx.getTypeInfo(INT_T).value()));
-                addInstruction(in, ctx);
-                if(alive) pop(ret, ctx);
-                return ret;
-            }
+            // if(src.m_base->m_registerType == RegisterType::Struct && src.m_typeInfo.m_size <= 16 && ctx.m_parameters.contains(src.m_base->m_id) && ctx.m_virtualRegisters.contains(src.m_base->m_id)) {
+            //     auto ret = m_registers.at(Register::R13);
+            //     bool alive = isRegisterAlive(Register::R13, ctx);
+            //     if(alive) push(ret, ctx);
+            //     auto fromReg = src.m_offset > 8 ? ctx.m_virtualRegisters.at(src.m_base->m_id + "_0") : ctx.m_virtualRegisters.at(src.m_base->m_id);
+            //     fromReg = cast<Operands::Address>(fromReg)->m_base;
+            //     move(ret, fromReg, ctx);
+            //     if(src.m_offset > 0) shift(ret, src.m_offset * 8, ctx);
+            //     Instruction in; in.m_opcode = And;
+            //     in.addOperand(ret);
+            //     in.addOperand(std::make_shared<Operands::Immediate>(INT_MAX, ctx.m_brawCtx.getTypeInfo(LONG_T).value()));
+            //     addInstruction(in, ctx);
+            //     if(alive) pop(ret, ctx);
+            //     return ret;
+            // }
             
             auto addrOff = src.m_offset;
             std::shared_ptr<Operands::Address> addr;
@@ -1018,6 +1067,8 @@ bool CodeGenerator::isDouble(std::shared_ptr<Operand> o) const {
 }
 
 bool CodeGenerator::isRegisterAlive(Operands::Register::RegisterGroup reg, FunctionContext& ctx) const {
+    if(ctx.m_parametersUsed.contains(reg))
+        return true;
     size_t blockIndex = ctx.m_allocatorResult.m_propagated.blockForInstruction.at(ctx.m_instructionIndex);
     for(auto range : ctx.m_allocatorResult.m_propagated.blocks.at(blockIndex)->m_rangeVector) {
         std::shared_ptr<Operand> arg = ctx.m_virtualRegisters.at(range->m_id);

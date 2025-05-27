@@ -51,6 +51,7 @@ struct Call : Instruction {
     std::shared_ptr<Register> m_optReturn = nullptr;
     TypeInfo m_returnType;
     std::vector<std::shared_ptr<Operand>> m_parameters;
+    bool m_cSig = false;
 };
 
 struct Label : Instruction {

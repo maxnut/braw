@@ -19,7 +19,7 @@ class FunctionContext;
 
 class MoveResolver {
 public:   
-    static std::vector<Instruction> resolve(std::vector<Instruction> from, std::unordered_set<size_t> ignore, CodeGenerator& codegen, FunctionContext& ctx);
+    static std::vector<Instruction> resolve(std::vector<Instruction> from, std::unordered_set<size_t> ignore, std::unordered_set<size_t> beginning, CodeGenerator& codegen, FunctionContext& ctx);
     static bool operandEquals(std::shared_ptr<Operand> op1, std::shared_ptr<Operand> op2);
     
 private:

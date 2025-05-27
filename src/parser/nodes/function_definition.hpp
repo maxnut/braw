@@ -17,6 +17,7 @@ struct FunctionSignature {
     std::shared_ptr<Node> m_name;
     std::vector<std::shared_ptr<AST::VariableDeclarationNode>> m_parameters; 
     bool m_external = false;
+    bool m_cSig = false;
 };
 
 struct FunctionDefinitionNode : Node {

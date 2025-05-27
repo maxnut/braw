@@ -59,6 +59,8 @@ namespace Rules {
     inline bool isFunctionDefinition(TokenCursor cursor) {
         if(cursor.get().value().m_value == "ext")
             cursor.tryNext();
+        if(cursor.get().value().m_value == "C")
+            cursor.tryNext();
 
         if(cursor.get().next().value().m_value != "fn")
             return false;

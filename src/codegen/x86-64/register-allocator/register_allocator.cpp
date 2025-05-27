@@ -46,24 +46,25 @@ RegisterAllocatorResult RegisterAllocator::build(const Function& function, std::
                     registerPrecisionIndex++;
                     break;
                 default:
-                    if(param->m_type.m_size > 8 && param->m_type.m_size <= 16) registerIndex++;
+                    // if(param->m_type.m_size > 8 && param->m_type.m_size <= 16) registerIndex++;
                     if(registerIndex >= registers.size() || registerIndex >= maxParamReg) {
                         paramStack.insert(param->m_id);
+                        // if(param->m_type.m_size > 8 && param->m_type.m_size <= 16) registerIndex--;
                         break;
                     }
-                    if(param->m_type.m_size > 8 && param->m_type.m_size <= 16) registerIndex--;
+                    // if(param->m_type.m_size > 8 && param->m_type.m_size <= 16) registerIndex--;
                     paramAssignments[param->m_id] = registers[registerIndex];
                     registerIndex++;
-                    if(param->m_type.m_size > 8 && param->m_type.m_size <= 16) {
-                        paramAssignments[param->m_id + "_0"] = registers[registerIndex];
-                        registerIndex++;
-                        for(auto& r : block->m_ranges[param->m_id]) {
-                            std::shared_ptr<Range> clone = std::make_shared<Range>(*r);
-                            clone->m_id += "_0";
-                            block->m_ranges[param->m_id + "_0"].push_back(clone);
-                            block->m_rangeVector.push_back(clone);
-                        }
-                    }
+                    // if(param->m_type.m_size > 8 && param->m_type.m_size <= 16) {
+                    //     paramAssignments[param->m_id + "_0"] = registers[registerIndex];
+                    //     registerIndex++;
+                    //     for(auto& r : block->m_ranges[param->m_id]) {
+                    //         std::shared_ptr<Range> clone = std::make_shared<Range>(*r);
+                    //         clone->m_id += "_0";
+                    //         block->m_ranges[param->m_id + "_0"].push_back(clone);
+                    //         block->m_rangeVector.push_back(clone);
+                    //     }
+                    // }
                     break;
             }
         }

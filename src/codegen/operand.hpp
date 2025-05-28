@@ -50,6 +50,9 @@ public:
         else if(ti.m_name == DOUBLE_T) {
             return Size::Qword;
         }
+        else if(ti.m_name == "short") {
+            return Size::Word;
+        }
         return Size::Qword;
     }
 

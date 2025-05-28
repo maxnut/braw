@@ -824,6 +824,46 @@ std::shared_ptr<Operands::Address> CodeGenerator::copyAddressToNew(std::shared_p
 }
 
 void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, size_t size, FunctionContext& ctx) {
+    if(size <= 32) {
+        size_t remaining = size;
+        auto add1 = cast<Operands::Address>(target->clone());
+        std::shared_ptr<Operands::Register> reg = nullptr;
+        if(source->m_type == Operand::Type::Register) {
+            reg = cast<Operands::Register>(source);
+        }
+        else {
+            reg = m_registers.at(Register::R12);
+            move(reg, source, ctx);
+        }
+        auto add2 = std::make_shared<Operands::Address>(reg, target->m_typeInfo);
+        while(remaining > 0) {
+            Operand::Size osize = remaining <= 1 ? Operand::Byte : remaining <= 2 ? Operand::Word : remaining <= 4 ? Operand::Dword : Operand::Qword;
+            switch(osize) {
+                case Operand::Byte:
+                    add2->m_typeInfo = ctx.m_brawCtx.getTypeInfo(CHAR_T).value();
+                    break;
+                case Operand::Word:
+                    add2->m_typeInfo.m_name = "short;"; // TODO change this
+                    break;
+                case Operand::Dword:
+                    add2->m_typeInfo = ctx.m_brawCtx.getTypeInfo(INT_T).value();
+                    break;
+                case Operand::Qword:
+                    add2->m_typeInfo = ctx.m_brawCtx.getTypeInfo(LONG_T).value();
+                    break;
+                case Operand::Oword:
+                case Operand::Yword:
+                case Operand::Uninitialized:
+                    break;
+                }
+            add1->m_typeInfo = add2->m_typeInfo;
+            move(add1, add2, ctx);
+            add1->m_offset += osize;
+            add2->m_offset += osize;
+            remaining -= osize;
+        }
+        return;
+    }
     std::vector<std::shared_ptr<Operands::Register>> save;
 
     if(isRegisterAlive(Register::RDI, ctx))
@@ -880,6 +920,39 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operand> target,
 }
 
 void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operand> target, std::shared_ptr<Operand> source, size_t size, FunctionContext& ctx) {
+    if(size <= 32) {
+        size_t remaining = size;
+        auto add1 = cast<Operands::Address>(target->clone());
+        auto add2 = cast<Operands::Address>(source->clone());
+        while(remaining > 0) {
+            Operand::Size osize = remaining <= 1 ? Operand::Byte : remaining <= 2 ? Operand::Word : remaining <= 4 ? Operand::Dword : Operand::Qword;
+            switch(osize) {
+                case Operand::Byte:
+                    add2->m_typeInfo = ctx.m_brawCtx.getTypeInfo(CHAR_T).value();
+                    break;
+                case Operand::Word:
+                    add2->m_typeInfo.m_name = "short;"; // TODO change this
+                    break;
+                case Operand::Dword:
+                    add2->m_typeInfo = ctx.m_brawCtx.getTypeInfo(INT_T).value();
+                    break;
+                case Operand::Qword:
+                    add2->m_typeInfo = ctx.m_brawCtx.getTypeInfo(LONG_T).value();
+                    break;
+                case Operand::Oword:
+                case Operand::Yword:
+                case Operand::Uninitialized:
+                    break;
+                }
+            add1->m_typeInfo = add2->m_typeInfo;
+            move(add1, add2, ctx);
+            add1->m_offset += osize;
+            add2->m_offset += osize;
+            remaining -= osize;
+        }
+        return;
+    }
+    
     std::vector<std::shared_ptr<Operands::Register>> save;
 
     if(isRegisterAlive(Register::RDI, ctx))

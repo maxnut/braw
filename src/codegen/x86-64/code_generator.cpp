@@ -547,7 +547,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
 
     size_t blockIndex = ctx.m_allocatorResult.m_propagated.blockForInstruction.at(ctx.m_instructionIndex);
     for(auto range : ctx.m_allocatorResult.m_propagated.blocks.at(blockIndex)->m_rangeVector) {
-        if(!(range->m_range.first <= ctx.m_instructionIndex && ctx.m_instructionIndex <= range->m_range.second)/*  || range->m_isAssignedFirst TODO: figure this out */)
+        if(!(range->m_range.first <= ctx.m_instructionIndex && ctx.m_instructionIndex <= range->m_range.second))
             continue;
 
         std::shared_ptr<Operand> arg = ctx.m_virtualRegisters.at(range->m_id);
@@ -647,6 +647,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
     ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
+    size_t spilledForPos = ctx.m_spills - spilledBeg;
     size_t diff = ctx.m_spills % (int64_t)16;
     if(diff > 0) {
         ctx.m_spills += 16 - diff; // alignment
@@ -664,6 +665,7 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     if(spilled > 0) {
         add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(spilled, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
         ctx.m_spills -= spilled;
+        ctx.m_spillPosition -= spilledForPos;
     }
 
     std::reverse(saveStack.begin(), saveStack.end());
@@ -722,7 +724,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
         sub(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>((int)reg->m_typeInfo.m_size, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
         ctx.m_spills += reg->m_typeInfo.m_size;
         ctx.m_spillPosition += reg->m_typeInfo.m_size;
-        move(std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP), -ctx.m_spillPosition, TypeInfo{}), reg, ctx);
+        move(std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -ctx.m_spillPosition, TypeInfo{}), reg, ctx);
         return;
     }
 
@@ -735,7 +737,7 @@ void CodeGenerator::push(std::shared_ptr<Operand> target, FunctionContext& ctx) 
 
 void CodeGenerator::pop(std::shared_ptr<Operands::Register> target, FunctionContext& ctx) {
     if(isFloat(target) || isDouble(target)) {
-        move(target, std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RSP), -ctx.m_spillPosition, target->m_typeInfo), ctx);
+        move(target, std::make_shared<Operands::Address>(m_registers.at(Operands::Register::RBP), -ctx.m_spillPosition, target->m_typeInfo), ctx);
         add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>((int)target->m_typeInfo.m_size, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
         ctx.m_spills -= target->m_typeInfo.m_size;
         ctx.m_spillPosition -= target->m_typeInfo.m_size;

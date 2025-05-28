@@ -37,6 +37,10 @@ enum Opcode {
     Setle,
     Setl,
     Setg,
+    Seta,
+    Setb,
+    Setae,
+    Setbe,
     Je,
     Jne,
     Call,
@@ -124,6 +128,10 @@ inline const char* opcodeToString(Opcode opcode) {
     case Shr: return "shr";
     case Sar: return "shr";
     case Shl: return "shl";
+    case Seta: return "seta";
+    case Setb: return "setb";
+    case Setae: return "setae";
+    case Setbe: return "setbe";
     case LabelOp:
       break;
     }

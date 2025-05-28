@@ -116,7 +116,7 @@ void Propagator::fillHoles(std::shared_ptr<Block> from, std::shared_ptr<Block> c
 
     if(path.size() > 2) {
         for(std::shared_ptr<Range> range : from->m_rangeVector) {
-            if(!current->m_ranges.contains(range->m_id)/*  || current->m_ranges.at(range->m_id).at(0)->m_isAssignedFirst */)
+            if(!current->m_ranges.contains(range->m_id) || range->m_isAssignedFirst) // warning could be wrong!!!
                 continue;
 
             for(size_t i = 1; i < path.size() - 1; i++) {

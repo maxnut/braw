@@ -192,32 +192,32 @@ void CodeGenerator::generate(const ::Instruction* instr, FunctionContext& ctx) {
         }
         case ::Instruction::CompareEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Sete, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Sete, Sete, ctx); 
             break;
         }
         case ::Instruction::CompareNotEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setne, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setne, Setne, ctx); 
             break;
         }
         case ::Instruction::CompareGreater: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setg, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setg, Seta, ctx); 
             break;
         }
         case ::Instruction::CompareLess: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setl, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setl, Setb, ctx); 
             break;
         }
         case ::Instruction::CompareGreaterEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setge, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setge, Setae, ctx); 
             break;
         }
         case ::Instruction::CompareLessEquals: {
             auto bin = (const ::BasicInstruction*)instr;
-            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setle, ctx); 
+            compareAndStore(cast<Operands::Register>(convertOperand(bin->m_o1, ctx)), convertOperand(bin->m_o2, ctx), cast<Operands::Register>(convertOperand(bin->m_o3, ctx)), Setle, Setbe, ctx); 
             break;
         }
         case ::Instruction::JumpFalse: {
@@ -647,10 +647,10 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     ctx.m_file.m_text.m_instructions.erase(ctx.m_file.m_text.m_instructions.begin() + beg, ctx.m_file.m_text.m_instructions.begin() + end + 1);
     ctx.m_file.m_text.m_instructions.insert(ctx.m_file.m_text.m_instructions.begin() + beg, result.begin(), result.end());
 
-    size_t diff = ctx.m_spills % 16;
+    size_t diff = ctx.m_spills % (int64_t)16;
     if(diff > 0) {
-        ctx.m_spills += diff; // alignment
-        sub(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(diff, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
+        ctx.m_spills += 16 - diff; // alignment
+        sub(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(16 - diff, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
     }
     size_t spilled = ctx.m_spills - spilledBeg;
     
@@ -664,7 +664,6 @@ void CodeGenerator::call(std::shared_ptr<Operands::Label> label, std::shared_ptr
     if(spilled > 0) {
         add(m_registers.at(Operands::Register::RSP), std::make_shared<Operands::Immediate>(spilled, ctx.m_brawCtx.getTypeInfo(INT_T).value()), ctx);
         ctx.m_spills -= spilled;
-        ctx.m_spillPosition -= spilled;
     }
 
     std::reverse(saveStack.begin(), saveStack.end());
@@ -775,7 +774,7 @@ std::shared_ptr<Operands::Register> CodeGenerator::memoryAddressToRegister(std::
     return reg;
 }
 
-void CodeGenerator::compareAndStore(std::shared_ptr<Operand> opp, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, FunctionContext& ctx) {
+void CodeGenerator::compareAndStore(std::shared_ptr<Operand> opp, std::shared_ptr<Operand> op, std::shared_ptr<Operands::Register> store, Opcode setOpcode, Opcode precisionOpcode, FunctionContext& ctx) {
     if(opp->m_type == Operand::Type::Immediate || opp->m_type == Operand::Type::Address) {
         auto target = isDouble(opp) || isFloat(opp) ? m_registers.at(PRCSPILL1) : m_registers.at(SPILL1);
         move(target, opp, ctx);
@@ -791,7 +790,7 @@ void CodeGenerator::compareAndStore(std::shared_ptr<Operand> opp, std::shared_pt
     cmp.addOperand(opp);
     cmp.addOperand(op);
     addInstruction(cmp, ctx);
-    set.m_opcode = setOpcode;
+    set.m_opcode = isFloat(op) || isDouble(op) ? precisionOpcode : setOpcode;
     m_registers.at(Operands::Register::RAX)->m_typeInfo = ctx.m_brawCtx.getTypeInfo(BOOL_T).value();
     set.addOperand(m_registers.at(Operands::Register::RAX));
     addInstruction(set, ctx);
@@ -841,7 +840,6 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operand> target,
     Instruction lea, mov;
     mov.m_opcode = Mov;
     lea.m_opcode = Lea;
-    // TODO find a way to force qword
     lea.addOperand(m_registers.at(Register::RDI));
     lea.addOperand(target);
     m_registers.at(Register::RDI)->m_typeInfo = Utils::makePointer(target->m_typeInfo);
@@ -897,7 +895,6 @@ void CodeGenerator::copyAddressToAddress(std::shared_ptr<Operand> target, std::s
 
     Instruction lea;
     lea.m_opcode = Lea;
-    // TODO find a way to force qword
     lea.addOperand(m_registers.at(Register::RDI));
     lea.addOperand(target);
     m_registers.at(Register::RDI)->m_typeInfo = Utils::makePointer(target->m_typeInfo);

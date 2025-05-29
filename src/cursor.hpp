@@ -48,8 +48,16 @@ public:
         return m_current != m_end;
     }
 
+    bool hasPrev() {
+        return m_current != m_begin;
+    }
+
     size_t getIndex() {
         return std::distance(m_begin, m_current);
+    }
+
+    Iterator current() {
+        return m_current;
     }
 
 private:

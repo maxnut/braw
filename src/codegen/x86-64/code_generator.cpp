@@ -7,6 +7,7 @@
 #include "codegen/x86-64/label.hpp"
 #include "codegen/x86-64/move-resolver/move_resolver.hpp"
 #include "codegen/x86-64/olabel.hpp"
+#include "codegen/x86-64/peephole.hpp"
 #include "codegen/x86-64/register.hpp"
 #include "cursor.hpp"
 #include "ir/address.hpp"
@@ -142,12 +143,8 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         }
     }
 
-    // coalesce useless moves
-    std::erase_if(file.m_text.m_instructions, [](const Instruction& i) {
-        if((i.m_opcode == Mov || i.m_opcode == Movss || i.m_opcode == Movsd) && MoveResolver::operandEquals(i.m_operands.at(0), i.m_operands.at(1)))
-            return true;
-        return false;
-    });
+    if(braw.m_optLevel > 0)
+        Peephole::run(file);
 
     return file;
 }

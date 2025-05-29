@@ -5,6 +5,7 @@
 #include "parser/nodes/unary_operator.hpp"
 #include "parser/nodes/variable_access.hpp"
 #include "rules.hpp"
+#include "ssa/constant_folding.hpp"
 #include "ssa/copy_propagator.hpp"
 #include "ssa/cse.hpp"
 #include "ssa/operand.hpp"
@@ -130,6 +131,7 @@ Function Builder::build(const AST::FunctionDefinitionNode* node, BrawContext& co
                 bool changed = false;
                 changed |= CopyPropagator::propagate(f);
                 changed |= CSE::run(f);
+                changed |= ConstantFolding::run(f);
                 if(!changed) break;
             }
         }

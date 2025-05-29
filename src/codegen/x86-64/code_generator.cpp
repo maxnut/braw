@@ -143,8 +143,12 @@ File CodeGenerator::generate(const ::File& src, BrawContext& braw) {
         }
     }
 
-    if(braw.m_optLevel > 0)
-        Peephole::run(file);
+    if(braw.m_optLevel > 0) {
+        bool change = false;
+        do {
+            change = Peephole::run(file);
+        } while(change);
+    }
 
     return file;
 }

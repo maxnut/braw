@@ -1,0 +1,42 @@
+import "memory.braw"
+
+type DynamicArray {
+    data: void*;
+    el_size: long;
+    size: long;
+    capacity: long;
+}
+
+fn da_init(da: DynamicArray*, el_size: long) -> void {
+    da->el_size = el_size;
+    da->size = 0l;
+    da->capacity = 4l;
+    da->data = memory_allocate(da->el_size * da->capacity);
+}
+
+fn da_push(da: DynamicArray*, value: void*) -> void {
+    if(da->size == da->capacity) {
+        da->capacity = da->capacity * 2l;
+        da->data = memory_reallocate(da->data, da->el_size * da->capacity);
+    }
+    memory_copy((void*)((long)da->data + da->el_size * da->size), value, da->el_size);
+    da->size = da->size + 1l;
+}
+
+fn da_get(da: DynamicArray*, index: long) -> void* {
+    return (void*)((long)da->data + da->el_size * index);
+}
+
+fn da_free(da: DynamicArray*) -> void {
+    memory_free(da->data);
+}
+
+fn da_clear(da: DynamicArray*) -> void {
+    da->size = 0l;
+}
+
+fn da_reserve(da: DynamicArray*, capacity: long) -> void {
+    if(capacity <= da->capacity): return;
+    da->capacity = capacity;
+    da->data = memory_reallocate(da->data, da->el_size * da->capacity);
+}

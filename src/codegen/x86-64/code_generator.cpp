@@ -833,7 +833,7 @@ void CodeGenerator::copyAddressToAddressPointer(std::shared_ptr<Operand> target,
             reg = cast<Operands::Register>(source);
         }
         else {
-            reg = m_registers.at(Register::R12);
+            reg = m_registers.at(SPILL2);
             move(reg, source, ctx);
         }
         auto add2 = std::make_shared<Operands::Address>(reg, target->m_typeInfo);

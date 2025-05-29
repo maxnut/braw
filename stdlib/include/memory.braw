@@ -1,4 +1,4 @@
-import "syscall.braw"
+import "core.braw"
 
 fn memory_set(ptr: void*, value: int, num: long) -> void {
     let p: char* = (char*)ptr;
@@ -129,7 +129,7 @@ fn memory_reallocate(ptr: void*, size: long) -> void* {
         return (void*)0l;
     }
 
-    let block = (MemoryBlock*)((long)ptr - 1l);
+    let block = (MemoryBlock*)((long)ptr - 17l);
     if(block->size >= size): return ptr;
 
     let new_ptr = memory_allocate(size);

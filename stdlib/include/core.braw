@@ -1,7 +1,7 @@
 import "syscall.braw"
 
-define EXIT_SUCCESS: 0;
-define EXIT_FAILURE: 1;
+macro EXIT_SUCCESS: 0;
+macro EXIT_FAILURE: 1;
 
 fn exit(code: int) -> void {
     syscall(60, (void*)code, (void*)0,(void*)0,(void*)0,(void*)0,(void*)0);

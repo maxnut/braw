@@ -1,5 +1,5 @@
 import "core.braw"
 
-define ASSERT(condition) {
+macro ASSERT(condition) {
     if(!#condition): exit($EXIT_FAILURE);
 }

@@ -11,6 +11,7 @@ import "../tests/retain/retain.braw"
 import "../tests/string_char/string_char.braw"
 import "../tests/type/type.braw"
 import "../tests/mem/mem.braw"
+import "../tests/da.braw"
 
 fn total_runs() -> int* {
     retain runs = 0;
@@ -106,6 +107,10 @@ fn main() -> int {
     });
     $TEST("MEMORY TESTS\n", {
         simple_run("Running basic test\n", mem_simple() == 10);
+    });
+    $TEST("DYNAMIC ARRAY TESTS\n", {
+        simple_run("Running basic test\n", da_simple() == 1);
+        simple_run("Running type test\n", da_type() == 1);
     });
 
     let tot = *total_runs();

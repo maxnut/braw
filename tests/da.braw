@@ -1,0 +1,26 @@
+import "dynamic_array.braw"
+
+fn da_simple() -> int {
+    let arr: DynamicArray;
+    let value = 1;
+    da_init(&arr, 4l);
+    da_push(&arr, &value);
+    let save = *(int*)da_get(&arr, 0l);
+    da_free(&arr);
+    return save;
+}
+
+type DATest {
+    a: int;
+    b: int;
+}
+
+fn da_type() -> int {
+    let v: DATest; v.a = 1; v.b = 1;
+    let arr: DynamicArray;
+    da_init(&arr, 8l);
+    da_push(&arr, &v);
+    v = *(DATest*)da_get(&arr, 0l);
+    da_free(&arr);
+    return v.a + v.b;
+}
